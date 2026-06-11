@@ -1,0 +1,29 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+.env
+**/.env
+!**/.env.example
+
+# Python API
+api/.venv/
+api/__pycache__/
+api/**/__pycache__/
+api/*.pyc
+api/tamilar_calendar.db
+
+# Flutter
+app/.dart_tool/
+app/build/
+app/.flutter-plugins-dependencies
+
+# Admin (React)
+admin/node_modules/
+admin/dist/
+
+# Cursor / local assets
+.cursor/

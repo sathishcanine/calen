@@ -1,0 +1,110 @@
+import json
+from datetime import date, datetime
+
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.database import Base
+
+
+class City(Base):
+    __tablename__ = "cities"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name_en: Mapped[str] = mapped_column(String(128))
+    name_ta: Mapped[str] = mapped_column(String(128))
+    lat: Mapped[float] = mapped_column()
+    lon: Mapped[float] = mapped_column()
+    tz_offset: Mapped[float] = mapped_column(default=5.5)
+    country: Mapped[str] = mapped_column(String(8), default="IN")
+    is_default: Mapped[bool] = mapped_column(default=False)
+
+
+class DailyCalendar(Base):
+    """One row per city per Gregorian date — daily view (SS2–4)."""
+
+    __tablename__ = "daily_calendars"
+    __table_args__ = (UniqueConstraint("city_id", "gregorian_date", name="uq_city_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    city_id: Mapped[str] = mapped_column(String(64), ForeignKey("cities.id"))
+    gregorian_date: Mapped[date] = mapped_column(Date, index=True)
+
+    # Header
+    month_label_ta: Mapped[str] = mapped_column(String(64))  # ஜூன் - புதன்
+    gregorian_display: Mapped[str] = mapped_column(String(16))  # 03-06-2026
+    subtitle_line1_ta: Mapped[str] = mapped_column(Text, default="")
+    subtitle_line2_ta: Mapped[str] = mapped_column(Text, default="")
+    banner_line_ta: Mapped[str] = mapped_column(String(128), default="")  # வைகாசி - 20, புதன்
+
+    # Events row under header
+    events_ta: Mapped[str] = mapped_column(Text, default="")
+
+    # Nalla neram / Gowri — JSON: [{"period":"காலை","time":"10.30 - 11.30"}, ...]
+    nalla_neram_json: Mapped[str] = mapped_column(Text, default="[]")
+    gowri_nalla_neram_json: Mapped[str] = mapped_column(Text, default="[]")
+    # Full Gowri Panchangam — JSON {sections: [{period, slots: [{time, name, auspicious}]}]}
+    gowri_panchangam_json: Mapped[str] = mapped_column(Text, default="[]")
+    # Planetary hora — JSON {sections: [{period, slots: [{time, planet, auspicious}]}]}
+    hora_json: Mapped[str] = mapped_column(Text, default="[]")
+
+    # Panchangam grid — JSON list of {label, value}
+    panchangam_json: Mapped[str] = mapped_column(Text, default="[]")
+
+    # Rahu / Gulika / Yamagandam — JSON
+    inauspicious_json: Mapped[str] = mapped_column(Text, default="[]")
+
+    shoolam_ta: Mapped[str] = mapped_column(String(128), default="")
+    pariharam_ta: Mapped[str] = mapped_column(String(128), default="")
+    lagnam_ta: Mapped[str] = mapped_column(Text, default="")
+
+    # Rasi chart 4x4 — JSON 16 cells (null = empty)
+    rasi_chart_json: Mapped[str] = mapped_column(Text, default="[]")
+    rasi_center_ta: Mapped[str] = mapped_column(Text, default="")
+
+    # Horoscope — JSON [{sign, prediction}, ...]
+    horoscope_json: Mapped[str] = mapped_column(Text, default="[]")
+
+    quote_ta: Mapped[str] = mapped_column(Text, default="")
+    birthdays_ta: Mapped[str] = mapped_column(Text, default="")
+
+    note_ta: Mapped[str] = mapped_column(Text, default="")
+    data_version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    city: Mapped["City"] = relationship("City")
+
+    def get_nalla_neram(self) -> list:
+        return json.loads(self.nalla_neram_json or "[]")
+
+    def set_nalla_neram(self, value: list) -> None:
+        self.nalla_neram_json = json.dumps(value, ensure_ascii=False)
+
+
+class MonthCalendar(Base):
+    """Month metadata + fasting summary (SS5–7)."""
+
+    __tablename__ = "month_calendars"
+    __table_args__ = (UniqueConstraint("city_id", "year", "month", name="uq_city_month"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    city_id: Mapped[str] = mapped_column(String(64), ForeignKey("cities.id"))
+    year: Mapped[int] = mapped_column(Integer)
+    month: Mapped[int] = mapped_column(Integer)
+
+    month_label_ta: Mapped[str] = mapped_column(String(64))  # ஜூன் - 2026
+    tamil_months_ta: Mapped[str] = mapped_column(String(128))  # வைகாசி - ஆனி
+
+    # Each day in grid: JSON array of day objects
+    days_json: Mapped[str] = mapped_column(Text, default="[]")
+
+    # Lists below grid
+    fasting_days_json: Mapped[str] = mapped_column(Text, default="[]")
+    wedding_days_json: Mapped[str] = mapped_column(Text, default="[]")
+    other_days_json: Mapped[str] = mapped_column(Text, default="[]")
+    hindu_festivals_json: Mapped[str] = mapped_column(Text, default="[]")
+    muslim_festivals_json: Mapped[str] = mapped_column(Text, default="[]")
+    christian_festivals_json: Mapped[str] = mapped_column(Text, default="[]")
+    government_holidays_json: Mapped[str] = mapped_column(Text, default="[]")
+
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

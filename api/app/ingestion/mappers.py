@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from kaalavidya.models import DailyPanchanga
 
-from app.ingestion.gowri_panchangam import gowri_from_panchanga
+from app.ingestion.gowri_panchangam import (
+    gowri_from_panchanga,
+    gowri_nalla_neram_from_gowri,
+    nalla_neram_from_gowri,
+)
 from app.ingestion.hora_panchangam import hora_from_panchanga
 
 TAMIL_MONTHS = [
@@ -126,41 +130,6 @@ def _rasi_chart_16(panchanga: DailyPanchanga) -> list[str | None]:
     return cells
 
 
-def _nalla_neram_slots(panchanga: DailyPanchanga) -> list[dict]:
-    slots = []
-    if panchanga.abhijit_muhurta:
-        ab = panchanga.abhijit_muhurta
-        slots.append(
-            {
-                "period": "காலை",
-                "time": _fmt_time_range(ab.starts_at, ab.ends_at),
-            }
-        )
-    for amrit in panchanga.amrit_kalam[:1]:
-        slots.append(
-            {
-                "period": "மாலை",
-                "time": _fmt_time_range(amrit.starts_at, amrit.ends_at),
-            }
-        )
-    return slots
-
-
-def _gowri_slots(panchanga: DailyPanchanga) -> list[dict]:
-    """Use auspicious day muhurtas with guna=1 as Gowri-style slots."""
-    good = [m for m in panchanga.dina_muhurtas if getattr(m, "guna", 0) == 1][:2]
-    periods = ["காலை", "மாலை"]
-    out = []
-    for i, m in enumerate(good):
-        out.append(
-            {
-                "period": periods[i] if i < len(periods) else f"நேரம் {i + 1}",
-                "time": _fmt_time_range(m.starts_at, m.ends_at),
-            }
-        )
-    return out
-
-
 def daily_from_panchanga(
     city_id: str,
     panchanga: DailyPanchanga,
@@ -264,9 +233,18 @@ def daily_from_panchanga(
         "subtitle_line2_ta": subtitle2,
         "banner_line_ta": f"{masa} - {tithi_day}, {weekday}" if masa else f"{tamil_month} - {weekday}",
         "events_ta": "",
-        "nalla_neram_json": json.dumps(_nalla_neram_slots(panchanga), ensure_ascii=False),
-        "gowri_nalla_neram_json": json.dumps(_gowri_slots(panchanga), ensure_ascii=False),
-        "gowri_panchangam_json": json.dumps(gowri_panchangam, ensure_ascii=False),
+        "nalla_neram_json": json.dumps(
+            nalla_neram_from_gowri(gowri_panchangam["day_slots"], gowri_panchangam["night_slots"]),
+            ensure_ascii=False,
+        ),
+        "gowri_nalla_neram_json": json.dumps(
+            gowri_nalla_neram_from_gowri(gowri_panchangam["day_slots"], gowri_panchangam["night_slots"]),
+            ensure_ascii=False,
+        ),
+        "gowri_panchangam_json": json.dumps(
+            {"sections": gowri_panchangam["sections"]},
+            ensure_ascii=False,
+        ),
         "hora_json": json.dumps(hora_panchangam, ensure_ascii=False),
         "panchangam_json": json.dumps(panchangam, ensure_ascii=False),
         "inauspicious_json": json.dumps(inauspicious, ensure_ascii=False),

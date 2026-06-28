@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "781972617201",
+    "project_id": "tamil-calendar-9fece",
+    "storage_bucket": "tamil-calendar-9fece.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:781972617201:android:5768712564ed5f1b247650",
+        "android_client_info": {
+          "package_name": "com.tamilarworld.tamilar_calendar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbB6ZMkChSP-HSCLb-_f9BJTMT09ArpQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

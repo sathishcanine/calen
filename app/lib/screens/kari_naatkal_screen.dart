@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/month_calendar.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../widgets/native_ad_widget.dart';
 
 /// கரி நாட்கள், அஷ்டமி, நவமி, தசமி — monthly view for a full year.
 class KariNaatkalScreen extends StatefulWidget {
@@ -93,6 +94,7 @@ class _KariNaatkalScreenState extends State<KariNaatkalScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const NativeAdWidget(),
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,

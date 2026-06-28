@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/gowri_week.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../widgets/native_ad_widget.dart';
 
 /// கௌரி பஞ்சாங்கம் — weekly tab view (Sun–Sat) with day/night sections.
 class GowriPanchangamScreen extends StatefulWidget {
@@ -78,6 +79,7 @@ class _GowriPanchangamScreenState extends State<GowriPanchangamScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const NativeAdWidget(),
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,

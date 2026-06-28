@@ -5,6 +5,7 @@ import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/kolam_pattern.dart';
+import '../widgets/native_ad_widget.dart';
 import '../widgets/section_header.dart';
 import 'daily_calendar_screen.dart';
 
@@ -77,6 +78,7 @@ class _MonthlyCalendarScreenState extends State<MonthlyCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const NativeAdWidget(),
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text('மாத காட்டி'),

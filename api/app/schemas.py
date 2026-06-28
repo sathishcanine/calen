@@ -211,3 +211,182 @@ class HoraWeekOut(BaseModel):
     city_id: str
     week_start: date
     days: list[HoraWeekDayOut]
+
+
+class VastuArticleOut(BaseModel):
+    id: int
+    title_ta: str
+
+
+class VastuDayOut(BaseModel):
+    gregorian_date: date
+    label_line1_ta: str
+    time_line_ta: str
+
+
+class VastuDaysOut(BaseModel):
+    city_id: str
+    year: int
+    days: list[VastuDayOut]
+
+
+class PanchaPakshiArticleOut(BaseModel):
+    id: int
+    title_ta: str
+    kind: str
+
+
+class PanchaPakshiNakshatraOut(BaseModel):
+    index: int
+    name_ta: str
+
+
+class PanchaPakshiPakshaOptionOut(BaseModel):
+    id: str
+    label_ta: str
+
+
+class PanchaPakshiSlotOut(BaseModel):
+    time: str
+    activity_ta: str
+    strength_ta: str = ""
+    strength_pct: int = 0
+
+
+class PanchaPakshiSectionOut(BaseModel):
+    period_ta: str
+    slots: list[PanchaPakshiSlotOut]
+
+
+class PanchaPakshiCalculateOut(BaseModel):
+    nakshatra_ta: str
+    birth_paksha_ta: str
+    bird_ta: str
+    gregorian_date: date
+    weekday_ta: str
+    observation_paksha_ta: str
+    sections: list[PanchaPakshiSectionOut]
+
+
+class PanchaPakshiGridSlotOut(BaseModel):
+    time: str
+    activity_ta: str
+
+
+class PanchaPakshiGridRowOut(BaseModel):
+    weekday_ta: str
+    slots: list[PanchaPakshiGridSlotOut]
+
+
+class PanchaPakshiArticleDetailOut(BaseModel):
+    id: int
+    title_ta: str
+    kind: str
+    content: dict
+
+
+class JyotishNakshatraOut(BaseModel):
+    index: int
+    name_ta: str
+
+
+class JyotishRashiOut(BaseModel):
+    index: int
+    name_ta: str
+
+
+class NazhigaiConvertOut(BaseModel):
+    mode: str
+    gregorian_date: date
+    segment_ta: str
+    sunrise: str
+    sunset: str
+    day_duration_ta: str
+    night_duration_ta: str
+    display_ta: str
+    input_time: str | None = None
+    nazhigai: int | None = None
+    vinadi: int | None = None
+    vighadiya: int | None = None
+    input_nazhigai: int | None = None
+    input_vinadi: int | None = None
+    equivalent_time: str | None = None
+
+
+class ChandrashtamamPeriodOut(BaseModel):
+    rashi_ta: str
+    time_range: str
+    is_chandrashtamam: bool
+
+
+class ChandrashtamamOut(BaseModel):
+    gregorian_date: date
+    birth_rashi_ta: str
+    chandrashtamam_rashi_ta: str
+    is_active_now: bool
+    note_ta: str
+    periods: list[ChandrashtamamPeriodOut]
+
+
+class NumerologyOut(BaseModel):
+    full_name: str
+    gregorian_date: date
+    name_number: int
+    destiny_number: int
+    birth_nakshatra_ta: str
+    birth_rashi_ta: str
+    interpretation_ta: str
+    summary_ta: str
+
+
+class PoruthamFactorOut(BaseModel):
+    name_ta: str
+    matched: bool
+    note_ta: str
+
+
+class MarriagePoruthamOut(BaseModel):
+    person1_nakshatra_ta: str
+    person2_nakshatra_ta: str
+    person1_rashi_ta: str
+    person2_rashi_ta: str
+    total_score: int
+    max_score: int
+    verdict_ta: str
+    factors: list[PoruthamFactorOut]
+
+
+class TarabalamPeriodOut(BaseModel):
+    transit_nakshatra_ta: str
+    time_range: str
+    tara_name_ta: str = ""
+
+
+class TarabalamOut(BaseModel):
+    gregorian_date: date
+    birth_nakshatra_ta: str
+    note_ta: str
+    favorable_periods: list[TarabalamPeriodOut]
+    unfavorable_periods: list[TarabalamPeriodOut]
+
+
+class PalangalCategoryOut(BaseModel):
+    id: str
+    title_ta: str
+    subtitle_ta: str
+    icon: str
+    color: str
+    kind: str = "articles"
+
+
+class PalangalArticleOut(BaseModel):
+    id: int
+    category_id: str
+    title_ta: str
+
+
+class PalangalArticleDetailOut(BaseModel):
+    id: int
+    category_id: str
+    title_ta: str
+    body_ta: str

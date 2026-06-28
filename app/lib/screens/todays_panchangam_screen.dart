@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/daily_calendar.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../widgets/native_ad_widget.dart';
 
 /// Competitor-style "இன்றைய பஞ்சாங்கம்" screen (dedicated panchangam view).
 class TodaysPanchangamScreen extends StatefulWidget {
@@ -104,6 +105,7 @@ class _TodaysPanchangamScreenState extends State<TodaysPanchangamScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const NativeAdWidget(),
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,

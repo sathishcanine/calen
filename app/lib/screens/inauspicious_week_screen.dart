@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/inauspicious_week.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../widgets/native_ad_widget.dart';
 
 /// இராகு, குளிகை, எமகண்டம் — weekly tab view (Sun–Sat).
 class InauspiciousWeekScreen extends StatefulWidget {
@@ -79,6 +80,7 @@ class _InauspiciousWeekScreenState extends State<InauspiciousWeekScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const NativeAdWidget(),
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,

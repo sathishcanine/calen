@@ -7,6 +7,6 @@ void main() {
     await tester.pumpWidget(
       TamilarCalendarApp(repository: CalendarRepository()),
     );
-    expect(find.textContaining('தமிழர்'), findsWidgets);
+    expect(find.textContaining('A-Z தமிழ்'), findsWidgets);
   });
 }

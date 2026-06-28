@@ -1,19 +1,32 @@
 import 'package:flutter/material.dart';
 
+import '../config/app_config.dart';
+import '../config/ad_config.dart';
 import '../models/daily_calendar.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
+import '../widgets/native_ad_widget.dart';
 import '../widgets/kolam_pattern.dart';
 import '../widgets/nav_action_card.dart';
+import '../models/palangal.dart';
+import '../widgets/jyotish_palangal_menus.dart';
 import '../widgets/spiritual_menu_grid.dart';
+import 'chandrashtamam_screen.dart';
 import 'daily_calendar_screen.dart';
+import 'marriage_porutham_screen.dart';
 import 'monthly_calendar_screen.dart';
+import 'nazhigai_converter_screen.dart';
+import 'numerology_screen.dart';
+import 'palangal_category_screen.dart';
+import 'tarabalam_screen.dart';
 import 'gowri_panchangam_screen.dart';
 import 'hora_week_screen.dart';
 import 'inauspicious_week_screen.dart';
 import 'kari_naatkal_screen.dart';
 import 'todays_panchangam_screen.dart';
+import 'pancha_pakshi_screen.dart';
+import 'vastu_screen.dart';
 
 /// SS1 — Home with hero date banner, daily preview, and navigation cards.
 class HomeScreen extends StatefulWidget {
@@ -28,6 +41,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   HomeSummary? _home;
   DailyCalendar? _today;
+  List<PalangalCategory> _palangalCategories = [];
   String? _error;
   bool _loading = true;
 
@@ -48,10 +62,15 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         today = await widget.repository.getDay(home.gregorianDate);
       } catch (_) {}
+      List<PalangalCategory> palangal = [];
+      try {
+        palangal = await widget.repository.getPalangalCategories();
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _home = home;
           _today = today;
+          _palangalCategories = palangal;
         });
       }
     } catch (e) {
@@ -134,6 +153,86 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openVastu(int year) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VastuScreen(
+          repository: widget.repository,
+          initialYear: year,
+        ),
+      ),
+    );
+  }
+
+  void _openPanchaPakshi(DateTime date) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PanchaPakshiScreen(
+          repository: widget.repository,
+          initialDate: date,
+        ),
+      ),
+    );
+  }
+
+  void _openMarriagePorutham() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => MarriagePoruthamScreen(repository: widget.repository)),
+    );
+  }
+
+  void _openNumerology() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => NumerologyScreen(repository: widget.repository)),
+    );
+  }
+
+  void _openNazhigai(DateTime date) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NazhigaiConverterScreen(repository: widget.repository, initialDate: date),
+      ),
+    );
+  }
+
+  void _openChandrashtamam(DateTime date) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChandrashtamamScreen(repository: widget.repository, initialDate: date),
+      ),
+    );
+  }
+
+  void _openPalangalCategory(PalangalCategory category, DateTime date) {
+    if (category.id == 'tara') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TarabalamScreen(repository: widget.repository, initialDate: date),
+        ),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PalangalCategoryScreen(
+          repository: widget.repository,
+          categoryId: category.id,
+          titleTa: category.titleTa,
+          initialDate: date,
+          isCalculator: category.isCalculator,
+        ),
+      ),
+    );
+  }
+
   String _greeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'காலை வணக்கம்';
@@ -141,9 +240,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'மாலை வணக்கம்';
   }
 
+  List<PalangalCategory> _defaultPalangalCategories() => const [
+        PalangalCategory(id: 'kanavu', titleTa: 'கனவு பலன்கள்', subtitleTa: '', icon: 'bedtime', color: '#FF6F00'),
+        PalangalCategory(id: 'palli_vizhum', titleTa: 'பல்லி விழும் பலன்கள்', subtitleTa: '', icon: 'pest_control', color: '#1565C0'),
+        PalangalCategory(id: 'palli_sollum', titleTa: 'பல்லி சொல்லும் பலன்கள்', subtitleTa: '', icon: 'record_voice_over', color: '#EF6C00'),
+        PalangalCategory(id: 'manaiyadi', titleTa: 'மனையடி சாஸ்திரம்', subtitleTa: '', icon: 'home_work', color: '#AD1457'),
+        PalangalCategory(id: 'tara', titleTa: 'தாரா பலன்கள்', subtitleTa: '', icon: 'stars', color: '#6A1B9A', kind: 'calculator'),
+        PalangalCategory(id: 'macha', titleTa: 'மச்ச பலன்கள்', subtitleTa: '', icon: 'face', color: '#C62828'),
+        PalangalCategory(id: 'dhana', titleTa: 'தான பலன்கள்', subtitleTa: '', icon: 'volunteer_activism', color: '#7B1FA2'),
+        PalangalCategory(id: 'vilakku', titleTa: 'விளக்கு ஏற்றும் பலன்கள்', subtitleTa: '', icon: 'light_mode', color: '#558B2F'),
+      ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: NativeAdWidget(adUnitId: AdConfig.homeNativeUnitId),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -154,19 +265,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: CustomScrollView(
                     slivers: [
                       SliverAppBar(
-                        expandedHeight: 72,
                         floating: true,
                         pinned: true,
                         backgroundColor: AppColors.cream,
-                        flexibleSpace: FlexibleSpaceBar(
-                          titlePadding: const EdgeInsets.only(left: 16, bottom: 14),
-                          title: Text(
-                            'தமிழர் உலகம்',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.maroon,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
+                        foregroundColor: AppColors.maroon,
+                        centerTitle: false,
+                        titleSpacing: 16,
+                        title: Text(
+                          'A-Z தமிழ்',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppColors.maroon,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                         actions: [
                           IconButton(
@@ -208,7 +320,51 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onOpenGowri: () => _openGowriPanchangam(_home!.gregorianDate),
                                 onOpenHora: () => _openHoraWeek(_home!.gregorianDate),
                                 onOpenKariNaatkal: () => _openKariNaatkal(_home!.gregorianDate),
-                                onOpenDaily: () => _openDailyCalendar(_home!.gregorianDate),
+                                onOpenVastu: () => _openVastu(_home!.gregorianDate.year),
+                                onOpenPanchaPakshi: () => _openPanchaPakshi(_home!.gregorianDate),
+                              ),
+                              const SizedBox(height: 24),
+                              JyotishPalangalMenus(
+                                jyotishItems: [
+                                  JyotishMenuItem(
+                                    label: 'திருமண பொருத்தம்',
+                                    icon: Icons.favorite_rounded,
+                                    color: const Color(0xFF2E8B57),
+                                    onTap: _openMarriagePorutham,
+                                  ),
+                                  JyotishMenuItem(
+                                    label: 'எண்கணிதம்',
+                                    icon: Icons.pin_rounded,
+                                    color: const Color(0xFFC62828),
+                                    onTap: _openNumerology,
+                                  ),
+                                  JyotishMenuItem(
+                                    label: 'நாழிகை converter',
+                                    icon: Icons.access_time_filled_rounded,
+                                    color: const Color(0xFFF9A825),
+                                    onTap: () => _openNazhigai(_home!.gregorianDate),
+                                  ),
+                                  JyotishMenuItem(
+                                    label: 'சந்திராஷ்டமம்',
+                                    icon: Icons.nightlight_round,
+                                    color: const Color(0xFF1565C0),
+                                    onTap: () => _openChandrashtamam(_home!.gregorianDate),
+                                  ),
+                                ],
+                                palangalItems: (_palangalCategories.isNotEmpty
+                                        ? _palangalCategories
+                                        : _defaultPalangalCategories())
+                                    .map(
+                                      (c) => PalangalMenuItem(
+                                        id: c.id,
+                                        label: c.titleTa,
+                                        icon: palangalIconFromName(c.icon),
+                                        color: palangalColorFromHex(c.color),
+                                        kind: c.kind,
+                                        onTap: () => _openPalangalCategory(c, _home!.gregorianDate),
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                               const SizedBox(height: 28),
                               Text(
@@ -522,7 +678,9 @@ class _ErrorView extends StatelessWidget {
               Text(error, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 8),
               Text(
-                'API: uvicorn app.main:app --reload --host 0.0.0.0 --port 4000',
+                AppConfig.offlineMode
+                    ? 'ஆஃப்லைன்: சென்னை 2026 தரவு மட்டும். வேறு தேதிகள் இல்லை.'
+                    : 'API: uvicorn app.main:app --reload --host 0.0.0.0 --port 4000',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
               ),

@@ -16,7 +16,7 @@ class SpiritualMenuItem {
   final VoidCallback onTap;
 }
 
-/// SS1 spiritual shortcuts — 4×3 grid matching competitor home layout.
+/// SS1 spiritual shortcuts — 3-column grid.
 class SpiritualMenuGrid extends StatelessWidget {
   const SpiritualMenuGrid({
     super.key,
@@ -25,8 +25,8 @@ class SpiritualMenuGrid extends StatelessWidget {
     required this.onOpenGowri,
     required this.onOpenHora,
     required this.onOpenKariNaatkal,
-    required this.onOpenDaily,
-    this.onComingSoon,
+    required this.onOpenVastu,
+    required this.onOpenPanchaPakshi,
   });
 
   final VoidCallback onOpenPanchangam;
@@ -34,23 +34,8 @@ class SpiritualMenuGrid extends StatelessWidget {
   final VoidCallback onOpenGowri;
   final VoidCallback onOpenHora;
   final VoidCallback onOpenKariNaatkal;
-  final VoidCallback onOpenDaily;
-  final VoidCallback? onComingSoon;
-
-  void _comingSoon(BuildContext context) {
-    if (onComingSoon != null) {
-      onComingSoon!();
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('விரைவில் வருகிறது'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.maroon,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+  final VoidCallback onOpenVastu;
+  final VoidCallback onOpenPanchaPakshi;
 
   @override
   Widget build(BuildContext context) {
@@ -89,43 +74,13 @@ class SpiritualMenuGrid extends StatelessWidget {
         label: 'வாஸ்து நாட்கள் / தகவல்கள்',
         icon: Icons.temple_hindu_rounded,
         color: const Color(0xFF5D4037),
-        onTap: () => _comingSoon(context),
+        onTap: onOpenVastu,
       ),
       SpiritualMenuItem(
         label: 'பஞ்ச பட்சி சாஸ்திரம் / கணக்கீடு',
         icon: Icons.grid_view_rounded,
         color: const Color(0xFFF9A825),
-        onTap: () => _comingSoon(context),
-      ),
-      SpiritualMenuItem(
-        label: 'ஜோதிட தேடல்',
-        icon: Icons.search_rounded,
-        color: const Color(0xFF212121),
-        onTap: () => _comingSoon(context),
-      ),
-      SpiritualMenuItem(
-        label: 'எண் கணிதம்',
-        icon: Icons.calculate_rounded,
-        color: const Color(0xFFE91E8C),
-        onTap: () => _comingSoon(context),
-      ),
-      SpiritualMenuItem(
-        label: 'தனிஷ்டா பஞ்சமி (திதி / அடைப்பு)',
-        icon: Icons.public_rounded,
-        color: const Color(0xFF1565C0),
-        onTap: () => _comingSoon(context),
-      ),
-      SpiritualMenuItem(
-        label: 'கதைகள் / கட்டுரைகள்',
-        icon: Icons.menu_book_rounded,
-        color: const Color(0xFF7B1FA2),
-        onTap: () => _comingSoon(context),
-      ),
-      SpiritualMenuItem(
-        label: 'ஜோதிடர் பதில்கள்',
-        icon: Icons.psychology_alt_rounded,
-        color: const Color(0xFFEF6C00),
-        onTap: () => _comingSoon(context),
+        onTap: onOpenPanchaPakshi,
       ),
     ];
 
@@ -145,10 +100,10 @@ class SpiritualMenuGrid extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
+            crossAxisCount: 3,
             mainAxisSpacing: 16,
-            crossAxisSpacing: 10,
-            childAspectRatio: 0.72,
+            crossAxisSpacing: 12,
+            mainAxisExtent: 128,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) => _SpiritualMenuTile(item: items[index]),
@@ -171,38 +126,37 @@ class _SpiritualMenuTile extends StatelessWidget {
         onTap: item.onTap,
         borderRadius: BorderRadius.circular(AppDecorations.cardRadiusSm),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: item.color,
-                  borderRadius: BorderRadius.circular(AppDecorations.cardRadiusSm),
-                  boxShadow: [
-                    BoxShadow(
-                      color: item.color.withValues(alpha: 0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Icon(item.icon, color: Colors.white, size: 28),
+            Container(
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: item.color,
+                borderRadius: BorderRadius.circular(AppDecorations.cardRadiusSm),
+                boxShadow: [
+                  BoxShadow(
+                    color: item.color.withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
+              child: Icon(item.icon, color: Colors.white, size: 32),
             ),
-            const SizedBox(height: 6),
-            Expanded(
-              child: Text(
-                item.label,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
-                      height: 1.2,
-                      fontSize: 10,
-                    ),
-              ),
+            const SizedBox(height: 8),
+            Text(
+              item.label,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                    height: 1.25,
+                    fontSize: 11,
+                  ),
             ),
           ],
         ),

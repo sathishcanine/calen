@@ -61,10 +61,53 @@ class AppDecorations {
   );
 
   static const heroGradient = LinearGradient(
-    colors: [AppColors.greenBanner, AppColors.greenBannerLight],
+    colors: [AppColors.maroonDark, AppColors.maroon, AppColors.maroonLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static const spiritualGradient = LinearGradient(
+    colors: [Color(0xFF1A1040), Color(0xFF2C1F5C)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const tealGradient = LinearGradient(
+    colors: [Color(0xFF1A6B6B), Color(0xFF2D9B9B)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const forestGradient = LinearGradient(
+    colors: [Color(0xFF1B5E3A), Color(0xFF2E8B57)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static BoxDecoration glassCard({Color? tint}) => BoxDecoration(
+        color: (tint ?? Colors.white).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.maroon.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      );
+
+  static BoxDecoration iconTile(LinearGradient gradient) => BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(cardRadiusSm),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.colors.first.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      );
 }
 
 ThemeData buildAppTheme() {

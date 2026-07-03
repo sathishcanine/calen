@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// Bundled Chennai 2026 SQLite — copied to app documents on first launch.
+/// Bundled Chennai 2026 SQLite (365 daily + 12 monthly rows) — copied on first launch.
 class LocalDatabase {
   LocalDatabase._();
 

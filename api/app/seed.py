@@ -277,36 +277,9 @@ def seed_month_june(db) -> None:
 
 
 def ensure_cities() -> None:
-    db = SessionLocal()
-    try:
-        if not db.query(City).filter(City.id == "chennai").first():
-            db.add(
-                City(
-                    id="chennai",
-                    name_en="Chennai",
-                    name_ta="சென்னை",
-                    lat=13.0827,
-                    lon=80.2707,
-                    tz_offset=5.5,
-                    country="IN",
-                    is_default=True,
-                )
-            )
-            db.add(
-                City(
-                    id="singapore",
-                    name_en="Singapore",
-                    name_ta="சிங்கப்பூர்",
-                    lat=1.3521,
-                    lon=103.8198,
-                    tz_offset=8.0,
-                    country="SG",
-                    is_default=False,
-                )
-            )
-            db.commit()
-    finally:
-        db.close()
+    from app.ingestion.seed_cities import ensure_world_cities
+
+    ensure_world_cities()
 
 
 def run_seed() -> None:

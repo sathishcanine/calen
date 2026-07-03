@@ -17,14 +17,25 @@ Health: `http://<LAN_IP>:4000/api/v1/health` → `{"status":"ok"}`
 ## Ingest data
 
 ```bash
-# Full year
-python -m app.ingestion.fetch_month --city chennai --year 2026 --all-months --no-prokerala
+# 1. Seed ~180 world cities (TN, India, diaspora, global hubs)
+python -m app.ingestion.seed_cities
 
-# One month
+# 2. One city, full year
+python -m app.ingestion.fetch_month --city coimbatore --year 2026 --all-months --no-prokerala
+
+# 3. All seeded cities, full year (batch — may take several hours)
+python -m app.ingestion.fetch_month --year 2026 --all-months --all-cities --no-prokerala
+
+# 4. India only, skip cities already ingested
+python -m app.ingestion.fetch_month --year 2026 --all-months --all-cities --country IN --skip-existing --no-prokerala
+
+# One month only
 python -m app.ingestion.fetch_month --city chennai --year 2026 --month 6 --no-prokerala
 ```
 
-DB: `tamilar_calendar.db`
+DB: `tamilar_calendar.db` (~4 MB per city per year)
+
+**Note:** Literal “every city on Earth” is not practical (millions of places). Extend `app/data/world_cities.py` or pass `--json cities_extra.json` to `seed_cities`.
 
 ## Endpoints
 

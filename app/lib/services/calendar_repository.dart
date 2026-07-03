@@ -1,7 +1,8 @@
 import 'package:intl/intl.dart';
 
-import '../config/api_config.dart';
 import '../config/app_config.dart';
+import '../config/api_config.dart';
+import '../models/city.dart';
 import '../models/daily_calendar.dart';
 import '../models/gowri_week.dart';
 import '../models/hora_week.dart';
@@ -15,104 +16,119 @@ import 'api_service.dart';
 import 'local_calendar_service.dart';
 import 'local_database.dart';
 import 'pancha_pakshi_engine.dart';
+import 'city_preferences_service.dart';
 import 'spiritual_static_bundle.dart';
 
-/// Calendar data from API or bundled offline SQLite (see [AppConfig.offlineMode]).
+/// Hybrid data access: bundled Chennai 2026 SQLite offline + API for other cities.
 class CalendarRepository {
-  CalendarRepository._({required ApiService? api, required LocalCalendarService? local})
+  CalendarRepository._({required ApiService? api, required LocalCalendarService local})
       : _api = api,
         _local = local;
 
   final ApiService? _api;
-  final LocalCalendarService? _local;
+  final LocalCalendarService _local;
 
-  bool get isOffline => _local != null;
+  /// True when calendar reads come from bundled assets (no network).
+  /// Chennai always uses bundled calendar.db — even when OFFLINE_MODE=false.
+  bool get usesBundledCalendar =>
+      AppConfig.offlineMode || CityPreferencesService.instance.isDefaultCity;
+
+  bool get isOffline => AppConfig.offlineMode;
+
+  String get cityId => CityPreferencesService.instance.cityId;
+
+  String get cityDisplayName => CityPreferencesService.instance.displayName;
+
+  bool get _hasApi => _api != null && !AppConfig.offlineMode;
+
+  Future<List<City>> getCities() async {
+    if (!_hasApi) return _bundledCities();
+    try {
+      return await _api!.fetchCities();
+    } catch (_) {
+      return _bundledCities();
+    }
+  }
+
+  /// Bundled calendar.db contains Chennai 2026 only.
+  List<City> _bundledCities() => [CityPreferencesService.defaultCity];
 
   ApiService get _online {
     final api = _api;
-    if (api == null) throw StateError('API unavailable in offline mode');
+    if (api == null) throw StateError('API unavailable');
     return api;
   }
 
-  LocalCalendarService get _offline {
-    final local = _local;
-    if (local == null) throw StateError('Local DB unavailable in online mode');
-    return local;
-  }
-
   static Future<CalendarRepository> create() async {
+    await CityPreferencesService.instance.load();
+    await LocalDatabase.instance.ensureInitialized();
+    await SpiritualStaticBundle.instance.load();
+    await PanchaPakshiEngine.instance.load();
+
+    final local = LocalCalendarService(cityId: ApiConfig.defaultCityId);
     if (AppConfig.offlineMode) {
-      await LocalDatabase.instance.ensureInitialized();
-      await SpiritualStaticBundle.instance.load();
-      await PanchaPakshiEngine.instance.load();
-      return CalendarRepository._(local: LocalCalendarService(), api: null);
+      return CalendarRepository._(api: null, local: local);
     }
-    return CalendarRepository._(api: ApiService(), local: null);
+    return CalendarRepository._(api: ApiService(), local: local);
   }
 
   Future<HomeSummary> getHome({DateTime? date}) {
-    if (_local != null) return _offline.fetchHome(date: date);
-    return _online.fetchHome(date: date ?? DateTime.now());
+    if (usesBundledCalendar) return _local.fetchHome(date: date);
+    return _online.fetchHome(cityId: cityId, date: date ?? DateTime.now());
   }
 
   Future<DailyCalendar> getDay(DateTime date) {
-    if (_local != null) return _offline.fetchDay(date);
-    return _online.fetchDay(cityId: ApiConfig.defaultCityId, date: date);
+    if (usesBundledCalendar) return _local.fetchDay(date);
+    return _online.fetchDay(cityId: cityId, date: date);
   }
 
   Future<HoraWeek> getHoraWeek(DateTime date) {
-    if (_local != null) return _offline.fetchHoraWeek(date);
-    return _online.fetchHoraWeek(cityId: ApiConfig.defaultCityId, date: date);
+    if (usesBundledCalendar) return _local.fetchHoraWeek(date);
+    return _online.fetchHoraWeek(cityId: cityId, date: date);
   }
 
   Future<GowriWeek> getGowriWeek(DateTime date) {
-    if (_local != null) return _offline.fetchGowriWeek(date);
-    return _online.fetchGowriWeek(cityId: ApiConfig.defaultCityId, date: date);
+    if (usesBundledCalendar) return _local.fetchGowriWeek(date);
+    return _online.fetchGowriWeek(cityId: cityId, date: date);
   }
 
   Future<InauspiciousWeek> getInauspiciousWeek(DateTime date) {
-    if (_local != null) return _offline.fetchInauspiciousWeek(date);
-    return _online.fetchInauspiciousWeek(cityId: ApiConfig.defaultCityId, date: date);
+    if (usesBundledCalendar) return _local.fetchInauspiciousWeek(date);
+    return _online.fetchInauspiciousWeek(cityId: cityId, date: date);
   }
 
   Future<VastuDays> getVastuDays(int year) {
-    if (_local != null) return _offline.fetchVastuDays(year);
-    return _online.fetchVastuDays(cityId: ApiConfig.defaultCityId, year: year);
+    if (usesBundledCalendar) return _local.fetchVastuDays(year);
+    return _online.fetchVastuDays(cityId: cityId, year: year);
   }
 
   Future<List<VastuArticle>> getVastuArticles() {
-    if (_local != null) return _offline.fetchVastuArticles();
-    return _online.fetchVastuArticles();
+    return _local.fetchVastuArticles();
   }
 
   Future<List<int>> getVastuYears() {
-    if (_local != null) return _offline.fetchVastuYears();
-    return _online.fetchVastuYears();
+    return _local.fetchVastuYears();
   }
 
   Future<List<PanchaPakshiArticle>> getPanchaPakshiArticles() {
-    if (_local != null) return _offline.fetchPanchaPakshiArticles();
-    return _online.fetchPanchaPakshiArticles();
+    return _local.fetchPanchaPakshiArticles();
   }
 
   Future<PanchaPakshiArticleDetail> getPanchaPakshiArticle(int id) {
-    if (_local != null) return _offline.fetchPanchaPakshiArticle(id);
+    if (usesBundledCalendar) return _local.fetchPanchaPakshiArticle(id);
     return _online.fetchPanchaPakshiArticle(id);
   }
 
   Future<List<PanchaPakshiNakshatra>> getPanchaPakshiNakshatras() {
-    if (_local != null) return _offline.fetchPanchaPakshiNakshatras();
-    return _online.fetchPanchaPakshiNakshatras();
+    return _local.fetchPanchaPakshiNakshatras();
   }
 
   Future<List<PanchaPakshiPakshaOption>> getPanchaPakshiPakshaOptions() {
-    if (_local != null) return _offline.fetchPanchaPakshiPakshaOptions();
-    return _online.fetchPanchaPakshiPakshaOptions();
+    return _local.fetchPanchaPakshiPakshaOptions();
   }
 
   Future<List<int>> getPanchaPakshiYears() {
-    if (_local != null) return _offline.fetchPanchaPakshiYears();
-    return _online.fetchPanchaPakshiYears();
+    return _local.fetchPanchaPakshiYears();
   }
 
   Future<PanchaPakshiResult> calculatePanchaPakshi({
@@ -120,15 +136,15 @@ class CalendarRepository {
     required String birthPakshaId,
     required DateTime date,
   }) {
-    if (_local != null) {
-      return _offline.fetchPanchaPakshiCalculate(
+    if (usesBundledCalendar) {
+      return _local.fetchPanchaPakshiCalculate(
         nakshatraIndex: nakshatraIndex,
         birthPakshaId: birthPakshaId,
         date: date,
       );
     }
     return _online.fetchPanchaPakshiCalculate(
-      cityId: ApiConfig.defaultCityId,
+      cityId: cityId,
       nakshatraIndex: nakshatraIndex,
       birthPakshaId: birthPakshaId,
       date: date,
@@ -136,18 +152,16 @@ class CalendarRepository {
   }
 
   Future<MonthCalendar> getMonth(int year, int month) {
-    if (_local != null) return _offline.fetchMonth(year, month);
-    return _online.fetchMonth(cityId: ApiConfig.defaultCityId, year: year, month: month);
+    if (usesBundledCalendar) return _local.fetchMonth(year, month);
+    return _online.fetchMonth(cityId: cityId, year: year, month: month);
   }
 
   Future<List<JyotishNakshatra>> getJyotishNakshatras() {
-    if (_local != null) return _offline.fetchJyotishNakshatras();
-    return _online.fetchJyotishNakshatras();
+    return _local.fetchJyotishNakshatras();
   }
 
   Future<List<JyotishRashi>> getJyotishRashis() {
-    if (_local != null) return _offline.fetchJyotishRashis();
-    return _online.fetchJyotishRashis();
+    return _local.fetchJyotishRashis();
   }
 
   Future<NazhigaiResult> convertNazhigai({
@@ -158,8 +172,8 @@ class CalendarRepository {
     int nazhigai = 1,
     int vinadi = 0,
   }) {
-    if (_local != null) {
-      return _offline.fetchNazhigaiConvert(
+    if (!_hasApi) {
+      return _local.fetchNazhigaiConvert(
         date: date,
         hour: hour,
         minute: minute,
@@ -169,7 +183,7 @@ class CalendarRepository {
       );
     }
     return _online.fetchNazhigaiConvert(
-      cityId: ApiConfig.defaultCityId,
+      cityId: cityId,
       date: date,
       hour: hour,
       minute: minute,
@@ -183,19 +197,21 @@ class CalendarRepository {
     required int birthRashiIndex,
     required DateTime date,
   }) {
-    if (_local != null) {
-      return _offline.fetchChandrashtamam(birthRashiIndex: birthRashiIndex, date: date);
+    if (!_hasApi) {
+      return _local.fetchChandrashtamam(birthRashiIndex: birthRashiIndex, date: date);
     }
     return _online.fetchChandrashtamam(
-      cityId: ApiConfig.defaultCityId,
+      cityId: cityId,
       birthRashiIndex: birthRashiIndex,
       date: date,
     );
   }
 
   Future<NumerologyResult> getNumerology({required String name, required DateTime date}) {
-    if (_local != null) return _offline.fetchNumerology(name: name, date: date);
-    return _online.fetchNumerology(cityId: ApiConfig.defaultCityId, name: name, date: date);
+    if (!_hasApi) {
+      return _local.fetchNumerology(name: name, date: date);
+    }
+    return _online.fetchNumerology(cityId: cityId, name: name, date: date);
   }
 
   Future<MarriagePoruthamResult> getMarriagePorutham({
@@ -208,8 +224,8 @@ class CalendarRepository {
     required int person2Minute,
     int? person2Nakshatra,
   }) {
-    if (_local != null) {
-      return _offline.fetchMarriagePorutham(
+    if (!_hasApi) {
+      return _local.fetchMarriagePorutham(
         person1Date: person1Date,
         person1Hour: person1Hour,
         person1Minute: person1Minute,
@@ -221,7 +237,7 @@ class CalendarRepository {
       );
     }
     return _online.fetchMarriagePorutham(
-      cityId: ApiConfig.defaultCityId,
+      cityId: cityId,
       person1Date: person1Date,
       person1Hour: person1Hour,
       person1Minute: person1Minute,
@@ -237,29 +253,26 @@ class CalendarRepository {
     required int birthNakshatraIndex,
     required DateTime date,
   }) {
-    if (_local != null) {
-      return _offline.fetchTarabalam(birthNakshatraIndex: birthNakshatraIndex, date: date);
+    if (!_hasApi) {
+      return _local.fetchTarabalam(birthNakshatraIndex: birthNakshatraIndex, date: date);
     }
     return _online.fetchTarabalam(
-      cityId: ApiConfig.defaultCityId,
+      cityId: cityId,
       birthNakshatraIndex: birthNakshatraIndex,
       date: date,
     );
   }
 
   Future<List<PalangalCategory>> getPalangalCategories() {
-    if (_local != null) return _offline.fetchPalangalCategories();
-    return _online.fetchPalangalCategories();
+    return _local.fetchPalangalCategories();
   }
 
   Future<List<PalangalArticle>> getPalangalArticles(String categoryId) {
-    if (_local != null) return _offline.fetchPalangalArticles(categoryId);
-    return _online.fetchPalangalArticles(categoryId);
+    return _local.fetchPalangalArticles(categoryId);
   }
 
   Future<PalangalArticleDetail> getPalangalArticle(String categoryId, int articleId) {
-    if (_local != null) return _offline.fetchPalangalArticle(categoryId, articleId);
-    return _online.fetchPalangalArticle(categoryId, articleId);
+    return _local.fetchPalangalArticle(categoryId, articleId);
   }
 
   String formatDate(DateTime d) => DateFormat('yyyy-MM-dd').format(d);

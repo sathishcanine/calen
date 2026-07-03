@@ -1,6 +1,5 @@
-/// API base URL (ignored when [AppConfig.offlineMode] is true).
-/// Android emulator: http://10.0.2.2:4000/api/v1
-/// Physical device: use your machine LAN IP, e.g. http://192.168.1.5:4000/api/v1
+/// API base URL — used only when user picks a city other than bundled Chennai.
+/// Chennai 2026 always comes from assets/data/calendar.db (no API needed).
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE',

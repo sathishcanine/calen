@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../config/app_config.dart';
 import '../config/ad_config.dart';
 import '../models/daily_calendar.dart';
 import '../services/calendar_repository.dart';
+import '../services/city_preferences_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/native_ad_widget.dart';
@@ -15,6 +15,7 @@ import '../widgets/spiritual_menu_grid.dart';
 import '../widgets/home_section_header.dart';
 import '../widgets/menu_icons.dart';
 import 'chandrashtamam_screen.dart';
+import 'city_onboarding_screen.dart';
 import 'daily_calendar_screen.dart';
 import 'marriage_porutham_screen.dart';
 import 'monthly_calendar_screen.dart';
@@ -46,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<PalangalCategory> _palangalCategories = [];
   String? _error;
   bool _loading = true;
+  String _cityLabel = CityPreferencesService.instance.displayName;
 
   @override
   void initState() {
@@ -57,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _cityLabel = widget.repository.cityDisplayName;
     });
     try {
       final home = await widget.repository.getHome();
@@ -80,6 +83,22 @@ class _HomeScreenState extends State<HomeScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _openCityPicker() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CityOnboardingScreen(
+          repository: widget.repository,
+          changeMode: true,
+          onComplete: () {
+            Navigator.pop(context);
+            _load();
+          },
+        ),
+      ),
+    );
   }
 
   void _openDailyCalendar(DateTime date) {
@@ -260,14 +279,18 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorView(error: _error!, onRetry: _load)
+              ? _ErrorView(
+                  error: _error!,
+                  onRetry: _load,
+                  usesBundled: widget.repository.usesBundledCalendar,
+                )
               : RefreshIndicator(
                   onRefresh: _load,
                   color: AppColors.maroon,
                   child: CustomScrollView(
                     slivers: [
                       SliverAppBar(
-                        expandedHeight: 120,
+                        expandedHeight: 132,
                         floating: false,
                         pinned: true,
                         stretch: true,
@@ -275,8 +298,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         foregroundColor: Colors.white,
                         centerTitle: false,
                         titleSpacing: 16,
+                        actions: [
+                          IconButton(
+                            icon: const Icon(Icons.location_on_rounded),
+                            tooltip: '$_cityLabel — ஊர் தேர்வு',
+                            onPressed: _openCityPicker,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.refresh_rounded),
+                            tooltip: 'புதுப்பிக்க',
+                            onPressed: _load,
+                          ),
+                        ],
                         flexibleSpace: FlexibleSpaceBar(
-                          titlePadding: const EdgeInsets.only(left: 16, bottom: 14),
+                          titlePadding: const EdgeInsets.only(left: 16, bottom: 14, right: 120),
                           title: Text(
                             'A-Z தமிழ்',
                             maxLines: 1,
@@ -308,25 +343,42 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Positioned(
                                   left: 16,
                                   bottom: 48,
-                                  child: Text(
-                                    _greeting(),
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: AppColors.goldLight.withValues(alpha: 0.9),
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _greeting(),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: AppColors.goldLight.withValues(alpha: 0.9),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.location_on_outlined,
+                                            size: 13,
+                                            color: Colors.white.withValues(alpha: 0.75),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _cityLabel,
+                                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                  color: Colors.white.withValues(alpha: 0.85),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        actions: [
-                          IconButton(
-                            icon: const Icon(Icons.refresh_rounded),
-                            tooltip: 'புதுப்பிக்க',
-                            onPressed: _load,
-                          ),
-                        ],
                       ),
                       SliverToBoxAdapter(
                         child: Padding(
@@ -793,10 +845,15 @@ class _TodayPreview extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.error, required this.onRetry});
+  const _ErrorView({
+    required this.error,
+    required this.onRetry,
+    required this.usesBundled,
+  });
 
   final String error;
   final VoidCallback onRetry;
+  final bool usesBundled;
 
   @override
   Widget build(BuildContext context) {
@@ -810,16 +867,16 @@ class _ErrorView extends StatelessWidget {
               Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.maroon.withValues(alpha: 0.6)),
               const SizedBox(height: 16),
               Text(
-                'இணைப்பு தோல்வி',
+                usesBundled ? 'தரவு இல்லை' : 'இணைப்பு தோல்வி',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(error, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 8),
               Text(
-                AppConfig.offlineMode
-                    ? 'ஆஃப்லைன்: சென்னை 2026 தரவு மட்டும். வேறு தேதிகள் இல்லை.'
-                    : 'API: uvicorn app.main:app --reload --host 0.0.0.0 --port 4000',
+                usesBundled
+                    ? 'ஆஃப்லைன்: சென்னை 2026 தரவு மட்டும் (365 நாட்கள்).'
+                    : 'இணையம் தேவை — அல்லது சென்னை (ஆஃப்லைன்) தேர்வு செய்யுங்கள்.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
               ),

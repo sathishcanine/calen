@@ -84,7 +84,7 @@ def main() -> None:
     bundle_path = APP_ASSETS / "spiritual_bundle.json"
     bundle_path.write_text(json.dumps(bundle, ensure_ascii=False, default=str), encoding="utf-8")
     print(f"Wrote {bundle_path} ({bundle_path.stat().st_size / 1024:.1f} KB)")
-    print("Done. Build Flutter with: --dart-define=OFFLINE_MODE=true")
+    print("Done. Rebuild the Flutter app — Chennai 2026 is bundled by default.")
 
 
 if __name__ == "__main__":

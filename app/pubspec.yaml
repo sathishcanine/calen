@@ -45,6 +45,7 @@ dependencies:
   url_launcher: ^6.3.2
   google_mobile_ads: ^8.0.0
   gma_mediation_unity: ^1.8.0
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

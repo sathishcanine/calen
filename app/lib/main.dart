@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 
 import 'config/app_config.dart';
 import 'models/app_update_config.dart';
-import 'screens/home_screen.dart';
 import 'services/ad_service.dart';
 import 'services/calendar_repository.dart';
 import 'services/firebase_service.dart';
 import 'services/remote_config_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/app_entry.dart';
 import 'widgets/force_update_overlay.dart';
 
 Future<void> main() async {
@@ -79,7 +79,7 @@ class _TamilarCalendarAppState extends State<TamilarCalendarApp> {
         }
         return child ?? const SizedBox.shrink();
       },
-      home: HomeScreen(repository: widget.repository),
+      home: AppEntry(repository: widget.repository),
     );
   }
 }

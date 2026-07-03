@@ -8,10 +8,12 @@ class CityOut(BaseModel):
     id: str
     name_en: str
     name_ta: str
+    display_name: str
     lat: float
     lon: float
     tz_offset: float
     country: str
+    timezone: str | None = None
     is_default: bool
 
     model_config = {"from_attributes": True}

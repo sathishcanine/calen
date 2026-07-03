@@ -7,6 +7,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
+def _city_display_name(name_en: str, name_ta: str) -> str:
+    from app.data.world_cities import format_display_name
+
+    return format_display_name(name_en, name_ta)
+
+
 class City(Base):
     __tablename__ = "cities"
 
@@ -17,7 +23,12 @@ class City(Base):
     lon: Mapped[float] = mapped_column()
     tz_offset: Mapped[float] = mapped_column(default=5.5)
     country: Mapped[str] = mapped_column(String(8), default="IN")
+    timezone: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_default: Mapped[bool] = mapped_column(default=False)
+
+    @property
+    def display_name(self) -> str:
+        return _city_display_name(self.name_en, self.name_ta)
 
 
 class DailyCalendar(Base):

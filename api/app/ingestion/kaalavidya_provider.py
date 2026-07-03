@@ -41,6 +41,8 @@ def fetch_month_dailies(city: City, year: int, month: int) -> list[dict]:
 
 
 def _timezone_for_city(city: City) -> str:
+    if city.timezone:
+        return city.timezone
     if city.country == "IN":
         return "Asia/Kolkata"
     if city.country == "SG":
@@ -49,7 +51,6 @@ def _timezone_for_city(city: City) -> str:
         return "Asia/Colombo"
     if city.country == "MY":
         return "Asia/Kuala_Lumpur"
-    # Fallback from offset (approximate)
     offsets = {5.5: "Asia/Kolkata", 8.0: "Asia/Singapore"}
     return offsets.get(city.tz_offset, "Asia/Kolkata")
 

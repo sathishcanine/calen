@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../config/api_config.dart';
+import '../models/city.dart';
 import '../models/daily_calendar.dart';
 import '../models/gowri_week.dart';
 import '../models/hora_week.dart';
@@ -21,6 +22,15 @@ class ApiService {
 
   Uri _uri(String path, [Map<String, String>? query]) {
     return Uri.parse('${ApiConfig.baseUrl}$path').replace(queryParameters: query);
+  }
+
+  Future<List<City>> fetchCities() async {
+    final res = await _client.get(_uri('/cities'));
+    if (res.statusCode != 200) throw Exception('Cities failed: ${res.body}');
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list
+        .map((e) => City.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<HomeSummary> fetchHome({String cityId = ApiConfig.defaultCityId, DateTime? date}) async {

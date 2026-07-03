@@ -6,7 +6,12 @@ import calendar
 import json
 from datetime import date
 
-from app.ingestion.mappers import TAMIL_MONTHS
+from app.ingestion.calendar_icons import (
+    icons_from_daily_row,
+    moon_phase_from_row,
+    wedding_day_label,
+)
+from app.ingestion.government_holidays import holidays_for_month
 from app.ingestion.kaalavidya_provider import month_label
 from app.ingestion.other_days import collect_other_days
 from app.models import City
@@ -23,6 +28,8 @@ def build_month_record(
     """Assemble MonthCalendar fields from daily dicts (DB-ready)."""
     by_date = {r["gregorian_date"]: r for r in daily_rows}
     today = date.today()
+    gov_holidays = holidays_for_month(year, month)
+    gov_days = {int(h["day"]) for h in gov_holidays}
 
     cal = calendar.Calendar(firstweekday=6)  # Sunday first (matches reference UI)
     weeks = cal.monthdatescalendar(year, month)
@@ -34,22 +41,33 @@ def build_month_record(
             row = by_date.get(cell_date) if in_month else None
             tithi_day = _tamil_corner_day(row) if in_month else None
             is_sunday = cell_date.weekday() == 6
-            moon = _moon_phase(row) if in_month else None
+            moon = moon_phase_from_row(row) if in_month else None
+            icons = icons_from_daily_row(row, city, cell_date) if in_month and row else []
+            is_holiday = in_month and cell_date.day in gov_days
+            is_today = in_month and cell_date == today
+
+            highlight = None
+            if is_today:
+                highlight = "green"
+            elif is_holiday:
+                highlight = "red"
+
             days.append(
                 {
                     "gregorian_day": cell_date.day,
                     "tamil_day": tithi_day,
                     "is_sunday": is_sunday and in_month,
-                    "is_today": in_month and cell_date == today,
-                    "is_highlight": in_month and cell_date == today,
-                    "highlight_color": "green" if in_month and cell_date == today else None,
-                    "icons": [],
+                    "is_today": is_today,
+                    "is_highlight": is_today or is_holiday,
+                    "highlight_color": highlight,
+                    "icons": icons,
                     "moon_phase": moon,
                     "is_other_month": not in_month,
                 }
             )
 
     fasting = _collect_fasting_days(year, month, by_date)
+    wedding = _collect_wedding_days(city, year, month, by_date)
     other = collect_other_days(city, year, month)
     tamil_range = _tamil_month_range(daily_rows)
 
@@ -61,12 +79,12 @@ def build_month_record(
         "tamil_months_ta": tamil_months_ta or tamil_range,
         "days_json": json.dumps(days, ensure_ascii=False),
         "fasting_days_json": json.dumps(fasting, ensure_ascii=False),
-        "wedding_days_json": json.dumps([], ensure_ascii=False),
+        "wedding_days_json": json.dumps(wedding, ensure_ascii=False),
         "other_days_json": json.dumps(other, ensure_ascii=False),
         "hindu_festivals_json": json.dumps([], ensure_ascii=False),
         "muslim_festivals_json": json.dumps([], ensure_ascii=False),
         "christian_festivals_json": json.dumps([], ensure_ascii=False),
-        "government_holidays_json": json.dumps([], ensure_ascii=False),
+        "government_holidays_json": json.dumps(gov_holidays, ensure_ascii=False),
     }
 
 
@@ -84,35 +102,21 @@ def _tamil_corner_day(row: dict | None) -> int | None:
     return None
 
 
-def _moon_phase(row: dict | None) -> str | None:
-    if not row:
-        return None
-    panchangam = json.loads(row.get("panchangam_json") or "[]")
-    for item in panchangam:
-        if item.get("label") != "திதி":
-            continue
-        val = item.get("value", "")
-        if "அமாவாசை" in val:
-            return "amavasai"
-        if "பௌர்ணமி" in val or "சதுர்த்தி" in val and "வளர்பிறை" in val:
-            # full moon tithi names in Tamil almanacs
-            if "பௌர்ணமி" in val or "15" in val:
-                return "pournami"
-        if "பிரதமை" in val and "வளர்பிறை" in val:
-            pass
-        # Krishna prathama after amavasai — detect new moon day via தேய்பிறை last tithi
-        if "திருதியை" in val and "தேய்பிறை" in val:
-            return None
-    # Check banner/subtitle for krishna/shukla end
-    sub = row.get("subtitle_line2_ta", "")
-    if "அமாவாசை" in sub:
-        return "amavasai"
-    return None
-
-
 def _weekday_ta(d: date) -> str:
     names = ["திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி", "ஞாயிறு"]
     return names[d.weekday()]
+
+
+def _collect_wedding_days(city: City, year: int, month: int, by_date: dict) -> list[str]:
+    labels: list[str] = []
+    for d in sorted(by_date.keys()):
+        if d.month != month:
+            continue
+        row = by_date[d]
+        label = wedding_day_label(row, d, city)
+        if label:
+            labels.append(label)
+    return labels
 
 
 def _collect_fasting_days(year: int, month: int, by_date: dict) -> list[dict]:
@@ -122,6 +126,10 @@ def _collect_fasting_days(year: int, month: int, by_date: dict) -> list[dict]:
     kiruthigai: list[str] = []
     ekadasi: list[str] = []
     sashti: list[str] = []
+    pradosham: list[str] = []
+    sivaratri: list[str] = []
+    chaturthi: list[str] = []
+    thiruvonam: list[str] = []
 
     for d, row in sorted(by_date.items()):
         if d.month != month:
@@ -137,16 +145,24 @@ def _collect_fasting_days(year: int, month: int, by_date: dict) -> list[dict]:
             if p.get("label") == "நட்சத்திரம்":
                 nak_text = p.get("value", "")
 
-        if "அமாவாசை" in tithi_text or "தேய்பிறை" in tithi_text and "30" in tithi_text:
+        if "அமாவாசை" in tithi_text:
             amavasai.append(label)
-        if "பௌர்ணமி" in tithi_text or ("வளர்பிறை" in tithi_text and "15" in tithi_text):
+        if "பௌர்ணமி" in tithi_text:
             pournami.append(label)
-        if "கிருத்திகை" in nak_text or "கிருத்திகை" in tithi_text:
+        if "கிருத்திகை" in nak_text:
             kiruthigai.append(label)
-        if "ஏகாதசி" in tithi_text or "பதினொன்று" in tithi_text:
+        if "ஏகாதசி" in tithi_text:
             ekadasi.append(label)
         if "சஷ்டி" in tithi_text:
             sashti.append(label)
+        if "திரயோதசி" in tithi_text:
+            pradosham.append(label)
+        if "சதுர்த்தசி" in tithi_text and "தேய்பிறை" in tithi_text:
+            sivaratri.append(label)
+        if "சதுர்த்தி" in tithi_text:
+            chaturthi.append(label)
+        if "உத்திரம்" in nak_text and "உத்திராட" not in nak_text:
+            thiruvonam.append(label)
 
     if amavasai:
         items.append({"icon": "amavasai", "title_ta": "அமாவாசை", "dates_ta": ", ".join(amavasai)})
@@ -155,9 +171,17 @@ def _collect_fasting_days(year: int, month: int, by_date: dict) -> list[dict]:
     if kiruthigai:
         items.append({"icon": "star", "title_ta": "கிருத்திகை", "dates_ta": ", ".join(kiruthigai)})
     if ekadasi:
-        items.append({"icon": "ekadasi", "title_ta": "ஏகாதசி", "dates_ta": ", ".join(ekadasi)})
+        items.append({"icon": "perumal", "title_ta": "ஏகாதசி", "dates_ta": ", ".join(ekadasi)})
     if sashti:
-        items.append({"icon": "sashti", "title_ta": "சஷ்டி", "dates_ta": ", ".join(sashti)})
+        items.append({"icon": "murugan", "title_ta": "சஷ்டி", "dates_ta": ", ".join(sashti)})
+    if pradosham:
+        items.append({"icon": "nandi", "title_ta": "பிரதோஷம்", "dates_ta": ", ".join(pradosham)})
+    if sivaratri:
+        items.append({"icon": "shiva", "title_ta": "சிவராத்திரி", "dates_ta": ", ".join(sivaratri)})
+    if chaturthi:
+        items.append({"icon": "ganesha", "title_ta": "சதுர்த்தி", "dates_ta": ", ".join(chaturthi)})
+    if thiruvonam:
+        items.append({"icon": "thiruvonam", "title_ta": "திருவோணம்", "dates_ta": ", ".join(thiruvonam)})
     return items
 
 

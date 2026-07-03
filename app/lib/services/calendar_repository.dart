@@ -39,6 +39,8 @@ class CalendarRepository {
 
   String get cityDisplayName => CityPreferencesService.instance.displayName;
 
+  String get cityNameTa => CityPreferencesService.instance.nameTa;
+
   bool get _hasApi => _api != null && !AppConfig.offlineMode;
 
   Future<List<City>> getCities() async {

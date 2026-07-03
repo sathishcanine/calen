@@ -4,6 +4,7 @@ import '../models/month_calendar.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
+import '../widgets/calendar_day_icons.dart';
 import '../widgets/kolam_pattern.dart';
 import '../widgets/native_ad_widget.dart';
 import '../widgets/section_header.dart';
@@ -238,25 +239,24 @@ class _WeekdayRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: labels
-          .map(
-            (d) => Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(
-                    d,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.maroon,
-                      fontSize: 13,
-                    ),
-                  ),
+      children: labels.asMap().entries.map((entry) {
+        final isSunday = entry.key == 0;
+        return Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text(
+                entry.value,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isSunday ? AppColors.sundayRed : AppColors.maroon,
+                  fontSize: 13,
                 ),
               ),
             ),
-          )
-          .toList(),
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -289,9 +289,9 @@ class _CalendarGrid extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 2),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 0.9,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
+        childAspectRatio: 0.82,
+        crossAxisSpacing: 3,
+        mainAxisSpacing: 3,
       ),
       itemCount: days.length,
       itemBuilder: (_, i) {
@@ -300,74 +300,129 @@ class _CalendarGrid extends StatelessWidget {
         if (day == null) return const SizedBox.shrink();
 
         Color? bg;
-        Color borderColor = AppColors.creamDark;
-        if (cell.isToday) {
+        Color borderColor = Colors.transparent;
+        final isHoliday = cell.highlightColor == 'red';
+        final isToday = cell.isToday;
+
+        if (isHoliday) {
+          bg = AppColors.dailyRed;
+        } else if (isToday) {
           bg = AppColors.auspicious;
           borderColor = AppColors.auspicious;
-        } else if (cell.highlightColor == 'red') {
-          bg = AppColors.dailyRed;
-          borderColor = AppColors.dailyRed;
+        } else if (cell.isOtherMonth) {
+          bg = AppColors.creamDark.withValues(alpha: 0.35);
+        } else {
+          bg = AppColors.surface;
+        }
+
+        final onDark = isHoliday || isToday;
+        final topIcons = calendarTopIcons(cell.icons);
+        final bottomIcons = calendarBottomIcons(cell.icons, moonPhase: cell.moonPhase);
+        final iconSize = bottomIcons.length > 2 ? 8.5 : 10.0;
+
+        Color dateColor;
+        if (cell.isOtherMonth) {
+          dateColor = AppColors.textSecondary.withValues(alpha: 0.45);
+        } else if (onDark) {
+          dateColor = Colors.white;
+        } else if (cell.isSunday) {
+          dateColor = AppColors.sundayRed;
+        } else {
+          dateColor = AppColors.textPrimary;
+        }
+
+        Color tamilColor;
+        if (onDark) {
+          tamilColor = Colors.white.withValues(alpha: 0.85);
+        } else if (cell.isOtherMonth) {
+          tamilColor = AppColors.textSecondary.withValues(alpha: 0.45);
+        } else {
+          tamilColor = AppColors.textSecondary.withValues(alpha: 0.75);
         }
 
         return Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () => onDayTap(_dateForCell(cell)),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             child: Container(
               decoration: BoxDecoration(
-                color: bg ?? (cell.isOtherMonth ? AppColors.creamDark.withValues(alpha: 0.4) : AppColors.surface),
-                border: Border.all(color: borderColor),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: cell.isToday
+                color: bg,
+                border: borderColor == Colors.transparent ? null : Border.all(color: borderColor),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: isToday
                     ? [
                         BoxShadow(
-                          color: AppColors.auspicious.withValues(alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                          color: AppColors.auspicious.withValues(alpha: 0.28),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
                         ),
                       ]
                     : null,
               ),
               child: Stack(
+                clipBehavior: Clip.none,
                 children: [
                   if (cell.tamilDay != null)
                     Positioned(
-                      right: 4,
-                      top: 3,
+                      right: 3,
+                      top: 2,
                       child: Text(
                         '${cell.tamilDay}',
                         style: TextStyle(
-                          fontSize: 9,
-                          color: bg != null ? Colors.white70 : AppColors.textSecondary,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w600,
+                          color: tamilColor,
                         ),
                       ),
                     ),
+                  if (topIcons.isNotEmpty)
+                    Positioned(
+                      left: 2,
+                      top: 1,
+                      child: CalendarDayIcon(
+                        iconId: topIcons.first,
+                        size: 11,
+                        onDark: onDark,
+                        themed: !onDark,
+                      ),
+                    ),
                   Center(
-                    child: Text(
-                      '$day',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: cell.isSunday
-                            ? AppColors.sundayRed
-                            : cell.isOtherMonth
-                                ? AppColors.textSecondary.withValues(alpha: 0.5)
-                                : (bg != null ? Colors.white : AppColors.textPrimary),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: topIcons.isNotEmpty ? 2 : 0),
+                      child: Text(
+                        '$day',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          height: 1,
+                          color: dateColor,
+                        ),
                       ),
                     ),
                   ),
-                  if (cell.moonPhase == 'amavasai')
+                  if (bottomIcons.isNotEmpty)
                     Positioned(
-                      bottom: 3,
-                      left: 6,
-                      child: Icon(Icons.circle, size: 7, color: bg != null ? Colors.white70 : Colors.black54),
-                    ),
-                  if (cell.moonPhase == 'pournami')
-                    Positioned(
-                      bottom: 3,
-                      left: 6,
-                      child: Icon(Icons.circle_outlined, size: 7, color: bg != null ? Colors.white70 : Colors.black54),
+                      left: 2,
+                      right: 2,
+                      bottom: 2,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: bottomIcons
+                            .take(3)
+                            .map(
+                              (id) => Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 0.5),
+                                child: CalendarDayIcon(
+                                  iconId: id,
+                                  size: iconSize,
+                                  onDark: onDark,
+                                  themed: !onDark,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
                     ),
                 ],
               ),

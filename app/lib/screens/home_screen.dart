@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import '../config/ad_config.dart';
 import '../models/daily_calendar.dart';
 import '../services/calendar_repository.dart';
 import '../services/city_preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/aanmeegam_menu_grid.dart';
 import '../widgets/app_card.dart';
-import '../widgets/native_ad_widget.dart';
 import '../widgets/kolam_pattern.dart';
 import '../widgets/nav_action_card.dart';
 import '../models/palangal.dart';
@@ -26,6 +26,7 @@ import 'tarabalam_screen.dart';
 import 'gowri_panchangam_screen.dart';
 import 'hora_week_screen.dart';
 import 'inauspicious_week_screen.dart';
+import 'jyotisha_search_screen.dart';
 import 'kari_naatkal_screen.dart';
 import 'todays_panchangam_screen.dart';
 import 'pancha_pakshi_screen.dart';
@@ -47,7 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<PalangalCategory> _palangalCategories = [];
   String? _error;
   bool _loading = true;
-  String _cityLabel = CityPreferencesService.instance.displayName;
+  String _cityNameTa = CityPreferencesService.instance.nameTa;
+  int _navIndex = 0;
 
   @override
   void initState() {
@@ -59,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _loading = true;
       _error = null;
-      _cityLabel = widget.repository.cityDisplayName;
+      _cityNameTa = widget.repository.cityNameTa;
     });
     try {
       final home = await widget.repository.getHome();
@@ -262,20 +264,571 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<PalangalCategory> _defaultPalangalCategories() => const [
+        PalangalCategory(id: 'guru_peyarchi', titleTa: 'குரு பெயர்ச்சி', subtitleTa: '', icon: 'stars', color: '#2E7D32'),
+        PalangalCategory(id: 'sani_peyarchi', titleTa: 'சனிப் பெயர்ச்சி', subtitleTa: '', icon: 'schedule', color: '#E65100'),
+        PalangalCategory(id: 'rahu_ketu_peyarchi', titleTa: 'ராகு கேது பெயர்ச்சி', subtitleTa: '', icon: 'blur_on', color: '#6A1B9A'),
         PalangalCategory(id: 'kanavu', titleTa: 'கனவு பலன்கள்', subtitleTa: '', icon: 'bedtime', color: '#FF6F00'),
         PalangalCategory(id: 'palli_vizhum', titleTa: 'பல்லி விழும் பலன்கள்', subtitleTa: '', icon: 'pest_control', color: '#1565C0'),
-        PalangalCategory(id: 'palli_sollum', titleTa: 'பல்லி சொல்லும் பலன்கள்', subtitleTa: '', icon: 'record_voice_over', color: '#EF6C00'),
-        PalangalCategory(id: 'manaiyadi', titleTa: 'மனையடி சாஸ்திரம்', subtitleTa: '', icon: 'home_work', color: '#AD1457'),
         PalangalCategory(id: 'tara', titleTa: 'தாரா பலன்கள்', subtitleTa: '', icon: 'stars', color: '#6A1B9A', kind: 'calculator'),
-        PalangalCategory(id: 'macha', titleTa: 'மச்ச பலன்கள்', subtitleTa: '', icon: 'face', color: '#C62828'),
-        PalangalCategory(id: 'dhana', titleTa: 'தான பலன்கள்', subtitleTa: '', icon: 'volunteer_activism', color: '#7B1FA2'),
+        PalangalCategory(id: 'manaiyadi', titleTa: 'மனையடி சாஸ்திரம்', subtitleTa: '', icon: 'home_work', color: '#AD1457'),
         PalangalCategory(id: 'vilakku', titleTa: 'விளக்கு ஏற்றும் பலன்கள்', subtitleTa: '', icon: 'light_mode', color: '#558B2F'),
+        PalangalCategory(id: 'kaagam', titleTa: 'காகம் கரையும் பலன்கள்', subtitleTa: '', icon: 'pets', color: '#4E342E'),
+        PalangalCategory(id: 'dhana', titleTa: 'தான பலன்கள்', subtitleTa: '', icon: 'volunteer_activism', color: '#7B1FA2'),
+        PalangalCategory(id: 'macha', titleTa: 'மச்ச பலன்கள்', subtitleTa: '', icon: 'face', color: '#C62828'),
+        PalangalCategory(id: 'thummal', titleTa: 'தும்மல் சகுனம்', subtitleTa: '', icon: 'air', color: '#00838F'),
+        PalangalCategory(id: 'palli_sollum', titleTa: 'பல்லி சொல்லும் பலன்கள்', subtitleTa: '', icon: 'record_voice_over', color: '#EF6C00'),
+        PalangalCategory(id: 'navagraha', titleTa: 'நவகிரக பலன்கள்', subtitleTa: '', icon: 'blur_circular', color: '#B71C1C'),
+        PalangalCategory(id: 'jyotidar_padigal', titleTa: 'ஜோதிடர் பதில்கள்', subtitleTa: '', icon: 'psychology', color: '#37474F'),
       ];
+
+  List<PalangalCategory> _allPalangalCategories() =>
+      _palangalCategories.isNotEmpty ? _palangalCategories : _defaultPalangalCategories();
+
+  PalangalCategory? _palangalById(String id) {
+    for (final c in _allPalangalCategories()) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+
+  void _openJyotishaSearch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => JyotishaSearchScreen(
+          repository: widget.repository,
+          initialDate: _home!.gregorianDate,
+        ),
+      ),
+    );
+  }
+
+  AanmeegamMenuItem _palangalMenuItem(PalangalCategory category, {String? labelOverride}) {
+    return AanmeegamMenuItem(
+      label: labelOverride ?? category.titleTa,
+      iconKind: menuIconKindFromPalangalId(category.id),
+      gradient: palangalGradientFromHex(category.color),
+      onTap: () => _openPalangalCategory(category, _home!.gregorianDate),
+    );
+  }
+
+  List<AanmeegamMenuItem> _aanmeegamSpiritualItems() => [
+        AanmeegamMenuItem(
+          label: 'இன்றைய பஞ்சாங்கம்',
+          iconKind: MenuIconKind.panchangam,
+          gradient: AppDecorations.spiritualGradient,
+          imageAsset: 'assets/images/icon_panchangam.webp',
+          onTap: () => _openTodaysPanchangam(_home!.gregorianDate),
+        ),
+        AanmeegamMenuItem(
+          label: 'ராகு, குளிகை, எமகண்டம்',
+          iconKind: MenuIconKind.inauspicious,
+          gradient: AppDecorations.tealGradient,
+          onTap: () => _openInauspiciousWeek(_home!.gregorianDate),
+        ),
+        AanmeegamMenuItem(
+          label: 'கௌரி பஞ்சாங்கம்',
+          iconKind: MenuIconKind.gowri,
+          gradient: AppDecorations.forestGradient,
+          onTap: () => _openGowriPanchangam(_home!.gregorianDate),
+        ),
+        AanmeegamMenuItem(
+          label: 'கிரக ஓரைகளின் காலம்',
+          iconKind: MenuIconKind.hora,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8B1A1A), Color(0xFFC62828)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: () => _openHoraWeek(_home!.gregorianDate),
+        ),
+        AanmeegamMenuItem(
+          label: 'கரி நாட்கள், அஷ்டமி, நவமி',
+          iconKind: MenuIconKind.kariNaatkal,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6B4F0A), Color(0xFF8B6914)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: () => _openKariNaatkal(_home!.gregorianDate),
+        ),
+        AanmeegamMenuItem(
+          label: 'வாஸ்து தகவல்/நாட்கள்',
+          iconKind: MenuIconKind.vastu,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF3E2723), Color(0xFF5D4037)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          imageAsset: 'assets/images/icon_temple.webp',
+          onTap: () => _openVastu(_home!.gregorianDate.year),
+        ),
+        AanmeegamMenuItem(
+          label: 'ஜோதிடர் பதில்கள்',
+          iconKind: MenuIconKind.marriage,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF37474F), Color(0xFF546E7A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: () {
+            final c = _palangalById('jyotidar_padigal');
+            if (c != null) _openPalangalCategory(c, _home!.gregorianDate);
+          },
+        ),
+        AanmeegamMenuItem(
+          label: 'ஜோதிட தேடல்',
+          icon: Icons.manage_search_rounded,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: _openJyotishaSearch,
+        ),
+      ];
+
+  List<AanmeegamMenuItem> _aanmeegamPalangalItems() {
+    const orderedIds = [
+      'guru_peyarchi',
+      'sani_peyarchi',
+      'rahu_ketu_peyarchi',
+      'kanavu',
+      'palli_vizhum',
+      'tara',
+      'manaiyadi',
+      'vilakku',
+      'kaagam',
+      'dhana',
+      'macha',
+      'thummal',
+      'palli_sollum',
+      'navagraha',
+    ];
+
+    final items = <AanmeegamMenuItem>[];
+    for (final id in orderedIds) {
+      final category = _palangalById(id);
+      if (category != null) {
+        final label = id == 'tara' ? 'தாரா பலன்' : category.titleTa;
+        items.add(_palangalMenuItem(category, labelOverride: label));
+      }
+    }
+
+    items.insert(
+      5,
+      AanmeegamMenuItem(
+        label: 'பஞ்ச பட்சி சாஸ்திரம்/கணக்கீடு',
+        iconKind: MenuIconKind.panchaPakshi,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE65100), Color(0xFFF9A825)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () => _openPanchaPakshi(_home!.gregorianDate),
+      ),
+    );
+
+    return items;
+  }
+
+  List<JyotishMenuItem> _jyotishItems() => [
+        JyotishMenuItem(
+          label: 'திருமண பொருத்தம்',
+          iconKind: MenuIconKind.marriage,
+          gradient: AppDecorations.forestGradient,
+          onTap: _openMarriagePorutham,
+        ),
+        JyotishMenuItem(
+          label: 'எண்கணிதம்',
+          iconKind: MenuIconKind.numerology,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8B1A1A), Color(0xFFC62828)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: _openNumerology,
+        ),
+        JyotishMenuItem(
+          label: 'நாழிகை converter',
+          iconKind: MenuIconKind.nazhigai,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE65100), Color(0xFFF9A825)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: () => _openNazhigai(_home!.gregorianDate),
+        ),
+        JyotishMenuItem(
+          label: 'சந்திராஷ்டமம்',
+          iconKind: MenuIconKind.chandrashtamam,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0D3B66), Color(0xFF1565C0)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: () => _openChandrashtamam(_home!.gregorianDate),
+        ),
+      ];
+
+  List<PalangalMenuItem> _palangalItems() => _allPalangalCategories()
+      .map(
+        (c) => PalangalMenuItem(
+          id: c.id,
+          label: c.titleTa,
+          iconKind: menuIconKindFromPalangalId(c.id),
+          gradient: palangalGradientFromHex(c.color),
+          kind: c.kind,
+          onTap: () => _openPalangalCategory(c, _home!.gregorianDate),
+        ),
+      )
+      .toList();
+
+  void _copyStatusText(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('நகலெடுக்கப்பட்டது'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildTabContent() {
+    switch (_navIndex) {
+      case 0:
+        return _buildMugappuTab();
+      case 1:
+        return _buildAanmeegamTab();
+      case 2:
+        return _buildPadhivugalTab();
+      case 3:
+        return _buildStatusTab();
+      case 4:
+        return _buildIndruTab();
+      default:
+        return _buildMugappuTab();
+    }
+  }
+
+  Widget _buildMugappuTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _HeroDateCard(
+          home: _home!,
+          today: _today,
+          onTap: () => _openDailyCalendar(_home!.gregorianDate),
+        ),
+        if (_today != null) ...[
+          const SizedBox(height: 20),
+          _TodayPreview(
+            day: _today!,
+            onTap: () => _openDailyCalendar(_home!.gregorianDate),
+          ),
+        ],
+        const SizedBox(height: 24),
+        SpiritualMenuGrid(
+          onOpenPanchangam: () => _openTodaysPanchangam(_home!.gregorianDate),
+          onOpenInauspicious: () => _openInauspiciousWeek(_home!.gregorianDate),
+          onOpenGowri: () => _openGowriPanchangam(_home!.gregorianDate),
+          onOpenHora: () => _openHoraWeek(_home!.gregorianDate),
+          onOpenKariNaatkal: () => _openKariNaatkal(_home!.gregorianDate),
+          onOpenVastu: () => _openVastu(_home!.gregorianDate.year),
+          onOpenPanchaPakshi: () => _openPanchaPakshi(_home!.gregorianDate),
+        ),
+        const SizedBox(height: 24),
+        JyotishPalangalMenus(
+          jyotishItems: _jyotishItems(),
+          palangalItems: _palangalItems(),
+        ),
+        const SizedBox(height: 24),
+        const HomeSectionHeader(title: 'காலண்டர்'),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 130,
+          child: Row(
+            children: [
+              Expanded(
+                child: NavActionCard(
+                  compact: true,
+                  gradient: const [AppColors.dailyRed, AppColors.dailyRedLight],
+                  iconKind: MenuIconKind.dailyCalendar,
+                  title: 'நாள் காட்டி',
+                  subtitle: 'பஞ்சாங்கம் · ராசிபலன்',
+                  onTap: () => _openDailyCalendar(_home!.gregorianDate),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: NavActionCard(
+                  compact: true,
+                  gradient: const [AppColors.monthlyGreen, AppColors.monthlyGreenLight],
+                  iconKind: MenuIconKind.monthlyCalendar,
+                  title: 'மாத காட்டி',
+                  subtitle: 'விரதம் · பண்டிகை',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MonthlyCalendarScreen(
+                        repository: widget.repository,
+                        year: _home!.gregorianDate.year,
+                        month: _home!.gregorianDate.month,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 28),
+        Center(
+          child: Text(
+            'தமிழ் மரபு · தினசரி வழிகாட்டி',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary.withValues(alpha: 0.7),
+                  fontStyle: FontStyle.italic,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAanmeegamTab() {
+    return AanmeegamMenuGrid(
+      spiritualItems: _aanmeegamSpiritualItems(),
+      palangalItems: _aanmeegamPalangalItems(),
+    );
+  }
+
+  Widget _buildPadhivugalTab() {
+    return JyotishPalangalMenus(
+      jyotishItems: _jyotishItems(),
+      palangalItems: _palangalItems(),
+    );
+  }
+
+  Widget _buildStatusTab() {
+    final day = _today;
+    if (day == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48),
+          child: Text(
+            'இன்றைய ஸ்டேட்டஸ் தகவல் இல்லை',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+        ),
+      );
+    }
+
+    final statusItems = <({String title, String body})>[];
+    if (day.quoteTa.isNotEmpty) {
+      statusItems.add((title: 'இன்றைய மேற்கோள்', body: day.quoteTa));
+    }
+    if (day.eventsTa.isNotEmpty) {
+      statusItems.add((title: 'இன்றைய நிகழ்வுகள்', body: day.eventsTa));
+    }
+    if (day.subtitleLine1Ta.isNotEmpty) {
+      statusItems.add((title: 'இன்றைய தகவல்', body: day.subtitleLine1Ta));
+    }
+
+    if (statusItems.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48),
+          child: Text(
+            'இன்றைய ஸ்டேட்டஸ் தகவல் இல்லை',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const HomeSectionHeader(
+          title: 'ஸ்டேட்டஸ்',
+          subtitle: 'நகலெடுத்து பகிருங்கள்',
+        ),
+        const SizedBox(height: 14),
+        ...statusItems.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _StatusCard(
+              title: item.title,
+              body: item.body,
+              onCopy: () => _copyStatusText(item.body),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIndruTab() {
+    final day = _today;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (day != null) ...[
+          _TodayPreview(
+            day: day,
+            onTap: () => _openDailyCalendar(_home!.gregorianDate),
+          ),
+          const SizedBox(height: 16),
+        ],
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _openTodaysPanchangam(_home!.gregorianDate),
+            borderRadius: BorderRadius.circular(18),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppDecorations.spiritualGradient,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppDecorations.spiritualGradient.colors.first.withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.goldLight.withValues(alpha: 0.4)),
+                      ),
+                      child: const Center(
+                        child: MenuIcon(kind: MenuIconKind.panchangam, size: 28),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'இன்றைய பஞ்சாங்கம்',
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'திதி · நட்சத்திரம் · நல்ல நேரம்',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: AppColors.goldLight,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_rounded, color: AppColors.goldLight),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: NativeAdWidget(adUnitId: AdConfig.homeNativeUnitId),
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.28))),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.maroon.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: NavigationBarTheme(
+            data: NavigationBarThemeData(
+              height: 64,
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: AppColors.maroon.withValues(alpha: 0.1),
+              labelPadding: const EdgeInsets.only(top: 0, bottom: 2),
+              iconTheme: WidgetStateProperty.resolveWith((states) {
+                final selected = states.contains(WidgetState.selected);
+                return IconThemeData(
+                  size: 22,
+                  color: selected ? AppColors.maroon : AppColors.textSecondary.withValues(alpha: 0.75),
+                );
+              }),
+              labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                final selected = states.contains(WidgetState.selected);
+                return TextStyle(
+                  fontSize: 9.5,
+                  height: 1.0,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? AppColors.maroon : AppColors.textSecondary.withValues(alpha: 0.85),
+                );
+              }),
+            ),
+            child: NavigationBar(
+              selectedIndex: _navIndex,
+              onDestinationSelected: (index) => setState(() => _navIndex = index),
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              animationDuration: const Duration(milliseconds: 280),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'முகப்பு',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.temple_hindu_outlined),
+                  selectedIcon: Icon(Icons.temple_hindu_rounded),
+                  label: 'ஆன்மீகம்',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.menu_book_outlined),
+                  selectedIcon: Icon(Icons.menu_book_rounded),
+                  label: 'பதிவுகள்',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.auto_stories_outlined),
+                  selectedIcon: Icon(Icons.auto_stories_rounded),
+                  label: 'ஸ்டேட்டஸ்',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.today_outlined),
+                  selectedIcon: Icon(Icons.today_rounded),
+                  label: 'இன்று',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -290,36 +843,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: CustomScrollView(
                     slivers: [
                       SliverAppBar(
-                        expandedHeight: 132,
+                        expandedHeight: 88,
                         floating: false,
                         pinned: true,
                         stretch: true,
+                        automaticallyImplyLeading: false,
+                        leadingWidth: 0,
                         backgroundColor: AppColors.maroonDark,
                         foregroundColor: Colors.white,
                         centerTitle: false,
-                        titleSpacing: 16,
-                        actions: [
-                          IconButton(
-                            icon: const Icon(Icons.location_on_rounded),
-                            tooltip: '$_cityLabel — ஊர் தேர்வு',
-                            onPressed: _openCityPicker,
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.refresh_rounded),
-                            tooltip: 'புதுப்பிக்க',
-                            onPressed: _load,
-                          ),
-                        ],
+                        titleSpacing: 0,
                         flexibleSpace: FlexibleSpaceBar(
-                          titlePadding: const EdgeInsets.only(left: 16, bottom: 14, right: 120),
-                          title: Text(
-                            'A-Z தமிழ்',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                          expandedTitleScale: 1,
+                          titlePadding: const EdgeInsets.only(left: 16, bottom: 12, right: 16),
+                          title: _HomeHeaderTitle(
+                            greeting: _greeting(),
+                            cityName: _cityNameTa,
+                            onCityTap: _openCityPicker,
                           ),
                           background: Container(
                             decoration: const BoxDecoration(
@@ -334,45 +874,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     opacity: 0.08,
                                     child: Image.asset(
                                       'assets/images/icon_panchangam.webp',
-                                      width: 160,
-                                      height: 160,
+                                      width: 140,
+                                      height: 140,
                                       fit: BoxFit.cover,
                                     ),
-                                  ),
-                                ),
-                                Positioned(
-                                  left: 16,
-                                  bottom: 48,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _greeting(),
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: AppColors.goldLight.withValues(alpha: 0.9),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.location_on_outlined,
-                                            size: 13,
-                                            color: Colors.white.withValues(alpha: 0.75),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            _cityLabel,
-                                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                                  color: Colors.white.withValues(alpha: 0.85),
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
                                   ),
                                 ),
                               ],
@@ -382,144 +887,111 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _HeroDateCard(
-                                home: _home!,
-                                today: _today,
-                                onTap: () => _openDailyCalendar(_home!.gregorianDate),
-                              ),
-                              if (_today != null) ...[
-                                const SizedBox(height: 20),
-                                _TodayPreview(
-                                  day: _today!,
-                                  onTap: () => _openDailyCalendar(_home!.gregorianDate),
-                                ),
-                              ],
-                              const SizedBox(height: 24),
-                              SpiritualMenuGrid(
-                                onOpenPanchangam: () => _openTodaysPanchangam(_home!.gregorianDate),
-                                onOpenInauspicious: () => _openInauspiciousWeek(_home!.gregorianDate),
-                                onOpenGowri: () => _openGowriPanchangam(_home!.gregorianDate),
-                                onOpenHora: () => _openHoraWeek(_home!.gregorianDate),
-                                onOpenKariNaatkal: () => _openKariNaatkal(_home!.gregorianDate),
-                                onOpenVastu: () => _openVastu(_home!.gregorianDate.year),
-                                onOpenPanchaPakshi: () => _openPanchaPakshi(_home!.gregorianDate),
-                              ),
-                              const SizedBox(height: 24),
-                              JyotishPalangalMenus(
-                                jyotishItems: [
-                                  JyotishMenuItem(
-                                    label: 'திருமண பொருத்தம்',
-                                    iconKind: MenuIconKind.marriage,
-                                    gradient: AppDecorations.forestGradient,
-                                    onTap: _openMarriagePorutham,
-                                  ),
-                                  JyotishMenuItem(
-                                    label: 'எண்கணிதம்',
-                                    iconKind: MenuIconKind.numerology,
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF8B1A1A), Color(0xFFC62828)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    onTap: _openNumerology,
-                                  ),
-                                  JyotishMenuItem(
-                                    label: 'நாழிகை converter',
-                                    iconKind: MenuIconKind.nazhigai,
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFE65100), Color(0xFFF9A825)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    onTap: () => _openNazhigai(_home!.gregorianDate),
-                                  ),
-                                  JyotishMenuItem(
-                                    label: 'சந்திராஷ்டமம்',
-                                    iconKind: MenuIconKind.chandrashtamam,
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF0D3B66), Color(0xFF1565C0)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    onTap: () => _openChandrashtamam(_home!.gregorianDate),
-                                  ),
-                                ],
-                                palangalItems: (_palangalCategories.isNotEmpty
-                                        ? _palangalCategories
-                                        : _defaultPalangalCategories())
-                                    .map(
-                                      (c) => PalangalMenuItem(
-                                        id: c.id,
-                                        label: c.titleTa,
-                                        iconKind: menuIconKindFromPalangalId(c.id),
-                                        gradient: palangalGradientFromHex(c.color),
-                                        kind: c.kind,
-                                        onTap: () => _openPalangalCategory(c, _home!.gregorianDate),
-                                      ),
-                                    )
-                                    .toList(),
-                              ),
-                              const SizedBox(height: 24),
-                              const HomeSectionHeader(title: 'காலண்டர்'),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                height: 130,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: NavActionCard(
-                                        compact: true,
-                                        gradient: const [AppColors.dailyRed, AppColors.dailyRedLight],
-                                        iconKind: MenuIconKind.dailyCalendar,
-                                        title: 'நாள் காட்டி',
-                                        subtitle: 'பஞ்சாங்கம் · ராசிபலன்',
-                                        onTap: () => _openDailyCalendar(_home!.gregorianDate),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: NavActionCard(
-                                        compact: true,
-                                        gradient: const [AppColors.monthlyGreen, AppColors.monthlyGreenLight],
-                                        iconKind: MenuIconKind.monthlyCalendar,
-                                        title: 'மாத காட்டி',
-                                        subtitle: 'விரதம் · பண்டிகை',
-                                        onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => MonthlyCalendarScreen(
-                                              repository: widget.repository,
-                                              year: _home!.gregorianDate.year,
-                                              month: _home!.gregorianDate.month,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 28),
-                              Center(
-                                child: Text(
-                                  'தமிழ் மரபு · தினசரி வழிகாட்டி',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppColors.textSecondary.withValues(alpha: 0.7),
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                          child: _buildTabContent(),
                         ),
                       ),
                     ],
                   ),
                 ),
+    );
+  }
+}
+
+class _HomeHeaderTitle extends StatelessWidget {
+  const _HomeHeaderTitle({
+    required this.greeting,
+    required this.cityName,
+    required this.onCityTap,
+  });
+
+  final String greeting;
+  final String cityName;
+  final VoidCallback onCityTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                greeting,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.goldLight.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+            _HeaderCityButton(
+              cityName: cityName,
+              onTap: onCityTap,
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'A-Z தமிழ்',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeaderCityButton extends StatelessWidget {
+  const _HeaderCityButton({
+    required this.cityName,
+    required this.onTap,
+  });
+
+  final String cityName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.location_on_rounded,
+                size: 15,
+                color: AppColors.goldLight.withValues(alpha: 0.95),
+              ),
+              const SizedBox(width: 3),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 88),
+                child: Text(
+                  cityName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -838,6 +1310,62 @@ class _TodayPreview extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.title,
+    required this.body,
+    required this.onCopy,
+  });
+
+  final String title;
+  final String body;
+  final VoidCallback onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: AppDecorations.glassCard(),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.maroon,
+                        ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: onCopy,
+                  icon: const Icon(Icons.copy_rounded, size: 20),
+                  tooltip: 'நகலெடு',
+                  color: AppColors.maroon,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              body,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    height: 1.5,
+                    color: AppColors.textPrimary,
+                  ),
+            ),
+          ],
         ),
       ),
     );

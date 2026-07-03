@@ -335,6 +335,19 @@ MenuIconKind menuIconKindFromPalangalId(String id) {
       return MenuIconKind.dhana;
     case 'vilakku':
       return MenuIconKind.vilakku;
+    case 'guru_peyarchi':
+    case 'navagraha':
+      return MenuIconKind.tara;
+    case 'sani_peyarchi':
+      return MenuIconKind.nazhigai;
+    case 'rahu_ketu_peyarchi':
+      return MenuIconKind.chandrashtamam;
+    case 'kaagam':
+      return MenuIconKind.panchaPakshi;
+    case 'thummal':
+      return MenuIconKind.numerology;
+    case 'jyotidar_padigal':
+      return MenuIconKind.marriage;
     default:
       return MenuIconKind.tara;
   }

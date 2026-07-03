@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../models/daily_calendar.dart';
+import '../models/month_calendar.dart';
 import '../services/calendar_repository.dart';
+import '../services/daily_event_details.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
+import '../widgets/day_events_card.dart';
 import '../widgets/kolam_pattern.dart';
 import '../widgets/native_ad_widget.dart';
 import '../widgets/section_header.dart';
@@ -26,6 +29,7 @@ class DailyCalendarScreen extends StatefulWidget {
 class _DailyCalendarScreenState extends State<DailyCalendarScreen> {
   late DateTime _date;
   DailyCalendar? _day;
+  DailyEventDetails? _events;
   bool _loading = true;
   String? _error;
 
@@ -42,8 +46,19 @@ class _DailyCalendarScreenState extends State<DailyCalendarScreen> {
       _error = null;
     });
     try {
-      final day = await widget.repository.getDay(_date);
-      if (mounted) setState(() => _day = day);
+      final results = await Future.wait([
+        widget.repository.getDay(_date),
+        widget.repository.getMonth(_date.year, _date.month),
+      ]);
+      final day = results[0] as DailyCalendar;
+      final month = results[1] as MonthCalendar;
+      final events = DailyEventResolver.resolve(day: day, month: month);
+      if (mounted) {
+        setState(() {
+          _day = day;
+          _events = events;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -77,7 +92,7 @@ class _DailyCalendarScreenState extends State<DailyCalendarScreen> {
                       padding: const EdgeInsets.only(bottom: 32),
                       children: [
                         _HeaderBlock(day: _day!, onPrev: () => _shift(-1), onNext: () => _shift(1)),
-                        if (_day!.eventsTa.isNotEmpty) _EventsBlock(text: _day!.eventsTa),
+                        if (_events != null && !_events!.isEmpty) DayEventsCard(details: _events!),
                         _TimeSection(
                           title: 'நல்ல நேரம்',
                           icon: Icons.wb_sunny_rounded,
@@ -200,37 +215,6 @@ class _NavButton extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Icon(icon, color: Colors.white, size: 28),
-        ),
-      ),
-    );
-  }
-}
-
-class _EventsBlock extends StatelessWidget {
-  const _EventsBlock({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: AppCard(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.maroon.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.celebration_rounded, color: AppColors.maroon, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(text, style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5)),
-            ),
-          ],
         ),
       ),
     );

@@ -39,6 +39,8 @@ class CityPreferencesService {
   String get displayName =>
       _selectedCity?.displayName ?? defaultCity.displayName;
 
+  String get nameTa => _selectedCity?.nameTa ?? defaultCity.nameTa;
+
   bool get isDefaultCity => cityId == ApiConfig.defaultCityId;
 
   bool get hasCompletedOnboarding =>

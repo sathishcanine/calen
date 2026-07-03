@@ -12,6 +12,7 @@ import '../models/pancha_pakshi.dart';
 import '../models/vastu.dart';
 import 'local_calendar_mapper.dart';
 import 'local_database.dart';
+import 'month_cell_enrichment.dart';
 import 'pancha_pakshi_engine.dart';
 import 'spiritual_static_bundle.dart';
 
@@ -65,7 +66,19 @@ class LocalCalendarService {
     if (rows.isEmpty) {
       throw Exception('No offline month data for $year-$month');
     }
-    return monthFromRow(rows.first);
+    final monthData = monthFromRow(rows.first);
+
+    final lastDay = DateTime(year, month + 1, 0).day;
+    final start = formatSqlDate(DateTime(year, month, 1));
+    final end = formatSqlDate(DateTime(year, month, lastDay));
+    final dailyRows = await LocalDatabase.instance.db.query(
+      'daily_calendars',
+      where: 'city_id = ? AND gregorian_date >= ? AND gregorian_date <= ?',
+      whereArgs: [_cityId, start, end],
+    );
+    final byDate = {for (final row in dailyRows) row['gregorian_date'] as String: row};
+
+    return MonthCellEnrichment.enrich(monthData, byDate);
   }
 
   Future<InauspiciousWeek> fetchInauspiciousWeek(DateTime date) async {

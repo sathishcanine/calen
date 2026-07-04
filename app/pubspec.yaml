@@ -46,6 +46,8 @@ dependencies:
   google_mobile_ads: ^8.0.0
   gma_mediation_unity: ^1.8.0
   shared_preferences: ^2.5.3
+  share_plus: ^13.2.0
+  fl_chart: ^0.70.2
 
 dev_dependencies:
   flutter_test:

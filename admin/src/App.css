@@ -132,3 +132,87 @@ th {
   font-size: 0.8rem;
   color: #666;
 }
+
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.story-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.story-card img {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  display: block;
+}
+
+.story-meta {
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.story-meta p {
+  margin: 0;
+  color: #555;
+}
+
+.story-meta button {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.dashboard-card h3,
+.dashboard-links h3 {
+  margin: 0 0 0.75rem;
+}
+
+.muted {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.rate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.25rem;
+}
+
+.rate-grid dt {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rate-grid dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dashboard-links ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.dashboard-links li {
+  margin-bottom: 0.35rem;
+}

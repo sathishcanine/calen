@@ -12,7 +12,9 @@ import '../models/inauspicious_week.dart';
 import '../models/month_calendar.dart';
 import '../models/jyotish.dart';
 import '../models/palangal.dart';
+import '../models/metal_rates.dart';
 import '../models/pancha_pakshi.dart';
+import '../models/status_story.dart';
 import '../models/vastu.dart';
 
 class ApiService {
@@ -331,5 +333,34 @@ class ApiService {
     );
     if (res.statusCode != 200) throw Exception('Palangal article failed: ${res.body}');
     return PalangalArticleDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Latest admin-published status stories (network only).
+  Future<List<StatusStory>> fetchStatusStories({int limit = 10}) async {
+    final res = await _client.get(_uri('/spiritual/status-stories', {
+      'limit': limit.toString(),
+    }));
+    if (res.statusCode != 200) throw Exception('Status stories failed: ${res.body}');
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list.map((e) => StatusStory.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<MetalRateCity>> fetchMetalRateCities() async {
+    final res = await _client.get(_uri('/spiritual/metal-rates/cities'));
+    if (res.statusCode != 200) throw Exception('Metal rate cities failed: ${res.body}');
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list.map((e) => MetalRateCity.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<MetalRates> fetchMetalRates({
+    String cityId = ApiConfig.defaultCityId,
+    String period = '7d',
+  }) async {
+    final res = await _client.get(_uri('/spiritual/metal-rates', {
+      'city_id': cityId,
+      'period': period,
+    }));
+    if (res.statusCode != 200) throw Exception('Metal rates failed: ${res.body}');
+    return MetalRates.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 }

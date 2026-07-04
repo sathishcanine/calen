@@ -119,3 +119,37 @@ class MonthCalendar(Base):
     government_holidays_json: Mapped[str] = mapped_column(Text, default="[]")
 
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MetalRateDaily(Base):
+    """Daily gold/silver rates per city (synced from free market APIs)."""
+
+    __tablename__ = "metal_rate_daily"
+    __table_args__ = (UniqueConstraint("city_id", "rate_date", name="uq_metal_city_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    city_id: Mapped[str] = mapped_column(String(64), ForeignKey("cities.id"), index=True)
+    rate_date: Mapped[date] = mapped_column(Date, index=True)
+    gold_22k: Mapped[float] = mapped_column()
+    gold_24k: Mapped[float] = mapped_column()
+    silver_gram: Mapped[float] = mapped_column()
+    silver_kg: Mapped[float] = mapped_column()
+    source: Mapped[str] = mapped_column(String(32), default="api")
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class MetalRateMonthly(Base):
+    """Month-end gold/silver snapshot for long-range charts (5y / 10y)."""
+
+    __tablename__ = "metal_rate_monthly"
+    __table_args__ = (UniqueConstraint("city_id", "rate_month", name="uq_metal_city_month"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    city_id: Mapped[str] = mapped_column(String(64), ForeignKey("cities.id"), index=True)
+    rate_month: Mapped[date] = mapped_column(Date, index=True)
+    gold_22k: Mapped[float] = mapped_column()
+    gold_24k: Mapped[float] = mapped_column()
+    silver_gram: Mapped[float] = mapped_column()
+    silver_kg: Mapped[float] = mapped_column()
+    source: Mapped[str] = mapped_column(String(32), default="api")
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

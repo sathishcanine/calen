@@ -9,8 +9,10 @@ import '../models/hora_week.dart';
 import '../models/inauspicious_week.dart';
 import '../models/month_calendar.dart';
 import '../models/jyotish.dart';
+import '../models/metal_rates.dart';
 import '../models/palangal.dart';
 import '../models/pancha_pakshi.dart';
+import '../models/status_story.dart';
 import '../models/vastu.dart';
 import 'api_service.dart';
 import 'local_calendar_service.dart';
@@ -276,6 +278,14 @@ class CalendarRepository {
   Future<PalangalArticleDetail> getPalangalArticle(String categoryId, int articleId) {
     return _local.fetchPalangalArticle(categoryId, articleId);
   }
+
+  /// Admin status stories — requires network (not bundled).
+  Future<List<StatusStory>> getStatusStories() => _online.fetchStatusStories();
+
+  Future<List<MetalRateCity>> getMetalRateCities() => _online.fetchMetalRateCities();
+
+  Future<MetalRates> getMetalRates({String? cityId, String period = '7d'}) =>
+      _online.fetchMetalRates(cityId: cityId ?? this.cityId, period: period);
 
   String formatDate(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 }

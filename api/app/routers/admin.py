@@ -1,14 +1,63 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.orm import Session
 
+from app.config import settings
+from app.data.metal_rates_service import get_admin_status, sync_retail
+from app.data.status_stories_service import add_story, delete_story, list_stories as list_status_stories
 from app.database import get_db
 from app.models import DailyCalendar, MonthCalendar
-from app.schemas import DailyCalendarIn, DailyCalendarOut, MonthCalendarIn, MonthCalendarOut
+from app.schemas import DailyCalendarIn, DailyCalendarOut, MonthCalendarIn, MonthCalendarOut, StatusStoryOut
 from app.serializers import daily_from_schema, daily_to_schema, month_from_schema, month_to_schema
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def _admin_status_story_out(entry: dict, request: Request) -> StatusStoryOut:
+    base = str(request.base_url).rstrip("/")
+    image_url = f"{base}{settings.api_prefix}/status-media/{entry['filename']}"
+    return StatusStoryOut(
+        id=entry["id"],
+        image_url=image_url,
+        title=entry.get("title") or "",
+        caption=entry.get("caption") or "",
+        created_at=entry["created_at"],
+    )
+
+
+@router.get("/status-stories", response_model=list[StatusStoryOut])
+def admin_list_status_stories(request: Request):
+    return [_admin_status_story_out(entry, request) for entry in list_status_stories(admin=True)]
+
+
+@router.post("/status-stories", response_model=StatusStoryOut)
+async def admin_upload_status_story(
+    request: Request,
+    file: UploadFile = File(...),
+    title: str = Form(default=""),
+    caption: str = Form(default=""),
+):
+    content = await file.read()
+    if not content:
+        raise HTTPException(400, detail="Empty file")
+    try:
+        entry = add_story(
+            filename=file.filename or "story.jpg",
+            content=content,
+            title=title,
+            caption=caption,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+    return _admin_status_story_out(entry, request)
+
+
+@router.delete("/status-stories/{story_id}")
+def admin_delete_status_story(story_id: str):
+    if not delete_story(story_id):
+        raise HTTPException(404, detail="Story not found")
+    return {"ok": True}
 
 
 @router.get("/daily", response_model=list[DailyCalendarOut])
@@ -98,3 +147,26 @@ def admin_upsert_month(
     db.commit()
     db.refresh(row)
     return month_to_schema(row)
+
+
+@router.get("/metal-rates/status")
+def admin_metal_rates_status(db: Session = Depends(get_db)):
+    """Current stored retail rates (no scrape)."""
+    return get_admin_status(db)
+
+
+@router.post("/metal-rates/sync")
+def admin_sync_metal_rates(db: Session = Depends(get_db)):
+    """Fetch retail gold/silver rates from Goodreturns & LiveChennai."""
+    live = sync_retail(db)
+    status = get_admin_status(db)
+    return {
+        "ok": True,
+        "source": "retail",
+        "rate_date": live.rate_date.isoformat(),
+        "gold_22k_per_gram": live.gold_22k_per_gram,
+        "gold_24k_per_gram": live.gold_24k_per_gram,
+        "silver_kg": live.silver_kg,
+        "fetched_at": status["fetched_at"],
+        "daily_history_days": status["daily_history_days"],
+    }

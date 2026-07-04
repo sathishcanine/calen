@@ -28,9 +28,23 @@ from app.data import jyotish_service  # noqa: E402
 
 
 def main() -> None:
+    archive = API / "calender-all-citiest-to-use-later.db"
     db_src = API / "tamilar_calendar.db"
+
     if not db_src.exists():
-        raise SystemExit(f"Missing database: {db_src}\nRun ingestion for Chennai 2026 first.")
+        if archive.exists():
+            import subprocess
+
+            subprocess.run([sys.executable, str(API / "scripts" / "extract_chennai_db.py")], check=True)
+        else:
+            raise SystemExit(
+                f"Missing database: {db_src}\n"
+                "Run ingestion for Chennai 2026, or keep calender-all-citiest-to-use-later.db and run:\n"
+                "  python scripts/extract_chennai_db.py"
+            )
+
+    if not db_src.exists():
+        raise SystemExit(f"Missing database: {db_src}")
 
     APP_ASSETS.mkdir(parents=True, exist_ok=True)
 
@@ -84,7 +98,7 @@ def main() -> None:
     bundle_path = APP_ASSETS / "spiritual_bundle.json"
     bundle_path.write_text(json.dumps(bundle, ensure_ascii=False, default=str), encoding="utf-8")
     print(f"Wrote {bundle_path} ({bundle_path.stat().st_size / 1024:.1f} KB)")
-    print("Done. Rebuild the Flutter app — Chennai 2026 is bundled by default.")
+    print("Done. Rebuild the Flutter app.")
 
 
 if __name__ == "__main__":

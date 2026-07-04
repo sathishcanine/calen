@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
 import 'home_section_header.dart';
+import 'jyotish_palangal_menus.dart';
 import 'menu_icons.dart';
+import 'menu_row_tile.dart';
 
 class AanmeegamMenuItem {
   const AanmeegamMenuItem({
@@ -22,158 +23,74 @@ class AanmeegamMenuItem {
   final String? imageAsset;
 }
 
-/// Compact 2-column spiritual menu for the ஆன்மீகம் tab.
+/// ஆன்மீகம் tab — Noolagam-style rows + ஜோதிட கணக்கீடு + முக்கிய பலன்கள்.
 class AanmeegamMenuGrid extends StatelessWidget {
   const AanmeegamMenuGrid({
     super.key,
     required this.spiritualItems,
     required this.palangalItems,
+    required this.jyotishItems,
   });
 
   final List<AanmeegamMenuItem> spiritualItems;
   final List<AanmeegamMenuItem> palangalItems;
+  final List<JyotishMenuItem> jyotishItems;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionCard(
+        const HomeSectionHeader(title: 'ஜோதிட கணக்கீடு'),
+        const SizedBox(height: 12),
+        JyotishHorizontalScroller(items: jyotishItems),
+        const SizedBox(height: 24),
+        const HomeSectionHeader(
           title: 'ஆன்மீக தகவல்கள்',
           subtitle: 'பஞ்சாங்கம் · நேரங்கள் · வாஸ்து',
-          items: spiritualItems,
         ),
-        const SizedBox(height: 14),
-        _SectionCard(
+        const SizedBox(height: 12),
+        _MenuGrid(items: spiritualItems),
+        const SizedBox(height: 24),
+        const HomeSectionHeader(
           title: 'முக்கிய பலன்கள்',
           subtitle: 'கனவு · பல்லி · தாரா · மச்சம்',
-          items: palangalItems,
         ),
+        const SizedBox(height: 12),
+        _MenuGrid(items: palangalItems),
       ],
     );
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.subtitle,
-    required this.items,
-  });
+class _MenuGrid extends StatelessWidget {
+  const _MenuGrid({required this.items});
 
-  final String title;
-  final String subtitle;
   final List<AanmeegamMenuItem> items;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.22)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.maroon.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        mainAxisExtent: 72,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HomeSectionHeader(title: title, subtitle: subtitle),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              mainAxisExtent: 50,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) => _AanmeegamTile(item: items[index]),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AanmeegamTile extends StatelessWidget {
-  const _AanmeegamTile({required this.item});
-
-  final AanmeegamMenuItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: item.onTap,
-        borderRadius: BorderRadius.circular(12),
-        splashColor: AppColors.maroon.withValues(alpha: 0.08),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.cream.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.14)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: item.gradient,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: item.gradient.colors.first.withValues(alpha: 0.28),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: item.imageAsset != null
-                      ? Image.asset(item.imageAsset!, fit: BoxFit.cover)
-                      : Center(
-                          child: item.iconKind != null
-                              ? MenuIcon(kind: item.iconKind!, size: 20)
-                              : Icon(
-                                  item.icon ?? Icons.auto_awesome_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                        ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  item.label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontSize: 10,
-                        height: 1.15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return MenuRowTile(
+          label: item.label,
+          gradient: item.gradient,
+          onTap: item.onTap,
+          iconKind: item.iconKind,
+          icon: item.icon,
+          imageAsset: item.imageAsset,
+        );
+      },
     );
   }
 }

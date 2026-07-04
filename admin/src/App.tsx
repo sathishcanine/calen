@@ -2,6 +2,8 @@ import { NavLink, Route, Routes } from 'react-router-dom';
 import './App.css';
 import DailyEdit from './pages/DailyEdit';
 import DailyList from './pages/DailyList';
+import Dashboard from './pages/Dashboard';
+import Stories from './pages/Stories';
 
 export default function App() {
   return (
@@ -9,13 +11,17 @@ export default function App() {
       <aside className="sidebar">
         <h1>தமிழர் உலகம் — Admin</h1>
         <NavLink to="/" end>
-          Daily entries
+          Dashboard
         </NavLink>
+        <NavLink to="/daily">Daily entries</NavLink>
+        <NavLink to="/stories">Status stories</NavLink>
       </aside>
       <main className="main">
         <Routes>
-          <Route path="/" element={<DailyList />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/daily" element={<DailyList />} />
           <Route path="/daily/:cityId/:date" element={<DailyEdit />} />
+          <Route path="/stories" element={<Stories />} />
         </Routes>
       </main>
     </div>

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'home_section_header.dart';
 import 'menu_icons.dart';
+import 'menu_row_tile.dart';
 
 class JyotishMenuItem {
   const JyotishMenuItem({
@@ -54,15 +55,7 @@ class JyotishPalangalMenus extends StatelessWidget {
       children: [
         const HomeSectionHeader(title: 'ஜோதிட கணக்கீடு'),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 108,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: jyotishItems.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) => _JyotishCard(item: jyotishItems[index]),
-          ),
-        ),
+        JyotishHorizontalScroller(items: jyotishItems),
         const SizedBox(height: 24),
         const HomeSectionHeader(
           title: 'முக்கிய பலன்கள்',
@@ -79,9 +72,34 @@ class JyotishPalangalMenus extends StatelessWidget {
             mainAxisExtent: 72,
           ),
           itemCount: palangalItems.length,
-          itemBuilder: (context, index) => _PalangalRowTile(item: palangalItems[index]),
+          itemBuilder: (context, index) => MenuRowTile(
+            label: palangalItems[index].label,
+            gradient: palangalItems[index].gradient,
+            onTap: palangalItems[index].onTap,
+            iconKind: palangalItems[index].iconKind,
+          ),
         ),
       ],
+    );
+  }
+}
+
+/// Horizontal ஜோதிட கணக்கீடு scroller — shared by Noolagam & Aanmeegam tabs.
+class JyotishHorizontalScroller extends StatelessWidget {
+  const JyotishHorizontalScroller({super.key, required this.items});
+
+  final List<JyotishMenuItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 108,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) => _JyotishCard(item: items[index]),
+      ),
     );
   }
 }
@@ -142,55 +160,6 @@ class _JyotishCard extends StatelessWidget {
             ),
           ),
         ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PalangalRowTile extends StatelessWidget {
-  const _PalangalRowTile({required this.item});
-
-  final PalangalMenuItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: item.onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: AppDecorations.glassCard(),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: AppDecorations.iconTile(item.gradient),
-                child: Center(child: MenuIcon(kind: item.iconKind, size: 22)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  item.label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                        color: AppColors.textPrimary,
-                      ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: AppColors.maroon.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
         ),
       ),
     );

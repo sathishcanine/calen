@@ -3,19 +3,21 @@ import 'package:flutter/services.dart';
 
 import '../models/daily_calendar.dart';
 import '../services/calendar_repository.dart';
-import '../services/city_preferences_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/aanmeegam_menu_grid.dart';
 import '../widgets/app_card.dart';
 import '../widgets/kolam_pattern.dart';
 import '../widgets/nav_action_card.dart';
 import '../models/palangal.dart';
+import '../models/status_story.dart';
+import '../services/status_story_service.dart';
 import '../widgets/jyotish_palangal_menus.dart';
+import '../widgets/metal_rates_menu_card.dart';
+import '../widgets/status_stories_bar.dart';
 import '../widgets/spiritual_menu_grid.dart';
 import '../widgets/home_section_header.dart';
 import '../widgets/menu_icons.dart';
 import 'chandrashtamam_screen.dart';
-import 'city_onboarding_screen.dart';
 import 'daily_calendar_screen.dart';
 import 'marriage_porutham_screen.dart';
 import 'monthly_calendar_screen.dart';
@@ -28,6 +30,7 @@ import 'hora_week_screen.dart';
 import 'inauspicious_week_screen.dart';
 import 'jyotisha_search_screen.dart';
 import 'kari_naatkal_screen.dart';
+import 'metal_rates_screen.dart';
 import 'todays_panchangam_screen.dart';
 import 'pancha_pakshi_screen.dart';
 import 'vastu_screen.dart';
@@ -46,22 +49,42 @@ class _HomeScreenState extends State<HomeScreen> {
   HomeSummary? _home;
   DailyCalendar? _today;
   List<PalangalCategory> _palangalCategories = [];
+  List<StatusStory> _statusStories = [];
+  Set<String> _viewedStoryIds = {};
+  bool _statusStoriesLoading = true;
   String? _error;
   bool _loading = true;
-  String _cityNameTa = CityPreferencesService.instance.nameTa;
   int _navIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadStatusStories();
+  }
+
+  Future<void> _loadStatusStories() async {
+    setState(() => _statusStoriesLoading = true);
+    try {
+      final stories = await widget.repository.getStatusStories();
+      final viewed = await StatusStoryService.instance.getViewedIds();
+      if (mounted) {
+        setState(() {
+          _statusStories = stories;
+          _viewedStoryIds = viewed;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _statusStories = []);
+    } finally {
+      if (mounted) setState(() => _statusStoriesLoading = false);
+    }
   }
 
   Future<void> _load() async {
     setState(() {
       _loading = true;
       _error = null;
-      _cityNameTa = widget.repository.cityNameTa;
     });
     try {
       final home = await widget.repository.getHome();
@@ -87,18 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _openCityPicker() {
+  void _openMetalRates() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CityOnboardingScreen(
-          repository: widget.repository,
-          changeMode: true,
-          onComplete: () {
-            Navigator.pop(context);
-            _load();
-          },
-        ),
+        builder: (_) => MetalRatesScreen(repository: widget.repository),
       ),
     );
   }
@@ -512,22 +528,73 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Widget _buildCalendarCards() {
+    return SizedBox(
+      height: 130,
+      child: Row(
+        children: [
+          Expanded(
+            child: NavActionCard(
+              compact: true,
+              gradient: const [AppColors.dailyRed, AppColors.dailyRedLight],
+              iconKind: MenuIconKind.dailyCalendar,
+              title: 'நாள் காட்டி',
+              subtitle: 'பஞ்சாங்கம் · ராசிபலன்',
+              onTap: () => _openDailyCalendar(_home!.gregorianDate),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: NavActionCard(
+              compact: true,
+              gradient: const [AppColors.monthlyGreen, AppColors.monthlyGreenLight],
+              iconKind: MenuIconKind.monthlyCalendar,
+              title: 'மாத காட்டி',
+              subtitle: 'விரதம் · பண்டிகை',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MonthlyCalendarScreen(
+                    repository: widget.repository,
+                    year: _home!.gregorianDate.year,
+                    month: _home!.gregorianDate.month,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMugappuTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (_statusStoriesLoading) ...[
+          const StatusStoriesBarSkeleton(),
+          const SizedBox(height: 16),
+        ] else if (_statusStories.isNotEmpty) ...[
+          StatusStoriesBar(
+            stories: _statusStories,
+            viewedIds: _viewedStoryIds,
+            onViewed: () async {
+              final viewed = await StatusStoryService.instance.getViewedIds();
+              if (mounted) setState(() => _viewedStoryIds = viewed);
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
         _HeroDateCard(
           home: _home!,
           today: _today,
           onTap: () => _openDailyCalendar(_home!.gregorianDate),
         ),
-        if (_today != null) ...[
-          const SizedBox(height: 20),
-          _TodayPreview(
-            day: _today!,
-            onTap: () => _openDailyCalendar(_home!.gregorianDate),
-          ),
-        ],
+        const SizedBox(height: 20),
+        _buildCalendarCards(),
+        const SizedBox(height: 20),
+        MetalRatesMenuCard(onTap: _openMetalRates),
         const SizedBox(height: 24),
         SpiritualMenuGrid(
           onOpenPanchangam: () => _openTodaysPanchangam(_home!.gregorianDate),
@@ -542,46 +609,6 @@ class _HomeScreenState extends State<HomeScreen> {
         JyotishPalangalMenus(
           jyotishItems: _jyotishItems(),
           palangalItems: _palangalItems(),
-        ),
-        const SizedBox(height: 24),
-        const HomeSectionHeader(title: 'காலண்டர்'),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 130,
-          child: Row(
-            children: [
-              Expanded(
-                child: NavActionCard(
-                  compact: true,
-                  gradient: const [AppColors.dailyRed, AppColors.dailyRedLight],
-                  iconKind: MenuIconKind.dailyCalendar,
-                  title: 'நாள் காட்டி',
-                  subtitle: 'பஞ்சாங்கம் · ராசிபலன்',
-                  onTap: () => _openDailyCalendar(_home!.gregorianDate),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: NavActionCard(
-                  compact: true,
-                  gradient: const [AppColors.monthlyGreen, AppColors.monthlyGreenLight],
-                  iconKind: MenuIconKind.monthlyCalendar,
-                  title: 'மாத காட்டி',
-                  subtitle: 'விரதம் · பண்டிகை',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MonthlyCalendarScreen(
-                        repository: widget.repository,
-                        year: _home!.gregorianDate.year,
-                        month: _home!.gregorianDate.month,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
         const SizedBox(height: 28),
         Center(
@@ -601,6 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return AanmeegamMenuGrid(
       spiritualItems: _aanmeegamSpiritualItems(),
       palangalItems: _aanmeegamPalangalItems(),
+      jyotishItems: _jyotishItems(),
     );
   }
 
@@ -618,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 48),
           child: Text(
-            'இன்றைய ஸ்டேட்டஸ் தகவல் இல்லை',
+            'இன்றைய பட்ஜெட் தகவல் இல்லை',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -643,7 +671,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 48),
           child: Text(
-            'இன்றைய ஸ்டேட்டஸ் தகவல் இல்லை',
+            'இன்றைய பட்ஜெட் தகவல் இல்லை',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -656,7 +684,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const HomeSectionHeader(
-          title: 'ஸ்டேட்டஸ்',
+          title: 'பட்ஜெட்',
           subtitle: 'நகலெடுத்து பகிருங்கள்',
         ),
         const SizedBox(height: 14),
@@ -812,12 +840,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 NavigationDestination(
                   icon: Icon(Icons.menu_book_outlined),
                   selectedIcon: Icon(Icons.menu_book_rounded),
-                  label: 'பதிவுகள்',
+                  label: 'நூலகம்',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.auto_stories_outlined),
-                  selectedIcon: Icon(Icons.auto_stories_rounded),
-                  label: 'ஸ்டேட்டஸ்',
+                  icon: Icon(Icons.account_balance_wallet_outlined),
+                  selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+                  label: 'பட்ஜெட்',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.today_outlined),
@@ -838,7 +866,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   usesBundled: widget.repository.usesBundledCalendar,
                 )
               : RefreshIndicator(
-                  onRefresh: _load,
+                  onRefresh: () async {
+                    await Future.wait([_load(), _loadStatusStories()]);
+                  },
                   color: AppColors.maroon,
                   child: CustomScrollView(
                     slivers: [
@@ -858,8 +888,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           titlePadding: const EdgeInsets.only(left: 16, bottom: 12, right: 16),
                           title: _HomeHeaderTitle(
                             greeting: _greeting(),
-                            cityName: _cityNameTa,
-                            onCityTap: _openCityPicker,
                           ),
                           background: Container(
                             decoration: const BoxDecoration(
@@ -901,13 +929,9 @@ class _HomeScreenState extends State<HomeScreen> {
 class _HomeHeaderTitle extends StatelessWidget {
   const _HomeHeaderTitle({
     required this.greeting,
-    required this.cityName,
-    required this.onCityTap,
   });
 
   final String greeting;
-  final String cityName;
-  final VoidCallback onCityTap;
 
   @override
   Widget build(BuildContext context) {
@@ -915,24 +939,14 @@ class _HomeHeaderTitle extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                greeting,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.goldLight.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w500,
-                    ),
+        Text(
+          greeting,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.goldLight.withValues(alpha: 0.95),
+                fontWeight: FontWeight.w500,
               ),
-            ),
-            _HeaderCityButton(
-              cityName: cityName,
-              onTap: onCityTap,
-            ),
-          ],
         ),
         const SizedBox(height: 2),
         Text(
@@ -945,53 +959,6 @@ class _HomeHeaderTitle extends StatelessWidget {
               ),
         ),
       ],
-    );
-  }
-}
-
-class _HeaderCityButton extends StatelessWidget {
-  const _HeaderCityButton({
-    required this.cityName,
-    required this.onTap,
-  });
-
-  final String cityName;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.location_on_rounded,
-                size: 15,
-                color: AppColors.goldLight.withValues(alpha: 0.95),
-              ),
-              const SizedBox(width: 3),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 88),
-                child: Text(
-                  cityName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

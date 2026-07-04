@@ -392,3 +392,71 @@ class PalangalArticleDetailOut(BaseModel):
     category_id: str
     title_ta: str
     body_ta: str
+
+
+class StatusStoryOut(BaseModel):
+    id: str
+    image_url: str
+    title: str = ""
+    caption: str = ""
+    created_at: datetime
+
+
+class MetalRateCityOut(BaseModel):
+    id: str
+    name_ta: str
+    name_en: str
+
+
+class MetalRateGramRowOut(BaseModel):
+    grams: int
+    today: float
+    yesterday: float
+    change: float
+
+
+class MetalRateGoldOut(BaseModel):
+    per_gram_today: float
+    per_gram_yesterday: float
+    change_per_gram: float
+    table: list[MetalRateGramRowOut]
+
+
+class MetalRateSilverHistoryOut(BaseModel):
+    date: str
+    per_gram: float
+    per_kg: float
+
+
+class MetalRateSilverOut(BaseModel):
+    per_gram_today: float
+    per_kg_today: float
+    history: list[MetalRateSilverHistoryOut]
+
+
+class MetalRateGoldHistoryOut(BaseModel):
+    date: str
+    gold_22k: float
+    gold_24k: float
+
+
+class MetalRateRecentDayOut(BaseModel):
+    date: str
+    gold_22k_8g: float
+    gold_24k_8g: float
+    change_22k_8g: float
+    change_24k_8g: float
+
+
+class MetalRatesOut(BaseModel):
+    city_id: str
+    city_name_ta: str
+    city_name_en: str
+    last_updated: datetime | None = None
+    source: str = "retail"
+    period: str
+    gold_22k: MetalRateGoldOut
+    gold_24k: MetalRateGoldOut
+    silver: MetalRateSilverOut
+    gold_history: list[MetalRateGoldHistoryOut]
+    recent_daily: list[MetalRateRecentDayOut]

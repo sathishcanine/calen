@@ -1,5 +1,5 @@
-/// API base URL — used only when user picks a city other than bundled Chennai.
-/// Chennai 2026 always comes from assets/data/calendar.db (no API needed).
+/// API base URL for network features (status stories, non-default cities, etc.).
+/// Bundled assets: calendar.db + pancha_pakshi_db.csv only.
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE',

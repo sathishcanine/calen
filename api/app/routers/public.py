@@ -1,7 +1,7 @@
 import json
 from datetime import date, time, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.data.pancha_pakshi_service import (
@@ -17,6 +17,9 @@ from app.data.palangal_content import list_articles as palangal_articles
 from app.data.palangal_content import list_categories as palangal_categories
 from app.data import jyotish_service
 from app.data.vastu_service import get_vastu_articles, get_vastu_days, get_vastu_years
+from app.config import settings
+from app.data.metal_rates_service import get_rates, has_today, list_cities as list_metal_cities, sync_retail
+from app.data.status_stories_service import PUBLIC_LIMIT, list_stories as list_status_stories
 from app.database import get_db
 from app.ingestion.spiritual_data import get_daily_fields
 from app.models import City, DailyCalendar, MonthCalendar
@@ -59,10 +62,63 @@ from app.schemas import (
     PalangalCategoryOut,
     PalangalArticleOut,
     PalangalArticleDetailOut,
+    StatusStoryOut,
+    MetalRateCityOut,
+    MetalRatesOut,
 )
 from app.serializers import daily_to_schema, month_to_schema
 
 router = APIRouter()
+
+
+def _status_story_out(entry: dict, request: Request) -> StatusStoryOut:
+    base = str(request.base_url).rstrip("/")
+    image_url = f"{base}{settings.api_prefix}/status-media/{entry['filename']}"
+    return StatusStoryOut(
+        id=entry["id"],
+        image_url=image_url,
+        title=entry.get("title") or "",
+        caption=entry.get("caption") or "",
+        created_at=entry["created_at"],
+    )
+
+
+@router.get("/spiritual/status-stories", response_model=list[StatusStoryOut])
+def status_stories(
+    request: Request,
+    limit: int = Query(default=PUBLIC_LIMIT, ge=1, le=PUBLIC_LIMIT),
+):
+    """Latest admin-uploaded story images for the mobile home screen (view-only)."""
+    return [_status_story_out(entry, request) for entry in list_status_stories(limit=limit)]
+
+
+@router.get("/spiritual/metal-rates/cities", response_model=list[MetalRateCityOut])
+def metal_rate_cities():
+    return [MetalRateCityOut(**c) for c in list_metal_cities()]
+
+
+@router.get("/spiritual/metal-rates", response_model=MetalRatesOut)
+def metal_rates(
+    city_id: str = Query(default="chennai"),
+    period: str = Query(default="7d", pattern="^(7d|30d|3m|6m|5y|10y)$"),
+    db: Session = Depends(get_db),
+):
+    try:
+        from app.models import MetalRateDaily
+
+        stale_source = (
+            db.query(MetalRateDaily)
+            .filter(MetalRateDaily.city_id == city_id, MetalRateDaily.source != "retail")
+            .first()
+            is not None
+        )
+        if db.query(MetalRateDaily).count() == 0 or not has_today(db) or stale_source:
+            sync_retail(db)
+        return MetalRatesOut(**get_rates(db, city_id=city_id, period=period))
+    except KeyError as exc:
+        raise HTTPException(404, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(503, detail=str(exc)) from exc
 
 
 @router.get("/health")

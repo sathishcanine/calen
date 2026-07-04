@@ -68,5 +68,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ஸ்டேட்டஸ் படங்களை சேர்க்க புகைப்பட தொகுப்பை அணுக வேண்டும்.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>பகிர்ந்த படங்களை சேமிக்க புகைப்பட தொகுப்பை அணுக வேண்டும்.</string>
 </dict>
 </plist>

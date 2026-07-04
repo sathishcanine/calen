@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models/daily_calendar.dart';
 import '../services/calendar_repository.dart';
@@ -15,7 +14,6 @@ import '../widgets/jyotish_palangal_menus.dart';
 import '../widgets/metal_rates_menu_card.dart';
 import '../widgets/status_stories_bar.dart';
 import '../widgets/spiritual_menu_grid.dart';
-import '../widgets/home_section_header.dart';
 import '../widgets/menu_icons.dart';
 import 'chandrashtamam_screen.dart';
 import 'daily_calendar_screen.dart';
@@ -34,6 +32,7 @@ import 'metal_rates_screen.dart';
 import 'todays_panchangam_screen.dart';
 import 'pancha_pakshi_screen.dart';
 import 'vastu_screen.dart';
+import 'budget/budget_screen.dart';
 
 /// SS1 — Home with hero date banner, daily preview, and navigation cards.
 class HomeScreen extends StatefulWidget {
@@ -500,17 +499,6 @@ class _HomeScreenState extends State<HomeScreen> {
       )
       .toList();
 
-  void _copyStatusText(String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('நகலெடுக்கப்பட்டது'),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   Widget _buildTabContent() {
     switch (_navIndex) {
       case 0:
@@ -640,66 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStatusTab() {
-    final day = _today;
-    if (day == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 48),
-          child: Text(
-            'இன்றைய பட்ஜெட் தகவல் இல்லை',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-          ),
-        ),
-      );
-    }
-
-    final statusItems = <({String title, String body})>[];
-    if (day.quoteTa.isNotEmpty) {
-      statusItems.add((title: 'இன்றைய மேற்கோள்', body: day.quoteTa));
-    }
-    if (day.eventsTa.isNotEmpty) {
-      statusItems.add((title: 'இன்றைய நிகழ்வுகள்', body: day.eventsTa));
-    }
-    if (day.subtitleLine1Ta.isNotEmpty) {
-      statusItems.add((title: 'இன்றைய தகவல்', body: day.subtitleLine1Ta));
-    }
-
-    if (statusItems.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 48),
-          child: Text(
-            'இன்றைய பட்ஜெட் தகவல் இல்லை',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const HomeSectionHeader(
-          title: 'பட்ஜெட்',
-          subtitle: 'நகலெடுத்து பகிருங்கள்',
-        ),
-        const SizedBox(height: 14),
-        ...statusItems.map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _StatusCard(
-              title: item.title,
-              body: item.body,
-              onCopy: () => _copyStatusText(item.body),
-            ),
-          ),
-        ),
-      ],
-    );
+    return const BudgetScreen();
   }
 
   Widget _buildIndruTab() {
@@ -1277,62 +1206,6 @@ class _TodayPreview extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusCard extends StatelessWidget {
-  const _StatusCard({
-    required this.title,
-    required this.body,
-    required this.onCopy,
-  });
-
-  final String title;
-  final String body;
-  final VoidCallback onCopy;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: AppDecorations.glassCard(),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.maroon,
-                        ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: onCopy,
-                  icon: const Icon(Icons.copy_rounded, size: 20),
-                  tooltip: 'நகலெடு',
-                  color: AppColors.maroon,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    height: 1.5,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-          ],
         ),
       ),
     );

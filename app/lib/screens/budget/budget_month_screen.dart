@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../models/budget.dart';
+import '../../services/budget_currency_service.dart';
 import '../../services/budget_export_service.dart';
 import '../../services/budget_service.dart';
 import '../../theme/budget_theme.dart';
 import '../../utils/budget_format.dart';
 import '../../widgets/budget/budget_category_filter_dialog.dart';
+import '../../widgets/budget/budget_currency_dialog.dart';
 import '../../widgets/budget/budget_list_category_icon.dart';
 import 'budget_transaction_entry_screen.dart';
 
-enum BudgetHubTab { spending, transactions, categories, accounts }
+enum BudgetHubTab { spending, transactions, categories }
 
 /// Standalone monthly budget hub — SS1 spending, SS4 transactions.
 class BudgetMonthScreen extends StatefulWidget {
@@ -39,13 +41,28 @@ class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
   @override
   void initState() {
     super.initState();
+    BudgetCurrencyService.instance.ensureInitialized();
+    BudgetCurrencyService.instance.selected.addListener(_onCurrencyChanged);
     _load();
   }
+
+  @override
+  void dispose() {
+    BudgetCurrencyService.instance.selected.removeListener(_onCurrencyChanged);
+    super.dispose();
+  }
+
+  void _onCurrencyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _showCurrencyPicker() => showBudgetCurrencyDialog(context);
 
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       await BudgetService.instance.ensureInitialized();
+      await BudgetCurrencyService.instance.ensureInitialized();
       final results = await Future.wait([
         BudgetService.instance.getMonthSummary(_year, _month),
         BudgetService.instance.getAllCategories(),
@@ -144,10 +161,13 @@ class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
                     month: _month,
                     tab: _tab,
                     onTabChanged: (t) => setState(() => _tab = t),
+                    onPrevMonth: () => _changeMonth(-1),
+                    onNextMonth: () => _changeMonth(1),
                     showTransactionActions: _tab == BudgetHubTab.transactions,
                     onAdd: () => _showEntryTypePicker(),
                     onFilter: _showFilter,
                     onExport: _exportMonth,
+                    onCurrency: _showCurrencyPicker,
                   ),
                   Expanded(child: _buildBody()),
                 ],
@@ -188,8 +208,6 @@ class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
     return switch (_tab) {
       BudgetHubTab.spending => _SpendingTab(
           summary: summary,
-          onPrevMonth: () => _changeMonth(-1),
-          onNextMonth: () => _changeMonth(1),
           onExpense: () => _openEntry(BudgetTransactionType.expense),
           onIncome: () => _openEntry(BudgetTransactionType.income),
         ),
@@ -201,7 +219,6 @@ class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
           onFilterTap: _showFilter,
         ),
       BudgetHubTab.categories => _CategoriesTab(summary: summary),
-      BudgetHubTab.accounts => const _AccountsTab(),
     };
   }
 }
@@ -213,50 +230,82 @@ class _BudgetHubHeader extends StatelessWidget {
     required this.month,
     required this.tab,
     required this.onTabChanged,
+    required this.onPrevMonth,
+    required this.onNextMonth,
     required this.showTransactionActions,
     required this.onAdd,
     required this.onFilter,
     required this.onExport,
+    required this.onCurrency,
   });
 
   final int month;
   final BudgetHubTab tab;
   final ValueChanged<BudgetHubTab> onTabChanged;
+  final VoidCallback onPrevMonth;
+  final VoidCallback onNextMonth;
   final bool showTransactionActions;
   final VoidCallback onAdd;
   final VoidCallback onFilter;
   final VoidCallback onExport;
+  final VoidCallback onCurrency;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back, color: BudgetColors.brown, size: 22),
-                visualDensity: VisualDensity.compact,
-              ),
-              _MonthChip(label: BudgetFormat.monthName(month)),
-              const Spacer(),
-              if (showTransactionActions)
-                IconButton(
-                  onPressed: onAdd,
-                  icon: const Icon(Icons.add, color: BudgetColors.brown),
-                ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: BudgetColors.brown),
-                onSelected: (v) {
-                  if (v == 'filter') onFilter();
-                  if (v == 'export') onExport();
-                },
-                itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'export', child: Text('Export')),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: BudgetColors.brown, size: 22),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  const Spacer(),
                   if (showTransactionActions)
-                    const PopupMenuItem(value: 'filter', child: Text('Category Filter')),
+                    IconButton(
+                      onPressed: onAdd,
+                      icon: const Icon(Icons.add, color: BudgetColors.brown),
+                    ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: BudgetColors.brown),
+                    onSelected: (v) {
+                      if (v == 'currency') onCurrency();
+                      if (v == 'filter') onFilter();
+                      if (v == 'export') onExport();
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(value: 'currency', child: Text('Currency')),
+                      const PopupMenuItem(value: 'export', child: Text('Export')),
+                      if (showTransactionActions)
+                        const PopupMenuItem(value: 'filter', child: Text('Category Filter')),
+                    ],
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: onPrevMonth,
+                    icon: const Icon(Icons.chevron_left, color: BudgetColors.brown, size: 28),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  ),
+                  _MonthChip(label: BudgetFormat.monthName(month)),
+                  IconButton(
+                    onPressed: onNextMonth,
+                    icon: const Icon(Icons.chevron_right, color: BudgetColors.brown, size: 28),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  ),
                 ],
               ),
             ],
@@ -297,7 +346,6 @@ class _TabBar extends StatelessWidget {
     (BudgetHubTab.spending, 'Spending', Icons.sell_outlined),
     (BudgetHubTab.transactions, 'Transactions', Icons.menu_book_outlined),
     (BudgetHubTab.categories, 'Categories', Icons.inventory_2_outlined),
-    (BudgetHubTab.accounts, 'Accounts', Icons.people_outline),
   ];
 
   @override
@@ -334,15 +382,11 @@ class _TabBar extends StatelessWidget {
 class _SpendingTab extends StatelessWidget {
   const _SpendingTab({
     required this.summary,
-    required this.onPrevMonth,
-    required this.onNextMonth,
     required this.onExpense,
     required this.onIncome,
   });
 
   final BudgetMonthSummary summary;
-  final VoidCallback onPrevMonth;
-  final VoidCallback onNextMonth;
   final VoidCallback onExpense;
   final VoidCallback onIncome;
 
@@ -362,51 +406,50 @@ class _SpendingTab extends StatelessWidget {
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _ChalkArrow(icon: Icons.chevron_left, onTap: onPrevMonth),
-                      const SizedBox(width: 24),
-                      _ChalkArrow(icon: Icons.chevron_right, onTap: onNextMonth),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
                   _BudgetProgressBar(expenseRatio: expenseRatio),
                   const SizedBox(height: 28),
-                  _ChalkLine(
+                  _ChalkAmountRow(
                     label: 'Income',
                     amount: BudgetFormat.currency(income),
-                    color: BudgetColors.chalkIncome,
+                    amountColor: BudgetColors.chalkIncome,
+                    labelSize: 23,
+                    amountSize: 23,
                   ),
                   const SizedBox(height: 16),
-                  _ChalkLine(
+                  _ChalkAmountRow(
                     label: 'Expense',
                     amount: BudgetFormat.currency(expense),
-                    color: BudgetColors.chalkExpense,
+                    amountColor: BudgetColors.chalkExpense,
+                    labelSize: 23,
+                    amountSize: 23,
                   ),
-                  if (summary.expenseByCategory.isNotEmpty) ...[
+                  if (summary.expenseByCategory.where((e) => e.total > 0).isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    ...summary.expenseByCategory.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(left: 20, top: 4),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            '${item.category.name}: ${BudgetFormat.currency(item.total)}',
-                            style: BudgetTextStyles.chalk(size: 16),
+                    ...summary.expenseByCategory.where((e) => e.total > 0).map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: _ChalkAmountRow(
+                              label: item.category.name,
+                              amount: BudgetFormat.currency(item.total),
+                              amountColor: BudgetColors.chalkWhite,
+                              labelSize: 17,
+                              amountSize: 17,
+                              indent: 24,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
                   ],
                   const SizedBox(height: 20),
                   _DashedDivider(),
                   const SizedBox(height: 16),
-                  _ChalkLine(
+                  _ChalkAmountRow(
                     label: 'Balance',
                     amount: '${balance >= 0 ? '+' : ''}${BudgetFormat.currency(balance)}',
-                    color: BudgetColors.chalkBalance,
+                    amountColor: BudgetColors.chalkBalance,
+                    labelSize: 23,
+                    amountSize: 23,
                   ),
                 ],
               ),
@@ -425,21 +468,6 @@ class _SpendingTab extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ChalkArrow extends StatelessWidget {
-  const _ChalkArrow({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Icon(icon, color: BudgetColors.chalkWhite, size: 28),
     );
   }
 }
@@ -472,20 +500,49 @@ class _BudgetProgressBar extends StatelessWidget {
   }
 }
 
-class _ChalkLine extends StatelessWidget {
-  const _ChalkLine({required this.label, required this.amount, required this.color});
+class _ChalkAmountRow extends StatelessWidget {
+  const _ChalkAmountRow({
+    required this.label,
+    required this.amount,
+    required this.amountColor,
+    this.labelSize = 23,
+    this.amountSize = 23,
+    this.indent = 0,
+  });
 
   final String label;
   final String amount;
-  final Color color;
+  final Color amountColor;
+  final double labelSize;
+  final double amountSize;
+  final double indent;
+
+  static const _tabular = [FontFeature.tabularFigures()];
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text('$label ', style: BudgetTextStyles.chalk(size: 22)),
-        Text(amount, style: BudgetTextStyles.chalk(size: 22, color: color)),
-      ],
+    return Padding(
+      padding: EdgeInsets.only(left: indent),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: BudgetTextStyles.chalk(size: labelSize),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            amount,
+            textAlign: TextAlign.right,
+            style: BudgetTextStyles.chalk(size: amountSize, color: amountColor).copyWith(
+              fontFeatures: _tabular,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -641,7 +698,7 @@ class _TransactionsTab extends StatelessWidget {
   }
 }
 
-// ─── Categories / Accounts placeholders ──────────────────────────────────────
+// ─── Categories tab ──────────────────────────────────────────────────────────
 
 class _CategoriesTab extends StatelessWidget {
   const _CategoriesTab({required this.summary});
@@ -678,20 +735,6 @@ class _CategoriesTab extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _AccountsTab extends StatelessWidget {
-  const _AccountsTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Accounts — coming soon',
-        style: BudgetTextStyles.formValue(color: BudgetColors.brownLight),
-      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/budget.dart';
+import '../../services/budget_currency_service.dart';
 import '../../services/budget_service.dart';
 import '../../theme/budget_theme.dart';
 import '../../utils/budget_format.dart';
@@ -22,13 +23,26 @@ class _BudgetScreenState extends State<BudgetScreen> {
   @override
   void initState() {
     super.initState();
+    BudgetCurrencyService.instance.ensureInitialized();
+    BudgetCurrencyService.instance.selected.addListener(_onCurrencyChanged);
     _load();
+  }
+
+  @override
+  void dispose() {
+    BudgetCurrencyService.instance.selected.removeListener(_onCurrencyChanged);
+    super.dispose();
+  }
+
+  void _onCurrencyChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       await BudgetService.instance.ensureInitialized();
+      await BudgetCurrencyService.instance.ensureInitialized();
       final summaries = await BudgetService.instance.getYearSummaries(_year);
       if (mounted) setState(() => _months = summaries);
     } finally {

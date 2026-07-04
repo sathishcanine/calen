@@ -1,18 +1,36 @@
 import 'package:intl/intl.dart';
 
+import '../models/budget_currency.dart';
+import '../services/budget_currency_service.dart';
+
 /// Currency formatting and amount input helpers for the budget module.
 class BudgetFormat {
   BudgetFormat._();
 
-  static final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  static BudgetCurrencyOption get _currency => BudgetCurrencyService.instance.selected.value;
 
-  static String currency(double amount) => _currency.format(amount);
+  static String currency(double amount) => currencyWith(_currency, amount);
 
-  /// Whole-number currency for home grid cards (no .00).
-  static String currencyCompact(double amount) {
-    final rounded = amount.round();
-    return NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(rounded);
+  static String currencyWith(BudgetCurrencyOption option, double amount) {
+    final digits = option.id == 'jpy' ? 0 : 2;
+    return NumberFormat.currency(
+      locale: option.locale,
+      symbol: option.symbol,
+      decimalDigits: digits,
+    ).format(amount);
   }
+
+  /// Whole-number currency for home grid cards (no decimals).
+  static String currencyCompact(double amount) {
+    final option = _currency;
+    return NumberFormat.currency(
+      locale: option.locale,
+      symbol: option.symbol,
+      decimalDigits: 0,
+    ).format(amount.round());
+  }
+
+  static String currencyCode() => _currency.code;
 
   static String monthName(int month) {
     const names = [

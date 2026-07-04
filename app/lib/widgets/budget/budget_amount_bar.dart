@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/budget_theme.dart';
+import '../../utils/budget_format.dart';
 import 'budget_category_icons.dart';
 
 class BudgetAmountBar extends StatelessWidget {
@@ -40,7 +41,7 @@ class BudgetAmountBar extends StatelessWidget {
                 const BudgetUtilityIcon(kind: BudgetUtilityIconKind.cash, size: 26),
                 const SizedBox(height: 2),
                 Text(
-                  'INR',
+                  BudgetFormat.currencyCode(),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 10,

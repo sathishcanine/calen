@@ -114,7 +114,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               crossAxisCount: 2,
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
-              childAspectRatio: 1.55,
+              childAspectRatio: 1.85,
             ),
             itemCount: 12,
             itemBuilder: (context, index) {
@@ -257,7 +257,7 @@ class _MonthCard extends StatelessWidget {
                 : null,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

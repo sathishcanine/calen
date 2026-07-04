@@ -402,6 +402,30 @@ class StatusStoryOut(BaseModel):
     created_at: datetime
 
 
+class BookCategoryOut(BaseModel):
+    id: str
+    name: str
+    sort_order: int
+    book_count: int = 0
+    created_at: datetime | None = None
+
+
+class BookCategoryIn(BaseModel):
+    name: str
+
+
+class LibraryBookOut(BaseModel):
+    id: str
+    category_id: str
+    title: str
+    author: str = ""
+    pdf_url: str
+    preview_url: str | None = None
+    file_size: int = 0
+    sort_order: int = 0
+    created_at: datetime | None = None
+
+
 class MetalRateCityOut(BaseModel):
     id: str
     name_ta: str
@@ -460,3 +484,34 @@ class MetalRatesOut(BaseModel):
     silver: MetalRateSilverOut
     gold_history: list[MetalRateGoldHistoryOut]
     recent_daily: list[MetalRateRecentDayOut]
+
+
+class IndruDailyOut(BaseModel):
+    gregorian_date: date
+    birthday_ta: str = ""
+    birthday_detail_ta: str = ""
+    historic_event_ta: str = ""
+    historic_event_detail_ta: str = ""
+    fact_ta: str = ""
+    quote_ta: str = ""
+    quote_author_ta: str = ""
+    kural_number: int = 1
+    kural_ta: str = ""
+    kural_meaning_ta: str = ""
+    locked: bool = False
+    source: str = "cron"
+    updated_at: datetime | None = None
+
+
+class IndruDailyIn(BaseModel):
+    birthday_ta: str = ""
+    birthday_detail_ta: str = ""
+    historic_event_ta: str = ""
+    historic_event_detail_ta: str = ""
+    fact_ta: str = ""
+    quote_ta: str = ""
+    quote_author_ta: str = ""
+    kural_number: int = 1
+    kural_ta: str = ""
+    kural_meaning_ta: str = ""
+    locked: bool = True

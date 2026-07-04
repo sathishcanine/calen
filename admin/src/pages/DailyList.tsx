@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, DailyCalendar } from '../api';
+import { api } from '../api';
+import type { DailyCalendar } from '../api';
 
 export default function DailyList() {
   const [items, setItems] = useState<DailyCalendar[]>([]);

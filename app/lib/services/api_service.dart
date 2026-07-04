@@ -15,7 +15,9 @@ import '../models/palangal.dart';
 import '../models/metal_rates.dart';
 import '../models/pancha_pakshi.dart';
 import '../models/status_story.dart';
+import '../models/library_book.dart';
 import '../models/vastu.dart';
+import '../models/indru_content.dart';
 
 class ApiService {
   ApiService({http.Client? client}) : _client = client ?? http.Client();
@@ -345,6 +347,20 @@ class ApiService {
     return list.map((e) => StatusStory.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  Future<List<BookCategory>> fetchLibraryCategories() async {
+    final res = await _client.get(_uri('/library/categories'));
+    if (res.statusCode != 200) throw Exception('Library categories failed: ${res.body}');
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list.map((e) => BookCategory.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<LibraryBook>> fetchLibraryBooks(String categoryId) async {
+    final res = await _client.get(_uri('/library/books', {'category_id': categoryId}));
+    if (res.statusCode != 200) throw Exception('Library books failed: ${res.body}');
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list.map((e) => LibraryBook.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<List<MetalRateCity>> fetchMetalRateCities() async {
     final res = await _client.get(_uri('/spiritual/metal-rates/cities'));
     if (res.statusCode != 200) throw Exception('Metal rate cities failed: ${res.body}');
@@ -362,5 +378,14 @@ class ApiService {
     }));
     if (res.statusCode != 200) throw Exception('Metal rates failed: ${res.body}');
     return MetalRates.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// Global இன்று content — same for all cities (no city_id).
+  Future<IndruContent> fetchIndru({DateTime? date}) async {
+    final d = date ?? DateTime.now();
+    final dateStr = DateFormat('yyyy-MM-dd').format(d);
+    final res = await _client.get(_uri('/indru', {'date': dateStr}));
+    if (res.statusCode != 200) throw Exception('Indru failed: ${res.body}');
+    return IndruContent.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 }

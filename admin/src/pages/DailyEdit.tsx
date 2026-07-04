@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api, DailyCalendar } from '../api';
+import { api } from '../api';
+import type { DailyCalendar } from '../api';
 
 const empty: DailyCalendar = {
   city_id: 'chennai',

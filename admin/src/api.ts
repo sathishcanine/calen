@@ -20,6 +20,26 @@ export interface StatusStory {
   created_at: string;
 }
 
+export interface BookCategory {
+  id: string;
+  name: string;
+  sort_order: number;
+  book_count: number;
+  created_at: string;
+}
+
+export interface LibraryBook {
+  id: string;
+  category_id: string;
+  title: string;
+  author: string;
+  pdf_url: string;
+  preview_url: string | null;
+  file_size: number;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface MetalRatesStatus {
   source: string | null;
   rate_date: string | null;
@@ -95,6 +115,44 @@ export const api = {
   },
   deleteStatusStory: (id: string) =>
     request<{ ok: boolean }>(`/admin/status-stories/${id}`, { method: 'DELETE' }),
+  listBookCategories: () => request<BookCategory[]>('/admin/book-categories'),
+  createBookCategory: (name: string) =>
+    request<BookCategory>('/admin/book-categories', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  deleteBookCategory: (id: string) =>
+    request<{ ok: boolean }>(`/admin/book-categories/${id}`, { method: 'DELETE' }),
+  listBooks: (categoryId?: string) =>
+    request<LibraryBook[]>(
+      `/admin/books${categoryId ? `?category_id=${encodeURIComponent(categoryId)}` : ''}`,
+    ),
+  uploadBook: async (params: {
+    file: File;
+    categoryId: string;
+    title?: string;
+    author?: string;
+    preview?: File | null;
+  }) => {
+    const form = new FormData();
+    form.append('file', params.file);
+    form.append('category_id', params.categoryId);
+    form.append('title', params.title ?? '');
+    form.append('author', params.author ?? '');
+    if (params.preview) {
+      form.append('preview', params.preview);
+    }
+    const res = await fetch(`${API_BASE}/admin/books`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+    return res.json() as Promise<LibraryBook>;
+  },
+  deleteBook: (id: string) => request<{ ok: boolean }>(`/admin/books/${id}`, { method: 'DELETE' }),
   getMetalRatesStatus: () => request<MetalRatesStatus>('/admin/metal-rates/status'),
   syncMetalRates: () =>
     request<MetalRatesSyncResult>('/admin/metal-rates/sync', { method: 'POST' }),

@@ -153,3 +153,57 @@ class MetalRateMonthly(Base):
     silver_kg: Mapped[float] = mapped_column()
     source: Mapped[str] = mapped_column(String(32), default="api")
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class BookCategory(Base):
+    """PDF library category (admin-managed)."""
+
+    __tablename__ = "book_categories"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    books: Mapped[list["LibraryBook"]] = relationship(
+        "LibraryBook", back_populates="category", cascade="all, delete-orphan"
+    )
+
+
+class LibraryBook(Base):
+    """PDF book entry under a category."""
+
+    __tablename__ = "library_books"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    category_id: Mapped[str] = mapped_column(String(64), ForeignKey("book_categories.id"), index=True)
+    title: Mapped[str] = mapped_column(String(256))
+    filename: Mapped[str] = mapped_column(String(256))
+    preview_filename: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    author: Mapped[str] = mapped_column(String(128), default="")
+    file_size: Mapped[int] = mapped_column(Integer, default=0)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    category: Mapped["BookCategory"] = relationship("BookCategory", back_populates="books")
+
+
+class IndruDaily(Base):
+    """Global இன்று content — one row per Gregorian date, shared by all users (no city)."""
+
+    __tablename__ = "indru_daily"
+
+    gregorian_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    birthday_ta: Mapped[str] = mapped_column(Text, default="")
+    birthday_detail_ta: Mapped[str] = mapped_column(Text, default="")
+    historic_event_ta: Mapped[str] = mapped_column(Text, default="")
+    historic_event_detail_ta: Mapped[str] = mapped_column(Text, default="")
+    fact_ta: Mapped[str] = mapped_column(Text, default="")
+    quote_ta: Mapped[str] = mapped_column(Text, default="")
+    quote_author_ta: Mapped[str] = mapped_column(Text, default="")
+    kural_number: Mapped[int] = mapped_column(Integer, default=1)
+    kural_ta: Mapped[str] = mapped_column(Text, default="")
+    kural_meaning_ta: Mapped[str] = mapped_column(Text, default="")
+    locked: Mapped[bool] = mapped_column(default=False)
+    source: Mapped[str] = mapped_column(String(16), default="cron")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

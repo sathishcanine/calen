@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.orm import Session
@@ -6,9 +6,28 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.data.metal_rates_service import get_admin_status, sync_retail
 from app.data.status_stories_service import add_story, delete_story, list_stories as list_status_stories
+from app.data import books_service
+from app.data.indru_service import (
+    LOOKAHEAD_DAYS,
+    _today_ist,
+    get_indru_for_date,
+    indru_to_dict,
+    refresh_indru_range,
+)
 from app.database import get_db
-from app.models import DailyCalendar, MonthCalendar
-from app.schemas import DailyCalendarIn, DailyCalendarOut, MonthCalendarIn, MonthCalendarOut, StatusStoryOut
+from app.models import DailyCalendar, MonthCalendar, IndruDaily
+from app.schemas import (
+    DailyCalendarIn,
+    DailyCalendarOut,
+    MonthCalendarIn,
+    MonthCalendarOut,
+    StatusStoryOut,
+    BookCategoryOut,
+    BookCategoryIn,
+    LibraryBookOut,
+    IndruDailyOut,
+    IndruDailyIn,
+)
 from app.serializers import daily_from_schema, daily_to_schema, month_from_schema, month_to_schema
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -57,6 +76,110 @@ async def admin_upload_status_story(
 def admin_delete_status_story(story_id: str):
     if not delete_story(story_id):
         raise HTTPException(404, detail="Story not found")
+    return {"ok": True}
+
+
+def _book_out(entry, request: Request) -> LibraryBookOut:
+    base = str(request.base_url).rstrip("/")
+    pdf_url = f"{base}{settings.api_prefix}/book-media/{entry.filename}"
+    preview_url = None
+    if entry.preview_filename:
+        preview_url = f"{base}{settings.api_prefix}/book-preview-media/{entry.preview_filename}"
+    return LibraryBookOut(
+        id=entry.id,
+        category_id=entry.category_id,
+        title=entry.title,
+        author=entry.author or "",
+        pdf_url=pdf_url,
+        preview_url=preview_url,
+        file_size=entry.file_size or 0,
+        sort_order=entry.sort_order or 0,
+        created_at=entry.created_at,
+    )
+
+
+@router.get("/book-categories", response_model=list[BookCategoryOut])
+def admin_list_book_categories(request: Request, db: Session = Depends(get_db)):
+    del request
+    return [
+        BookCategoryOut(
+            id=c.id,
+            name=c.name,
+            sort_order=c.sort_order,
+            book_count=books_service.book_count_for_category(db, c.id),
+            created_at=c.created_at,
+        )
+        for c in books_service.list_categories(db)
+    ]
+
+
+@router.post("/book-categories", response_model=BookCategoryOut)
+def admin_create_book_category(body: BookCategoryIn, db: Session = Depends(get_db)):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(400, detail="Category name required")
+    row = books_service.create_category(db, name=name)
+    return BookCategoryOut(
+        id=row.id,
+        name=row.name,
+        sort_order=row.sort_order,
+        book_count=0,
+        created_at=row.created_at,
+    )
+
+
+@router.delete("/book-categories/{category_id}")
+def admin_delete_book_category(category_id: str, db: Session = Depends(get_db)):
+    if not books_service.delete_category(db, category_id):
+        raise HTTPException(404, detail="Category not found")
+    return {"ok": True}
+
+
+@router.get("/books", response_model=list[LibraryBookOut])
+def admin_list_books(
+    request: Request,
+    category_id: str | None = None,
+    db: Session = Depends(get_db),
+):
+    return [_book_out(b, request) for b in books_service.list_books(db, category_id)]
+
+
+@router.post("/books", response_model=LibraryBookOut)
+async def admin_upload_book(
+    request: Request,
+    file: UploadFile = File(...),
+    category_id: str = Form(...),
+    title: str = Form(default=""),
+    author: str = Form(default=""),
+    preview: UploadFile | None = File(default=None),
+    db: Session = Depends(get_db),
+):
+    content = await file.read()
+    preview_content: bytes | None = None
+    preview_name: str | None = None
+    if preview is not None and preview.filename:
+        preview_content = await preview.read()
+        preview_name = preview.filename
+    try:
+        entry = books_service.add_book(
+            db,
+            category_id=category_id,
+            title=title,
+            content=content,
+            original_filename=file.filename or "book.pdf",
+            author=author,
+            preview_content=preview_content if preview_content else None,
+            preview_original_filename=preview_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+    return _book_out(entry, request)
+
+
+@router.delete("/books/{book_id}")
+def admin_delete_book(book_id: str, db: Session = Depends(get_db)):
+    if not books_service.delete_book(db, book_id):
+        raise HTTPException(404, detail="Book not found")
     return {"ok": True}
 
 
@@ -169,4 +292,62 @@ def admin_sync_metal_rates(db: Session = Depends(get_db)):
         "silver_kg": live.silver_kg,
         "fetched_at": status["fetched_at"],
         "daily_history_days": status["daily_history_days"],
+    }
+
+
+@router.get("/indru", response_model=list[IndruDailyOut])
+def admin_list_indru(
+    from_date: date | None = Query(default=None, alias="from"),
+    days: int = Query(default=LOOKAHEAD_DAYS + 1, ge=1, le=31),
+    db: Session = Depends(get_db),
+):
+    start = from_date or _today_ist()
+    rows = (
+        db.query(IndruDaily)
+        .filter(
+            IndruDaily.gregorian_date >= start,
+            IndruDaily.gregorian_date < start + timedelta(days=days),
+        )
+        .order_by(IndruDaily.gregorian_date)
+        .all()
+    )
+    return [IndruDailyOut(**indru_to_dict(r)) for r in rows]
+
+
+@router.get("/indru/{on_date}", response_model=IndruDailyOut)
+def admin_get_indru(on_date: date, db: Session = Depends(get_db)):
+    row = get_indru_for_date(db, on_date)
+    return IndruDailyOut(**indru_to_dict(row))
+
+
+@router.put("/indru/{on_date}", response_model=IndruDailyOut)
+def admin_upsert_indru(on_date: date, body: IndruDailyIn, db: Session = Depends(get_db)):
+    row = db.query(IndruDaily).filter(IndruDaily.gregorian_date == on_date).first()
+    data = body.model_dump()
+    data["source"] = "admin"
+    if row:
+        for key, value in data.items():
+            setattr(row, key, value)
+    else:
+        row = IndruDaily(gregorian_date=on_date, **data)
+        db.add(row)
+    db.commit()
+    db.refresh(row)
+    return IndruDailyOut(**indru_to_dict(row))
+
+
+@router.post("/indru/refresh")
+def admin_refresh_indru(
+    on_date: date | None = Query(default=None, alias="date"),
+    days: int = Query(default=LOOKAHEAD_DAYS + 1, ge=1, le=31),
+    force: bool = Query(default=True),
+    db: Session = Depends(get_db),
+):
+    start = on_date or _today_ist()
+    rows = refresh_indru_range(db, start, days=days, force=force)
+    return {
+        "ok": True,
+        "from": start.isoformat(),
+        "days": days,
+        "count": len(rows),
     }

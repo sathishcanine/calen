@@ -1,5 +1,6 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { api, StatusStory } from '../api';
+import { useEffect, useState, type FormEvent } from 'react';
+import { api } from '../api';
+import type { StatusStory } from '../api';
 
 export default function Stories() {
   const [items, setItems] = useState<StatusStory[]>([]);

@@ -20,6 +20,8 @@ from app.data.vastu_service import get_vastu_articles, get_vastu_days, get_vastu
 from app.config import settings
 from app.data.metal_rates_service import get_rates, has_today, list_cities as list_metal_cities, sync_retail
 from app.data.status_stories_service import PUBLIC_LIMIT, list_stories as list_status_stories
+from app.data import books_service
+from app.data.indru_service import get_indru_for_date, indru_to_dict
 from app.database import get_db
 from app.ingestion.spiritual_data import get_daily_fields
 from app.models import City, DailyCalendar, MonthCalendar
@@ -65,6 +67,9 @@ from app.schemas import (
     StatusStoryOut,
     MetalRateCityOut,
     MetalRatesOut,
+    BookCategoryOut,
+    LibraryBookOut,
+    IndruDailyOut,
 )
 from app.serializers import daily_to_schema, month_to_schema
 
@@ -90,6 +95,49 @@ def status_stories(
 ):
     """Latest admin-uploaded story images for the mobile home screen (view-only)."""
     return [_status_story_out(entry, request) for entry in list_status_stories(limit=limit)]
+
+
+def _library_book_out(entry, request: Request) -> LibraryBookOut:
+    base = str(request.base_url).rstrip("/")
+    pdf_url = f"{base}{settings.api_prefix}/book-media/{entry.filename}"
+    preview_url = None
+    if entry.preview_filename:
+        preview_url = f"{base}{settings.api_prefix}/book-preview-media/{entry.preview_filename}"
+    return LibraryBookOut(
+        id=entry.id,
+        category_id=entry.category_id,
+        title=entry.title,
+        author=entry.author or "",
+        pdf_url=pdf_url,
+        preview_url=preview_url,
+        file_size=entry.file_size or 0,
+        sort_order=entry.sort_order or 0,
+        created_at=entry.created_at,
+    )
+
+
+@router.get("/library/categories", response_model=list[BookCategoryOut])
+def library_categories(request: Request, db: Session = Depends(get_db)):
+    del request
+    return [
+        BookCategoryOut(
+            id=c.id,
+            name=c.name,
+            sort_order=c.sort_order,
+            book_count=books_service.book_count_for_category(db, c.id),
+            created_at=c.created_at,
+        )
+        for c in books_service.list_categories(db)
+    ]
+
+
+@router.get("/library/books", response_model=list[LibraryBookOut])
+def library_books(
+    request: Request,
+    category_id: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    return [_library_book_out(b, request) for b in books_service.list_books(db, category_id)]
 
 
 @router.get("/spiritual/metal-rates/cities", response_model=list[MetalRateCityOut])
@@ -124,6 +172,17 @@ def metal_rates(
 @router.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@router.get("/indru", response_model=IndruDailyOut)
+def indru_today(
+    on_date: date | None = Query(default=None, alias="date"),
+    db: Session = Depends(get_db),
+):
+    """Global இன்று content — same for all cities and all Tamil users."""
+    target = on_date or date.today()
+    row = get_indru_for_date(db, target)
+    return IndruDailyOut(**indru_to_dict(row))
 
 
 @router.get("/cities", response_model=list[CityOut])

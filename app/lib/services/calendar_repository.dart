@@ -13,7 +13,9 @@ import '../models/metal_rates.dart';
 import '../models/palangal.dart';
 import '../models/pancha_pakshi.dart';
 import '../models/status_story.dart';
+import '../models/library_book.dart';
 import '../models/vastu.dart';
+import '../models/indru_content.dart';
 import 'api_service.dart';
 import 'local_calendar_service.dart';
 import 'local_database.dart';
@@ -282,10 +284,25 @@ class CalendarRepository {
   /// Admin status stories — requires network (not bundled).
   Future<List<StatusStory>> getStatusStories() => _online.fetchStatusStories();
 
+  Future<List<BookCategory>> getLibraryCategories() => _online.fetchLibraryCategories();
+
+  Future<List<LibraryBook>> getLibraryBooks(String categoryId) =>
+      _online.fetchLibraryBooks(categoryId);
+
   Future<List<MetalRateCity>> getMetalRateCities() => _online.fetchMetalRateCities();
 
   Future<MetalRates> getMetalRates({String? cityId, String period = '7d'}) =>
       _online.fetchMetalRates(cityId: cityId ?? this.cityId, period: period);
+
+  /// Global இன்று content — network only, same for all Tamil users.
+  Future<IndruContent> getIndru({DateTime? date}) async {
+    if (!_hasApi) return IndruContent.empty;
+    try {
+      return await _online.fetchIndru(date: date);
+    } catch (_) {
+      return IndruContent.empty;
+    }
+  }
 
   String formatDate(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 }

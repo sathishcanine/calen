@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/daily_calendar.dart';
+import '../models/indru_content.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/aanmeegam_menu_grid.dart';
@@ -33,6 +34,7 @@ import 'todays_panchangam_screen.dart';
 import 'pancha_pakshi_screen.dart';
 import 'vastu_screen.dart';
 import 'budget/budget_screen.dart';
+import 'library/library_screen.dart';
 
 /// SS1 — Home with hero date banner, daily preview, and navigation cards.
 class HomeScreen extends StatefulWidget {
@@ -51,6 +53,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<StatusStory> _statusStories = [];
   Set<String> _viewedStoryIds = {};
   bool _statusStoriesLoading = true;
+  IndruContent? _indru;
+  bool _indruLoading = true;
   String? _error;
   bool _loading = true;
   int _navIndex = 0;
@@ -60,6 +64,21 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _load();
     _loadStatusStories();
+    _loadIndru();
+  }
+
+  Future<void> _loadIndru() async {
+    setState(() => _indruLoading = true);
+    try {
+      final indru = await widget.repository.getIndru(
+        date: _home?.gregorianDate ?? DateTime.now(),
+      );
+      if (mounted) setState(() => _indru = indru);
+    } catch (_) {
+      if (mounted) setState(() => _indru = IndruContent.empty);
+    } finally {
+      if (mounted) setState(() => _indruLoading = false);
+    }
   }
 
   Future<void> _loadStatusStories() async {
@@ -101,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _today = today;
           _palangalCategories = palangal;
         });
+        _loadIndru();
       }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -621,10 +641,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPadhivugalTab() {
-    return JyotishPalangalMenus(
-      jyotishItems: _jyotishItems(),
-      palangalItems: _palangalItems(),
-    );
+    return LibraryScreen(repository: widget.repository);
   }
 
   Widget _buildStatusTab() {
@@ -632,14 +649,68 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildIndruTab() {
-    final day = _today;
+    final indru = _indru;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (day != null) ...[
-          _TodayPreview(
-            day: day,
-            onTap: () => _openDailyCalendar(_home!.gregorianDate),
+        if (_indruLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (indru != null && indru.hasContent) ...[
+          if (indru.birthdayTa.isNotEmpty)
+            _IndruSectionCard(
+              emoji: '🎂',
+              title: 'இன்றைய பிறந்தநாள் பிரபலங்கள்',
+              body: indru.birthdayTa,
+              detail: indru.birthdayDetailTa,
+            ),
+          if (indru.historicEventTa.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _IndruSectionCard(
+              emoji: '📜',
+              title: 'இன்று நடந்த வரலாற்று நிகழ்வு',
+              body: indru.historicEventTa,
+              detail: indru.historicEventDetailTa,
+            ),
+          ],
+          if (indru.factTa.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _IndruSectionCard(
+              emoji: '🧠',
+              title: 'இன்று ஒரு தகவல்',
+              body: indru.factTa,
+            ),
+          ],
+          if (indru.quoteTa.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _IndruSectionCard(
+              emoji: '💡',
+              title: 'இன்று ஒரு பொன்மொழி',
+              body: indru.quoteTa,
+              detail: indru.quoteAuthorTa.isNotEmpty ? '— ${indru.quoteAuthorTa}' : '',
+              italicBody: true,
+            ),
+          ],
+          if (indru.kuralTa.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _IndruSectionCard(
+              emoji: '📖',
+              title: 'திருக்குறள் #${indru.kuralNumber}',
+              body: indru.kuralTa,
+              detail: indru.kuralMeaningTa,
+            ),
+          ],
+          const SizedBox(height: 16),
+        ] else if (indru != null) ...[
+          AppCard(
+            child: Text(
+              'இன்றைய உள்ளடக்கம் விரைவில் புதுப்பிக்கப்படும்.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+            ),
           ),
           const SizedBox(height: 16),
         ],
@@ -712,6 +783,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _navIndex == 2 ? Colors.white : AppColors.cream,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -774,7 +846,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 NavigationDestination(
                   icon: Icon(Icons.account_balance_wallet_outlined),
                   selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-                  label: 'பட்ஜெட்',
+                  label: 'செலவு',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.today_outlined),
@@ -796,7 +868,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               : RefreshIndicator(
                   onRefresh: () async {
-                    await Future.wait([_load(), _loadStatusStories()]);
+                    await Future.wait([_load(), _loadStatusStories(), _loadIndru()]);
                   },
                   color: AppColors.maroon,
                   child: CustomScrollView(
@@ -1060,153 +1132,62 @@ class _HeroDateCard extends StatelessWidget {
   }
 }
 
-class _TodayPreview extends StatelessWidget {
-  const _TodayPreview({required this.day, required this.onTap});
+class _IndruSectionCard extends StatelessWidget {
+  const _IndruSectionCard({
+    required this.emoji,
+    required this.title,
+    required this.body,
+    this.detail = '',
+    this.italicBody = false,
+  });
 
-  final DailyCalendar day;
-  final VoidCallback onTap;
+  final String emoji;
+  final String title;
+  final String body;
+  final String detail;
+  final bool italicBody;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: AppDecorations.glassCard(),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppDecorations.cardRadius),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: AppDecorations.heroGradient,
-                        borderRadius: BorderRadius.circular(10),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.maroon,
                       ),
-                      child: const Center(
-                        child: MenuIcon(kind: MenuIconKind.gowri, size: 22),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'இன்றைய சிறப்பு',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.maroon,
-                                ),
-                          ),
-                          if (day.eventsTa.isNotEmpty)
-                            Text(
-                              day.eventsTa,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                    height: 1.3,
-                                  ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
-                if (day.nallaNeram.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Icon(Icons.schedule_rounded, color: AppColors.auspicious, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'நல்ல நேரம்',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: AppColors.auspicious,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: day.nallaNeram
-                        .map(
-                          (s) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.auspicious.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: AppColors.auspicious.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  s.period,
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  s.time,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.auspicious,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-                if (day.quoteTa.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.goldLight.withValues(alpha: 0.2),
-                          AppColors.creamDark.withValues(alpha: 0.5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(AppDecorations.cardRadiusSm),
-                      border: Border(left: BorderSide(color: AppColors.gold, width: 3)),
-                    ),
-                    child: Text(
-                      '"${day.quoteTa}"',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                            height: 1.5,
-                            color: AppColors.textPrimary,
-                          ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Text(
+            body,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  height: 1.5,
+                  fontStyle: italicBody ? FontStyle.italic : FontStyle.normal,
+                  color: AppColors.textPrimary,
+                ),
+          ),
+          if (detail.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              detail,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    height: 1.45,
+                    color: AppColors.textSecondary,
+                  ),
+            ),
+          ],
+        ],
       ),
     );
   }

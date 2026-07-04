@@ -4,6 +4,7 @@ import DailyEdit from './pages/DailyEdit';
 import DailyList from './pages/DailyList';
 import Dashboard from './pages/Dashboard';
 import Stories from './pages/Stories';
+import Books from './pages/Books';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         </NavLink>
         <NavLink to="/daily">Daily entries</NavLink>
         <NavLink to="/stories">Status stories</NavLink>
+        <NavLink to="/books">Books library</NavLink>
       </aside>
       <main className="main">
         <Routes>
@@ -22,6 +24,7 @@ export default function App() {
           <Route path="/daily" element={<DailyList />} />
           <Route path="/daily/:cityId/:date" element={<DailyEdit />} />
           <Route path="/stories" element={<Stories />} />
+          <Route path="/books" element={<Books />} />
         </Routes>
       </main>
     </div>

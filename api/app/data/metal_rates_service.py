@@ -320,6 +320,58 @@ def get_rates(db: Session, city_id: str = DEFAULT_CITY, period: str = "7d") -> d
     }
 
 
+METAL_RATES_PUSH_TITLE_TA = "இன்றைய தங்கம் மற்றும் வெள்ளி நிலவரம்"
+METAL_RATES_PUSH_BODY_UNCHANGED_TA = "இன்றைய தங்கம் & வெள்ளி விலை பாருங்கள்"
+METAL_RATES_PUSH_BODY_DECREASED_TA = "இன்று தங்கம் விலை குறிந்தது"
+METAL_RATES_PUSH_BODY_DECREASED_SHARP_TA = "இன்று தங்கம் விலை அதிரடியாக குறிந்தது"
+METAL_RATES_PUSH_BODY_INCREASED_TA = "இன்று தங்கம் விலை உயர்வு"
+METAL_RATES_PUSH_BODY_INCREASED_SHARP_TA = "இன்று தங்கம் விலை அதிரடி உயர்வு"
+
+# 22K ₹/g move at or above this is treated as a sharp daily change.
+METAL_RATES_SHARP_CHANGE_PER_GRAM = 15.0
+METAL_RATES_UNCHANGED_EPSILON = 1.0
+
+
+def build_metal_rates_push_body(db: Session, *, city_id: str = DEFAULT_CITY) -> str:
+    """Tamil notification body from today's 22K gold vs the previous stored day."""
+    today = date.today()
+    today_row = (
+        db.query(MetalRateDaily)
+        .filter(
+            MetalRateDaily.city_id == city_id,
+            MetalRateDaily.rate_date == today,
+            MetalRateDaily.source == SOURCE,
+        )
+        .first()
+    )
+    if today_row is None:
+        return METAL_RATES_PUSH_BODY_UNCHANGED_TA
+
+    prev_row = (
+        db.query(MetalRateDaily)
+        .filter(
+            MetalRateDaily.city_id == city_id,
+            MetalRateDaily.rate_date < today,
+            MetalRateDaily.source == SOURCE,
+        )
+        .order_by(MetalRateDaily.rate_date.desc())
+        .first()
+    )
+    if prev_row is None:
+        return METAL_RATES_PUSH_BODY_UNCHANGED_TA
+
+    delta = today_row.gold_22k - prev_row.gold_22k
+    if abs(delta) < METAL_RATES_UNCHANGED_EPSILON:
+        return METAL_RATES_PUSH_BODY_UNCHANGED_TA
+    if delta < 0:
+        if abs(delta) >= METAL_RATES_SHARP_CHANGE_PER_GRAM:
+            return METAL_RATES_PUSH_BODY_DECREASED_SHARP_TA
+        return METAL_RATES_PUSH_BODY_DECREASED_TA
+    if delta >= METAL_RATES_SHARP_CHANGE_PER_GRAM:
+        return METAL_RATES_PUSH_BODY_INCREASED_SHARP_TA
+    return METAL_RATES_PUSH_BODY_INCREASED_TA
+
+
 # Backwards-compatible aliases used by routers/scripts.
 sync_ibja = sync_retail
 sync_live = sync_retail

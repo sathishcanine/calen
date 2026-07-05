@@ -188,6 +188,19 @@ class LibraryBook(Base):
     category: Mapped["BookCategory"] = relationship("BookCategory", back_populates="books")
 
 
+class Post(Base):
+    """Admin-published post with image and text content."""
+
+    __tablename__ = "posts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(256))
+    content: Mapped[str] = mapped_column(Text, default="")
+    image_filename: Mapped[str] = mapped_column(String(256))
+    push_sent: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class IndruDaily(Base):
     """Global இன்று content — one row per Gregorian date, shared by all users (no city)."""
 

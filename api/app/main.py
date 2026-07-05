@@ -8,6 +8,7 @@ from sqlalchemy import inspect, text
 from app.config import settings
 from app.data.status_stories_service import IMAGES_DIR
 from app.data.books_service import PDFS_DIR, PREVIEWS_DIR, seed_default_categories
+from app.data.posts_service import IMAGES_DIR as POST_IMAGES_DIR
 from app.database import Base, SessionLocal, engine
 from app.metal_rates_scheduler import start_metal_rates_scheduler, stop_metal_rates_scheduler
 from app.indru_scheduler import bootstrap_indru, start_indru_scheduler, stop_indru_scheduler
@@ -101,6 +102,7 @@ app.include_router(admin.router, prefix=prefix, tags=["admin"])
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 PDFS_DIR.mkdir(parents=True, exist_ok=True)
 PREVIEWS_DIR.mkdir(parents=True, exist_ok=True)
+POST_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount(f"{prefix}/status-media", StaticFiles(directory=str(IMAGES_DIR)), name="status-media")
 app.mount(f"{prefix}/book-media", StaticFiles(directory=str(PDFS_DIR)), name="book-media")
 app.mount(
@@ -108,6 +110,7 @@ app.mount(
     StaticFiles(directory=str(PREVIEWS_DIR)),
     name="book-preview-media",
 )
+app.mount(f"{prefix}/post-media", StaticFiles(directory=str(POST_IMAGES_DIR)), name="post-media")
 
 
 @app.get("/")

@@ -7,6 +7,8 @@ from app.config import settings
 from app.data.metal_rates_service import get_admin_status, sync_retail
 from app.data.status_stories_service import add_story, delete_story, list_stories as list_status_stories
 from app.data import books_service
+from app.data import posts_service
+from app.push_service import send_post_push
 from app.data.indru_service import (
     LOOKAHEAD_DAYS,
     _today_ist,
@@ -25,6 +27,7 @@ from app.schemas import (
     BookCategoryOut,
     BookCategoryIn,
     LibraryBookOut,
+    PostOut,
     IndruDailyOut,
     IndruDailyIn,
 )
@@ -351,3 +354,85 @@ def admin_refresh_indru(
         "days": days,
         "count": len(rows),
     }
+
+
+def _post_out(entry, request: Request) -> PostOut:
+    base = str(request.base_url).rstrip("/")
+    image_url = f"{base}{settings.api_prefix}/post-media/{entry.image_filename}"
+    return PostOut(
+        id=entry.id,
+        title=entry.title,
+        content=entry.content or "",
+        image_url=image_url,
+        push_sent=bool(entry.push_sent),
+        created_at=entry.created_at,
+    )
+
+
+@router.get("/posts", response_model=list[PostOut])
+def admin_list_posts(request: Request, db: Session = Depends(get_db)):
+    return [_post_out(p, request) for p in posts_service.list_posts(db)]
+
+
+@router.post("/posts", response_model=PostOut)
+async def admin_create_post(
+    request: Request,
+    db: Session = Depends(get_db),
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    content: str = Form(default=""),
+    send_push: str = Form(default="false"),
+):
+    image_bytes = await file.read()
+    try:
+        row = posts_service.add_post(
+            db,
+            title=title,
+            content=content,
+            filename=file.filename or "post.jpg",
+            image_bytes=image_bytes,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+
+    out = _post_out(row, request)
+    api_base = str(request.base_url).rstrip("/")
+    if send_push.strip().lower() in {"true", "1", "yes", "on"}:
+        pushed = send_post_push(
+            post_id=row.id,
+            title=row.title,
+            body=posts_service.push_notification_body(row.content),
+            image_filename=row.image_filename,
+            api_base=api_base,
+        )
+        if pushed:
+            posts_service.mark_push_sent(db, row)
+            out = _post_out(row, request)
+    return out
+
+
+@router.post("/posts/{post_id}/push", response_model=PostOut)
+def admin_push_post(post_id: str, request: Request, db: Session = Depends(get_db)):
+    row = posts_service.get_post(db, post_id)
+    if not row:
+        raise HTTPException(404, detail="Post not found")
+    out = _post_out(row, request)
+    api_base = str(request.base_url).rstrip("/")
+    pushed = send_post_push(
+        post_id=row.id,
+        title=row.title,
+        body=posts_service.push_notification_body(row.content),
+        image_filename=row.image_filename,
+        api_base=api_base,
+    )
+    if not pushed:
+        raise HTTPException(503, detail="Push notification unavailable (check FIREBASE_CREDENTIALS_PATH)")
+    posts_service.mark_push_sent(db, row)
+    return _post_out(row, request)
+
+
+@router.delete("/posts/{post_id}")
+def admin_delete_post(post_id: str, db: Session = Depends(get_db)):
+    if not posts_service.delete_post(db, post_id):
+        raise HTTPException(404, detail="Post not found")
+    return {"ok": True}

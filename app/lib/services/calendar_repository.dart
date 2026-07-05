@@ -14,6 +14,7 @@ import '../models/palangal.dart';
 import '../models/pancha_pakshi.dart';
 import '../models/status_story.dart';
 import '../models/library_book.dart';
+import '../models/post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
 import 'api_service.dart';
@@ -303,6 +304,8 @@ class CalendarRepository {
       return IndruContent.empty;
     }
   }
+
+  Future<Post> getPost(String postId) => _online.fetchPost(postId);
 
   String formatDate(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 }

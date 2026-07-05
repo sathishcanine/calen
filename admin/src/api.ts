@@ -40,6 +40,15 @@ export interface LibraryBook {
   created_at: string;
 }
 
+export interface Post {
+  id: string;
+  title: string;
+  content: string;
+  image_url: string;
+  push_sent: boolean;
+  created_at: string;
+}
+
 export interface MetalRatesStatus {
   source: string | null;
   rate_date: string | null;
@@ -156,4 +165,28 @@ export const api = {
   getMetalRatesStatus: () => request<MetalRatesStatus>('/admin/metal-rates/status'),
   syncMetalRates: () =>
     request<MetalRatesSyncResult>('/admin/metal-rates/sync', { method: 'POST' }),
+  listPosts: () => request<Post[]>('/admin/posts'),
+  createPost: async (params: {
+    file: File;
+    title: string;
+    content?: string;
+    sendPush?: boolean;
+  }) => {
+    const form = new FormData();
+    form.append('file', params.file);
+    form.append('title', params.title);
+    form.append('content', params.content ?? '');
+    form.append('send_push', params.sendPush ? 'true' : 'false');
+    const res = await fetch(`${API_BASE}/admin/posts`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+    return res.json() as Promise<Post>;
+  },
+  pushPost: (id: string) => request<Post>(`/admin/posts/${id}/push`, { method: 'POST' }),
+  deletePost: (id: string) => request<{ ok: boolean }>(`/admin/posts/${id}`, { method: 'DELETE' }),
 };

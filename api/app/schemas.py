@@ -426,6 +426,15 @@ class LibraryBookOut(BaseModel):
     created_at: datetime | None = None
 
 
+class PostOut(BaseModel):
+    id: str
+    title: str
+    content: str = ""
+    image_url: str
+    push_sent: bool = False
+    created_at: datetime | None = None
+
+
 class MetalRateCityOut(BaseModel):
     id: str
     name_ta: str

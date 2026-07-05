@@ -21,6 +21,7 @@ from app.config import settings
 from app.data.metal_rates_service import get_rates, has_today, list_cities as list_metal_cities, sync_retail
 from app.data.status_stories_service import PUBLIC_LIMIT, list_stories as list_status_stories
 from app.data import books_service
+from app.data import posts_service
 from app.data.indru_service import get_indru_for_date, indru_to_dict
 from app.database import get_db
 from app.ingestion.spiritual_data import get_daily_fields
@@ -69,6 +70,7 @@ from app.schemas import (
     MetalRatesOut,
     BookCategoryOut,
     LibraryBookOut,
+    PostOut,
     IndruDailyOut,
 )
 from app.serializers import daily_to_schema, month_to_schema
@@ -95,6 +97,36 @@ def status_stories(
 ):
     """Latest admin-uploaded story images for the mobile home screen (view-only)."""
     return [_status_story_out(entry, request) for entry in list_status_stories(limit=limit)]
+
+
+def _post_out(entry, request: Request) -> PostOut:
+    base = str(request.base_url).rstrip("/")
+    image_url = f"{base}{settings.api_prefix}/post-media/{entry.image_filename}"
+    return PostOut(
+        id=entry.id,
+        title=entry.title,
+        content=entry.content or "",
+        image_url=image_url,
+        push_sent=bool(entry.push_sent),
+        created_at=entry.created_at,
+    )
+
+
+@router.get("/posts", response_model=list[PostOut])
+def list_posts(
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Query(default=20, ge=1, le=50),
+):
+    return [_post_out(p, request) for p in posts_service.list_posts(db, limit=limit)]
+
+
+@router.get("/posts/{post_id}", response_model=PostOut)
+def get_post(post_id: str, request: Request, db: Session = Depends(get_db)):
+    row = posts_service.get_post(db, post_id)
+    if not row:
+        raise HTTPException(404, detail="Post not found")
+    return _post_out(row, request)
 
 
 def _library_book_out(entry, request: Request) -> LibraryBookOut:

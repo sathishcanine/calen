@@ -16,6 +16,7 @@ import '../models/metal_rates.dart';
 import '../models/pancha_pakshi.dart';
 import '../models/status_story.dart';
 import '../models/library_book.dart';
+import '../models/post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
 
@@ -387,5 +388,11 @@ class ApiService {
     final res = await _client.get(_uri('/indru', {'date': dateStr}));
     if (res.statusCode != 200) throw Exception('Indru failed: ${res.body}');
     return IndruContent.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<Post> fetchPost(String postId) async {
+    final res = await _client.get(_uri('/posts/$postId'));
+    if (res.statusCode != 200) throw Exception('Post failed: ${res.body}');
+    return Post.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 }

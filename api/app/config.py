@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     firebase_credentials_path: str = ""
     # Public API origin for push image URLs (e.g. http://192.168.1.8:4000 or https://api.example.com)
     public_base_url: str = ""
+    # Required for admin panel and /admin API routes
+    admin_password: str = ""
 
     class Config:
         env_file = ".env"

@@ -1,15 +1,44 @@
+import { clearAuthToken, getAuthToken, setAuthToken } from './auth';
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:4000/api/v1';
+
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function handleUnauthorized(): never {
+  clearAuthToken();
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login';
+  }
+  throw new Error('Session expired — please sign in again');
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...options?.headers },
     ...options,
   });
+  if (res.status === 401) {
+    handleUnauthorized();
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || res.statusText);
   }
   return res.json() as Promise<T>;
+}
+
+async function authFetch(path: string, options?: RequestInit): Promise<Response> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { ...authHeaders(), ...options?.headers },
+  });
+  if (res.status === 401) {
+    handleUnauthorized();
+  }
+  return res;
 }
 
 export interface StatusStory {
@@ -100,6 +129,29 @@ export interface DailyCalendar {
 }
 
 export const api = {
+  login: async (password: string) => {
+    const res = await fetch(`${API_BASE}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let message = text || res.statusText;
+      try {
+        const parsed = JSON.parse(text) as { detail?: string };
+        if (parsed.detail) message = parsed.detail;
+      } catch {
+        /* use raw text */
+      }
+      throw new Error(message);
+    }
+    const data = (await res.json()) as { token: string };
+    setAuthToken(data.token);
+  },
+  logout: () => {
+    clearAuthToken();
+  },
   listDaily: (cityId?: string) =>
     request<DailyCalendar[]>(`/admin/daily${cityId ? `?city_id=${cityId}` : ''}`),
   getDaily: (cityId: string, date: string) =>
@@ -121,7 +173,7 @@ export const api = {
     form.append('file', params.file);
     form.append('title', params.title ?? '');
     form.append('caption', params.caption ?? '');
-    const res = await fetch(`${API_BASE}/admin/status-stories`, {
+    const res = await authFetch('/admin/status-stories', {
       method: 'POST',
       body: form,
     });
@@ -160,7 +212,7 @@ export const api = {
     if (params.preview) {
       form.append('preview', params.preview);
     }
-    const res = await fetch(`${API_BASE}/admin/books`, {
+    const res = await authFetch('/admin/books', {
       method: 'POST',
       body: form,
     });
@@ -186,7 +238,7 @@ export const api = {
     form.append('title', params.title);
     form.append('content', params.content ?? '');
     form.append('send_push', params.sendPush ? 'true' : 'false');
-    const res = await fetch(`${API_BASE}/admin/posts`, {
+    const res = await authFetch('/admin/posts', {
       method: 'POST',
       body: form,
     });
@@ -210,7 +262,7 @@ export const api = {
     form.append('title', params.title);
     form.append('body', params.body ?? '');
     form.append('send_push', params.sendPush ? 'true' : 'false');
-    const res = await fetch(`${API_BASE}/admin/indru/pushes`, {
+    const res = await authFetch('/admin/indru/pushes', {
       method: 'POST',
       body: form,
     });

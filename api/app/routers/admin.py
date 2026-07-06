@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Reques
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.admin_auth import create_token, require_admin, verify_password
 from app.data.metal_rates_service import get_admin_status, sync_retail
 from app.data.status_stories_service import add_story, delete_story, list_stories as list_status_stories
 from app.data import books_service
@@ -32,10 +33,23 @@ from app.schemas import (
     IndruPushOut,
     IndruDailyOut,
     IndruDailyIn,
+    AdminLoginIn,
+    AdminLoginOut,
 )
 from app.serializers import daily_from_schema, daily_to_schema, month_from_schema, month_to_schema
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+secured = APIRouter(dependencies=[Depends(require_admin)])
+
+
+@router.post("/login", response_model=AdminLoginOut)
+def admin_login(body: AdminLoginIn):
+    if not settings.admin_password:
+        raise HTTPException(503, detail="Admin password not configured on server")
+    if not verify_password(body.password):
+        raise HTTPException(401, detail="Invalid password")
+    token, expires_at = create_token()
+    return AdminLoginOut(token=token, expires_at=expires_at)
 
 
 def _admin_status_story_out(entry: dict, request: Request) -> StatusStoryOut:
@@ -50,12 +64,12 @@ def _admin_status_story_out(entry: dict, request: Request) -> StatusStoryOut:
     )
 
 
-@router.get("/status-stories", response_model=list[StatusStoryOut])
+@secured.get("/status-stories", response_model=list[StatusStoryOut])
 def admin_list_status_stories(request: Request):
     return [_admin_status_story_out(entry, request) for entry in list_status_stories(admin=True)]
 
 
-@router.post("/status-stories", response_model=StatusStoryOut)
+@secured.post("/status-stories", response_model=StatusStoryOut)
 async def admin_upload_status_story(
     request: Request,
     file: UploadFile = File(...),
@@ -77,7 +91,7 @@ async def admin_upload_status_story(
     return _admin_status_story_out(entry, request)
 
 
-@router.delete("/status-stories/{story_id}")
+@secured.delete("/status-stories/{story_id}")
 def admin_delete_status_story(story_id: str):
     if not delete_story(story_id):
         raise HTTPException(404, detail="Story not found")
@@ -103,7 +117,7 @@ def _book_out(entry, request: Request) -> LibraryBookOut:
     )
 
 
-@router.get("/book-categories", response_model=list[BookCategoryOut])
+@secured.get("/book-categories", response_model=list[BookCategoryOut])
 def admin_list_book_categories(request: Request, db: Session = Depends(get_db)):
     del request
     return [
@@ -118,7 +132,7 @@ def admin_list_book_categories(request: Request, db: Session = Depends(get_db)):
     ]
 
 
-@router.post("/book-categories", response_model=BookCategoryOut)
+@secured.post("/book-categories", response_model=BookCategoryOut)
 def admin_create_book_category(body: BookCategoryIn, db: Session = Depends(get_db)):
     name = body.name.strip()
     if not name:
@@ -133,14 +147,14 @@ def admin_create_book_category(body: BookCategoryIn, db: Session = Depends(get_d
     )
 
 
-@router.delete("/book-categories/{category_id}")
+@secured.delete("/book-categories/{category_id}")
 def admin_delete_book_category(category_id: str, db: Session = Depends(get_db)):
     if not books_service.delete_category(db, category_id):
         raise HTTPException(404, detail="Category not found")
     return {"ok": True}
 
 
-@router.get("/books", response_model=list[LibraryBookOut])
+@secured.get("/books", response_model=list[LibraryBookOut])
 def admin_list_books(
     request: Request,
     category_id: str | None = None,
@@ -149,7 +163,7 @@ def admin_list_books(
     return [_book_out(b, request) for b in books_service.list_books(db, category_id)]
 
 
-@router.post("/books", response_model=LibraryBookOut)
+@secured.post("/books", response_model=LibraryBookOut)
 async def admin_upload_book(
     request: Request,
     file: UploadFile = File(...),
@@ -181,14 +195,14 @@ async def admin_upload_book(
     return _book_out(entry, request)
 
 
-@router.delete("/books/{book_id}")
+@secured.delete("/books/{book_id}")
 def admin_delete_book(book_id: str, db: Session = Depends(get_db)):
     if not books_service.delete_book(db, book_id):
         raise HTTPException(404, detail="Book not found")
     return {"ok": True}
 
 
-@router.get("/daily", response_model=list[DailyCalendarOut])
+@secured.get("/daily", response_model=list[DailyCalendarOut])
 def admin_list_daily(
     city_id: str | None = None,
     limit: int = Query(default=50, le=200),
@@ -200,7 +214,7 @@ def admin_list_daily(
     return [daily_to_schema(r) for r in q.limit(limit).all()]
 
 
-@router.get("/daily/{city_id}/{on_date}", response_model=DailyCalendarOut)
+@secured.get("/daily/{city_id}/{on_date}", response_model=DailyCalendarOut)
 def admin_get_daily(city_id: str, on_date: date, db: Session = Depends(get_db)):
     row = (
         db.query(DailyCalendar)
@@ -212,7 +226,7 @@ def admin_get_daily(city_id: str, on_date: date, db: Session = Depends(get_db)):
     return daily_to_schema(row)
 
 
-@router.put("/daily/{city_id}/{on_date}", response_model=DailyCalendarOut)
+@secured.put("/daily/{city_id}/{on_date}", response_model=DailyCalendarOut)
 def admin_upsert_daily(city_id: str, on_date: date, body: DailyCalendarIn, db: Session = Depends(get_db)):
     if body.city_id != city_id or body.gregorian_date != on_date:
         raise HTTPException(400, detail="Path and body city/date must match")
@@ -234,7 +248,7 @@ def admin_upsert_daily(city_id: str, on_date: date, body: DailyCalendarIn, db: S
     return daily_to_schema(row)
 
 
-@router.get("/month/{city_id}/{year}/{month}", response_model=MonthCalendarOut)
+@secured.get("/month/{city_id}/{year}/{month}", response_model=MonthCalendarOut)
 def admin_get_month(city_id: str, year: int, month: int, db: Session = Depends(get_db)):
     row = (
         db.query(MonthCalendar)
@@ -250,7 +264,7 @@ def admin_get_month(city_id: str, year: int, month: int, db: Session = Depends(g
     return month_to_schema(row)
 
 
-@router.put("/month/{city_id}/{year}/{month}", response_model=MonthCalendarOut)
+@secured.put("/month/{city_id}/{year}/{month}", response_model=MonthCalendarOut)
 def admin_upsert_month(
     city_id: str, year: int, month: int, body: MonthCalendarIn, db: Session = Depends(get_db)
 ):
@@ -277,13 +291,13 @@ def admin_upsert_month(
     return month_to_schema(row)
 
 
-@router.get("/metal-rates/status")
+@secured.get("/metal-rates/status")
 def admin_metal_rates_status(db: Session = Depends(get_db)):
     """Current stored retail rates (no scrape)."""
     return get_admin_status(db)
 
 
-@router.post("/metal-rates/sync")
+@secured.post("/metal-rates/sync")
 def admin_sync_metal_rates(db: Session = Depends(get_db)):
     """Fetch retail gold/silver rates from Goodreturns & LiveChennai."""
     live = sync_retail(db)
@@ -300,7 +314,7 @@ def admin_sync_metal_rates(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/indru", response_model=list[IndruDailyOut])
+@secured.get("/indru", response_model=list[IndruDailyOut])
 def admin_list_indru(
     from_date: date | None = Query(default=None, alias="from"),
     days: int = Query(default=LOOKAHEAD_DAYS + 1, ge=1, le=31),
@@ -319,13 +333,13 @@ def admin_list_indru(
     return [IndruDailyOut(**indru_to_dict(r)) for r in rows]
 
 
-@router.get("/indru/{on_date}", response_model=IndruDailyOut)
+@secured.get("/indru/{on_date}", response_model=IndruDailyOut)
 def admin_get_indru(on_date: date, db: Session = Depends(get_db)):
     row = get_indru_for_date(db, on_date)
     return IndruDailyOut(**indru_to_dict(row))
 
 
-@router.put("/indru/{on_date}", response_model=IndruDailyOut)
+@secured.put("/indru/{on_date}", response_model=IndruDailyOut)
 def admin_upsert_indru(on_date: date, body: IndruDailyIn, db: Session = Depends(get_db)):
     row = db.query(IndruDaily).filter(IndruDaily.gregorian_date == on_date).first()
     data = body.model_dump()
@@ -341,7 +355,7 @@ def admin_upsert_indru(on_date: date, body: IndruDailyIn, db: Session = Depends(
     return IndruDailyOut(**indru_to_dict(row))
 
 
-@router.post("/indru/refresh")
+@secured.post("/indru/refresh")
 def admin_refresh_indru(
     on_date: date | None = Query(default=None, alias="date"),
     days: int = Query(default=LOOKAHEAD_DAYS + 1, ge=1, le=31),
@@ -371,12 +385,12 @@ def _post_out(entry, request: Request) -> PostOut:
     )
 
 
-@router.get("/posts", response_model=list[PostOut])
+@secured.get("/posts", response_model=list[PostOut])
 def admin_list_posts(request: Request, db: Session = Depends(get_db)):
     return [_post_out(p, request) for p in posts_service.list_posts(db)]
 
 
-@router.post("/posts", response_model=PostOut)
+@secured.post("/posts", response_model=PostOut)
 async def admin_create_post(
     request: Request,
     db: Session = Depends(get_db),
@@ -413,7 +427,7 @@ async def admin_create_post(
     return out
 
 
-@router.post("/posts/{post_id}/push", response_model=PostOut)
+@secured.post("/posts/{post_id}/push", response_model=PostOut)
 def admin_push_post(post_id: str, request: Request, db: Session = Depends(get_db)):
     row = posts_service.get_post(db, post_id)
     if not row:
@@ -433,7 +447,7 @@ def admin_push_post(post_id: str, request: Request, db: Session = Depends(get_db
     return _post_out(row, request)
 
 
-@router.delete("/posts/{post_id}")
+@secured.delete("/posts/{post_id}")
 def admin_delete_post(post_id: str, db: Session = Depends(get_db)):
     if not posts_service.delete_post(db, post_id):
         raise HTTPException(404, detail="Post not found")
@@ -455,12 +469,12 @@ def _indru_push_out(entry, request: Request) -> IndruPushOut:
     )
 
 
-@router.get("/indru/pushes", response_model=list[IndruPushOut])
+@secured.get("/indru/pushes", response_model=list[IndruPushOut])
 def admin_list_indru_pushes(request: Request, db: Session = Depends(get_db)):
     return [_indru_push_out(p, request) for p in indru_push_service.list_pushes(db)]
 
 
-@router.post("/indru/pushes", response_model=IndruPushOut)
+@secured.post("/indru/pushes", response_model=IndruPushOut)
 async def admin_create_indru_push(
     request: Request,
     db: Session = Depends(get_db),
@@ -501,7 +515,7 @@ async def admin_create_indru_push(
     return out
 
 
-@router.post("/indru/pushes/{push_id}/send", response_model=IndruPushOut)
+@secured.post("/indru/pushes/{push_id}/send", response_model=IndruPushOut)
 def admin_send_indru_push(push_id: str, request: Request, db: Session = Depends(get_db)):
     row = indru_push_service.get_push(db, push_id)
     if not row:
@@ -520,8 +534,11 @@ def admin_send_indru_push(push_id: str, request: Request, db: Session = Depends(
     return _indru_push_out(row, request)
 
 
-@router.delete("/indru/pushes/{push_id}")
+@secured.delete("/indru/pushes/{push_id}")
 def admin_delete_indru_push(push_id: str, db: Session = Depends(get_db)):
     if not indru_push_service.delete_push(db, push_id):
         raise HTTPException(404, detail="Indru push not found")
     return {"ok": True}
+
+
+router.include_router(secured)

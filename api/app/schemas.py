@@ -402,6 +402,15 @@ class StatusStoryOut(BaseModel):
     created_at: datetime
 
 
+class AdminLoginIn(BaseModel):
+    password: str
+
+
+class AdminLoginOut(BaseModel):
+    token: str
+    expires_at: int
+
+
 class BookCategoryOut(BaseModel):
     id: str
     name: str

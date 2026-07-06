@@ -1,14 +1,25 @@
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
+import { isAuthenticated } from './auth';
 import DailyEdit from './pages/DailyEdit';
 import DailyList from './pages/DailyList';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
 import Stories from './pages/Stories';
 import Books from './pages/Books';
 import Posts from './pages/Posts';
 import IndruPushPage from './pages/IndruPush';
+import { api } from './api';
 
-export default function App() {
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+}
+
+function AdminLayout() {
   return (
     <div className="layout">
       <aside className="sidebar">
@@ -21,6 +32,16 @@ export default function App() {
         <NavLink to="/books">Books library</NavLink>
         <NavLink to="/posts">Posts</NavLink>
         <NavLink to="/indru-push">இன்று push</NavLink>
+        <button
+          type="button"
+          className="sidebar-logout"
+          onClick={() => {
+            api.logout();
+            window.location.href = '/login';
+          }}
+        >
+          Sign out
+        </button>
       </aside>
       <main className="main">
         <Routes>
@@ -34,5 +55,21 @@ export default function App() {
         </Routes>
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/*"
+        element={
+          <RequireAuth>
+            <AdminLayout />
+          </RequireAuth>
+        }
+      />
+    </Routes>
   );
 }

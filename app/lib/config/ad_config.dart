@@ -36,6 +36,11 @@ class AdConfig {
     defaultValue: 'ca-app-pub-3940256099942544/1033173712',
   );
 
+  static const String androidBudgetInterstitialUnitId = String.fromEnvironment(
+    'ADMOB_ANDROID_BUDGET_INTERSTITIAL_ID',
+    defaultValue: 'ca-app-pub-4789468551786381/1926533177',
+  );
+
   static const String androidNativeUnitId = String.fromEnvironment(
     'ADMOB_ANDROID_NATIVE_ID',
     defaultValue: 'ca-app-pub-4789468551786381/4833296911',
@@ -44,6 +49,16 @@ class AdConfig {
   static const String androidHomeNativeUnitId = String.fromEnvironment(
     'ADMOB_ANDROID_HOME_NATIVE_ID',
     defaultValue: 'ca-app-pub-4789468551786381/3587327145',
+  );
+
+  static const String androidMetalRatesNativeUnitId = String.fromEnvironment(
+    'ADMOB_ANDROID_METAL_RATES_NATIVE_ID',
+    defaultValue: 'ca-app-pub-4789468551786381/5115004531',
+  );
+
+  static const String androidBudgetNativeUnitId = String.fromEnvironment(
+    'ADMOB_ANDROID_BUDGET_NATIVE_ID',
+    defaultValue: 'ca-app-pub-4789468551786381/5602054301',
   );
 
   static const String iosNativeUnitId = String.fromEnvironment(
@@ -56,8 +71,23 @@ class AdConfig {
     defaultValue: 'ca-app-pub-3940256099942544/3986624511',
   );
 
+  static const String iosMetalRatesNativeUnitId = String.fromEnvironment(
+    'ADMOB_IOS_METAL_RATES_NATIVE_ID',
+    defaultValue: 'ca-app-pub-3940256099942544/3986624511',
+  );
+
+  static const String iosBudgetNativeUnitId = String.fromEnvironment(
+    'ADMOB_IOS_BUDGET_NATIVE_ID',
+    defaultValue: 'ca-app-pub-3940256099942544/3986624511',
+  );
+
   static const String iosInterstitialUnitId = String.fromEnvironment(
     'ADMOB_IOS_INTERSTITIAL_ID',
+    defaultValue: 'ca-app-pub-3940256099942544/4411468910',
+  );
+
+  static const String iosBudgetInterstitialUnitId = String.fromEnvironment(
+    'ADMOB_IOS_BUDGET_INTERSTITIAL_ID',
     defaultValue: 'ca-app-pub-3940256099942544/4411468910',
   );
 
@@ -70,9 +100,18 @@ class AdConfig {
   static String get interstitialUnitId =>
       Platform.isIOS ? iosInterstitialUnitId : androidInterstitialUnitId;
 
+  static String get budgetInterstitialUnitId =>
+      Platform.isIOS ? iosBudgetInterstitialUnitId : androidBudgetInterstitialUnitId;
+
   static String get nativeUnitId =>
       Platform.isIOS ? iosNativeUnitId : androidNativeUnitId;
 
   static String get homeNativeUnitId =>
       Platform.isIOS ? iosHomeNativeUnitId : androidHomeNativeUnitId;
+
+  static String get metalRatesNativeUnitId =>
+      Platform.isIOS ? iosMetalRatesNativeUnitId : androidMetalRatesNativeUnitId;
+
+  static String get budgetNativeUnitId =>
+      Platform.isIOS ? iosBudgetNativeUnitId : androidBudgetNativeUnitId;
 }

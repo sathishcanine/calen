@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../config/ad_config.dart';
 import '../../models/budget.dart';
+import '../../services/ad_service.dart';
 import '../../services/budget_currency_service.dart';
 import '../../services/budget_export_service.dart';
+import '../../services/budget_rating_service.dart';
 import '../../services/budget_service.dart';
 import '../../theme/budget_theme.dart';
 import '../../utils/budget_format.dart';
 import '../../widgets/budget/budget_category_filter_dialog.dart';
 import '../../widgets/budget/budget_currency_dialog.dart';
 import '../../widgets/budget/budget_list_category_icon.dart';
+import '../../widgets/budget/budget_rating_dialog.dart';
+import '../../widgets/native_ad_widget.dart';
 import 'budget_transaction_entry_screen.dart';
 
 enum BudgetHubTab { spending, transactions, categories }
@@ -29,6 +35,8 @@ class BudgetMonthScreen extends StatefulWidget {
 }
 
 class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
+  static const _playStoreUrl = 'https://play.google.com/store/apps/details?id=com.tamilarworld.tamilar_calendar';
+
   BudgetMonthSummary? _summary;
   List<BudgetCategory> _allCategories = [];
   bool _loading = true;
@@ -76,6 +84,37 @@ class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _openPlayStore() async {
+    final uri = Uri.parse(_playStoreUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _handleBack() async {
+    final hasRated = await BudgetRatingService.instance.hasAcceptedRating();
+    if (!hasRated) {
+      if (!mounted) return;
+      final choice = await showBudgetRatingDialog(context);
+      if (!mounted) return;
+      if (choice == BudgetRatingChoice.yes) {
+        await BudgetRatingService.instance.markRatingAccepted();
+        await _openPlayStore();
+      } else if (choice == BudgetRatingChoice.maybe && mounted) {
+        Navigator.pop(context);
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    await AdService.instance.showInterstitialForUnit(
+      adUnitId: AdConfig.budgetInterstitialUnitId,
+      onFinished: () {
+        if (mounted) Navigator.pop(context);
+      },
+    );
   }
 
   Future<void> _changeMonth(int delta) async {
@@ -150,28 +189,37 @@ class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: BudgetColors.headerBg,
-      body: SafeArea(
-        child: _loading && _summary == null
-            ? const Center(child: CircularProgressIndicator(color: BudgetColors.brown))
-            : Column(
-                children: [
-                  _BudgetHubHeader(
-                    month: _month,
-                    tab: _tab,
-                    onTabChanged: (t) => setState(() => _tab = t),
-                    onPrevMonth: () => _changeMonth(-1),
-                    onNextMonth: () => _changeMonth(1),
-                    showTransactionActions: _tab == BudgetHubTab.transactions,
-                    onAdd: () => _showEntryTypePicker(),
-                    onFilter: _showFilter,
-                    onExport: _exportMonth,
-                    onCurrency: _showCurrencyPicker,
-                  ),
-                  Expanded(child: _buildBody()),
-                ],
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: BudgetColors.headerBg,
+        bottomNavigationBar: NativeAdWidget(adUnitId: AdConfig.budgetNativeUnitId),
+        body: SafeArea(
+          child: _loading && _summary == null
+              ? const Center(child: CircularProgressIndicator(color: BudgetColors.brown))
+              : Column(
+                  children: [
+                    _BudgetHubHeader(
+                      month: _month,
+                      tab: _tab,
+                      onTabChanged: (t) => setState(() => _tab = t),
+                      onBack: _handleBack,
+                      onPrevMonth: () => _changeMonth(-1),
+                      onNextMonth: () => _changeMonth(1),
+                      showTransactionActions: _tab == BudgetHubTab.transactions,
+                      onAdd: () => _showEntryTypePicker(),
+                      onFilter: _showFilter,
+                      onExport: _exportMonth,
+                      onCurrency: _showCurrencyPicker,
+                    ),
+                    Expanded(child: _buildBody()),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -230,6 +278,7 @@ class _BudgetHubHeader extends StatelessWidget {
     required this.month,
     required this.tab,
     required this.onTabChanged,
+    required this.onBack,
     required this.onPrevMonth,
     required this.onNextMonth,
     required this.showTransactionActions,
@@ -242,6 +291,7 @@ class _BudgetHubHeader extends StatelessWidget {
   final int month;
   final BudgetHubTab tab;
   final ValueChanged<BudgetHubTab> onTabChanged;
+  final VoidCallback onBack;
   final VoidCallback onPrevMonth;
   final VoidCallback onNextMonth;
   final bool showTransactionActions;
@@ -262,7 +312,7 @@ class _BudgetHubHeader extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: onBack,
                     icon: const Icon(Icons.arrow_back, color: BudgetColors.brown, size: 22),
                     visualDensity: VisualDensity.compact,
                   ),

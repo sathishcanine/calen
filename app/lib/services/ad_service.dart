@@ -72,6 +72,49 @@ class AdService {
     _interstitialAd = null;
   }
 
+  /// Loads and shows an interstitial for a specific unit, then runs [onFinished].
+  Future<void> showInterstitialForUnit({
+    required String adUnitId,
+    required VoidCallback onFinished,
+  }) async {
+    if (!AdConfig.enabled || !_initialized) {
+      onFinished();
+      return;
+    }
+
+    await InterstitialAd.load(
+      adUnitId: adUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          var finished = false;
+          void finish() {
+            if (finished) return;
+            finished = true;
+            onFinished();
+          }
+
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              finish();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              debugPrint('Interstitial failed to show: $error');
+              finish();
+            },
+          );
+          ad.show();
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('Interstitial failed to load: $error');
+          onFinished();
+        },
+      ),
+    );
+  }
+
   void dispose() {
     _interstitialAd?.dispose();
     _interstitialAd = null;

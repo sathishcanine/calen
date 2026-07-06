@@ -2,11 +2,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../config/ad_config.dart';
 import '../models/metal_rates.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/metal_rates_menu_card.dart';
+import '../widgets/native_ad_widget.dart';
 
 class MetalRatesScreen extends StatefulWidget {
   const MetalRatesScreen({super.key, required this.repository});
@@ -133,6 +135,8 @@ class _MetalRatesScreenState extends State<MetalRatesScreen> {
                             gold: _data!.gold24k,
                           ),
                           const SizedBox(height: 16),
+                          NativeAdWidget(adUnitId: AdConfig.metalRatesNativeUnitId),
+                          const SizedBox(height: 16),
                           _RecentDaysCard(
                             cityName: _data!.cityNameEn,
                             rows: _data!.recentDaily,
@@ -225,7 +229,7 @@ class _GoldTableCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _RatesTable(
-            headers: const ['Gram', 'Today', 'Yesterday', 'Price Change'],
+            headers: const ['Gram', 'Today', 'Yesterday', 'Change'],
             rows: gold.table
                 .map(
                   (r) => [
@@ -348,25 +352,30 @@ class _ChangeCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (change == 0) return const Text('—');
+    if (change == 0) {
+      return const Text('—', textAlign: TextAlign.center, maxLines: 1);
+    }
     final up = change > 0;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          formatInr(change.abs()),
-          style: TextStyle(
-            color: up ? AppColors.auspicious : AppColors.inauspicious,
-            fontWeight: FontWeight.w700,
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            formatInr(change.abs()),
+            style: TextStyle(
+              color: up ? AppColors.auspicious : AppColors.inauspicious,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
           ),
-        ),
-        const SizedBox(width: 4),
-        Icon(
-          up ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
-          color: up ? AppColors.auspicious : AppColors.inauspicious,
-          size: 22,
-        ),
-      ],
+          Icon(
+            up ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+            color: up ? AppColors.auspicious : AppColors.inauspicious,
+            size: 18,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -388,20 +397,20 @@ class _RatesTable extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: Table(
         border: TableBorder.all(color: const Color(0xFFE0E0E0)),
-        columnWidths: {
-          for (var i = 0; i < headers.length; i++) i: const FlexColumnWidth(),
-        },
+        columnWidths: _columnWidths(headers.length),
         children: [
           TableRow(
             decoration: const BoxDecoration(color: Color(0xFF1565C0)),
             children: headers
                 .map(
                   (h) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                     child: Text(
                       h,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11),
                     ),
                   ),
                 )
@@ -415,14 +424,16 @@ class _RatesTable extends StatelessWidget {
               children: row
                   .map(
                     (cell) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                       child: cell is Widget
-                          ? cell
+                          ? Align(alignment: Alignment.center, child: cell)
                           : Text(
                               cell.toString(),
                               textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w500,
                                 color: coloredChanges && cell.toString().contains('▲')
                                     ? AppColors.auspicious
@@ -439,6 +450,18 @@ class _RatesTable extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Map<int, TableColumnWidth> _columnWidths(int count) {
+    if (count == 4) {
+      return const {
+        0: FlexColumnWidth(0.9),
+        1: FlexColumnWidth(1.1),
+        2: FlexColumnWidth(1.1),
+        3: FlexColumnWidth(1.0),
+      };
+    }
+    return {for (var i = 0; i < count; i++) i: const FlexColumnWidth()};
   }
 }
 

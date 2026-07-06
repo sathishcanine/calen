@@ -44,7 +44,13 @@ class MetalRatesMenuCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                   ),
-                  child: const Icon(Icons.monetization_on_rounded, color: Colors.white, size: 28),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      'assets/images/icon_metal_rates.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

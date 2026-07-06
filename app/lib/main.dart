@@ -123,8 +123,8 @@ class _TamilarCalendarAppState extends State<TamilarCalendarApp> {
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: AppConfig.offlineMode
-          ? 'Tamil Calender - A-Z தமிழ் (ஆஃப்லைன்)'
-          : 'Tamil Calender - A-Z தமிழ்',
+          ? 'Murugan Tamil Calendar - தமிழ் (ஆஃப்லைன்)'
+          : 'Murugan Tamil Calendar - தமிழ்',
       theme: buildAppTheme(),
       debugShowCheckedModeBanner: false,
       navigatorObservers: analytics == null

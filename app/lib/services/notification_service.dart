@@ -19,19 +19,70 @@ const kMetalRatesNotificationRoute = 'metal_rates';
 /// Payload value — tap opens [BudgetScreen].
 const kBudgetNotificationRoute = 'budget';
 
+/// Payload value — tap opens the இன்று tab on [HomeScreen].
+const kIndruNotificationRoute = 'indru';
+
 /// Payload prefix — tap opens [PostDetailScreen] (`post:<id>`).
 const kPostNotificationRoute = 'post';
 
 /// FCM topics.
 const kMetalRatesFcmTopic = 'metal_rates_updates';
 const kPostsFcmTopic = 'posts_updates';
+const kIndruFcmTopic = 'indru_updates';
 
 String postNotificationPayload(String postId) => '$kPostNotificationRoute:$postId';
 
 const _postFcmNotificationId = 3001;
+const _indruFcmNotificationId = 4001;
+const _metalFcmNotificationId = 2001;
 const _postsChannelId = 'posts';
 const _postsChannelName = 'பதிவுகள்';
 const _postsChannelDescription = 'புதிய பதிவு நினைவூட்டல்கள்';
+const _indruChannelId = 'indru';
+const _indruChannelName = 'இன்று';
+const _indruChannelDescription = 'இன்று தினசரி தகவல் நினைவூட்டல்கள்';
+const _indruTitleFallbackTa = 'இன்று — தினசரி தகவல்கள்';
+const _metalChannelId = 'metal_rates';
+const _metalChannelName = 'தங்கம் & வெள்ளி நிலவரம்';
+const _metalChannelDescription = 'இன்றைய தங்கம் மற்றும் வெள்ளி விலை நினைவூட்டல்';
+const _metalTitleTa = 'இன்றைய தங்கம் மற்றும் வெள்ளி நிலவரம்';
+const _metalBodyTa = 'இன்றைய தங்கம் & வெள்ளி விலை பாருங்கள்';
+const _prefPendingNotificationPayload = 'pending_notification_payload';
+
+@pragma('vm:entry-point')
+void onNotificationBackgroundResponseReceived(NotificationResponse response) {
+  final payload = response.payload;
+  if (payload == null || payload.isEmpty) return;
+  SharedPreferences.getInstance().then((prefs) {
+    prefs.setString(_prefPendingNotificationPayload, payload);
+  });
+}
+
+Future<void> _persistPendingNotificationPayload(String payload) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(_prefPendingNotificationPayload, payload);
+}
+
+Future<String?> _consumePersistedNotificationPayload() async {
+  final prefs = await SharedPreferences.getInstance();
+  final payload = prefs.getString(_prefPendingNotificationPayload);
+  if (payload != null) {
+    await prefs.remove(_prefPendingNotificationPayload);
+  }
+  return payload;
+}
+
+Future<void> _initLocalNotificationsPlugin(FlutterLocalNotificationsPlugin plugin) async {
+  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  await plugin.initialize(
+    settings: const InitializationSettings(
+      android: androidSettings,
+      iOS: DarwinInitializationSettings(),
+    ),
+    onDidReceiveNotificationResponse: NotificationService.onNotificationResponseReceived,
+    onDidReceiveBackgroundNotificationResponse: onNotificationBackgroundResponseReceived,
+  );
+}
 
 Future<NotificationDetails> _buildPostNotificationDetails({
   required String title,
@@ -80,6 +131,94 @@ Future<NotificationDetails> _buildPostNotificationDetails({
   );
 }
 
+Future<NotificationDetails> _buildIndruNotificationDetails({
+  required String title,
+  required String body,
+  String? imageUrl,
+}) async {
+  AndroidNotificationDetails androidDetails;
+
+  if (imageUrl != null && imageUrl.isNotEmpty) {
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        androidDetails = AndroidNotificationDetails(
+          _indruChannelId,
+          _indruChannelName,
+          channelDescription: _indruChannelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+          styleInformation: BigPictureStyleInformation(
+            ByteArrayAndroidBitmap(response.bodyBytes),
+            contentTitle: body.isNotEmpty ? title : null,
+            summaryText: body.isNotEmpty ? body : null,
+            hideExpandedLargeIcon: true,
+          ),
+        );
+        return NotificationDetails(
+          android: androidDetails,
+          iOS: const DarwinNotificationDetails(),
+        );
+      }
+    } catch (_) {
+      // Fall back to text-only notification.
+    }
+  }
+
+  androidDetails = AndroidNotificationDetails(
+    _indruChannelId,
+    _indruChannelName,
+    channelDescription: _indruChannelDescription,
+    importance: Importance.high,
+    priority: Priority.high,
+  );
+  return NotificationDetails(
+    android: androidDetails,
+    iOS: const DarwinNotificationDetails(),
+  );
+}
+
+Future<void> _displayIndruNotificationFromData(
+  Map<String, dynamic> data, {
+  FlutterLocalNotificationsPlugin? plugin,
+}) async {
+  final title = data['title']?.toString() ?? _indruTitleFallbackTa;
+  final body = data['body']?.toString() ?? '';
+  final imageUrl = data['image_url']?.toString();
+
+  final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+  if (plugin == null) {
+    await _initLocalNotificationsPlugin(activePlugin);
+  }
+
+  if (Platform.isAndroid) {
+    final android = activePlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _indruChannelId,
+        _indruChannelName,
+        description: _indruChannelDescription,
+        importance: Importance.high,
+      ),
+    );
+  }
+
+  final details = await _buildIndruNotificationDetails(
+    title: title,
+    body: body,
+    imageUrl: imageUrl,
+  );
+
+  await activePlugin.show(
+    id: _indruFcmNotificationId,
+    title: title,
+    body: body.isNotEmpty ? body : null,
+    notificationDetails: details,
+    payload: kIndruNotificationRoute,
+  );
+}
+
 Future<void> _displayPostNotificationFromData(
   Map<String, dynamic> data, {
   FlutterLocalNotificationsPlugin? plugin,
@@ -93,13 +232,7 @@ Future<void> _displayPostNotificationFromData(
 
   final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
   if (plugin == null) {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    await activePlugin.initialize(
-      settings: const InitializationSettings(
-        android: androidSettings,
-        iOS: DarwinInitializationSettings(),
-      ),
-    );
+    await _initLocalNotificationsPlugin(activePlugin);
   }
 
   if (Platform.isAndroid) {
@@ -130,11 +263,59 @@ Future<void> _displayPostNotificationFromData(
   );
 }
 
+Future<void> _displayMetalRatesNotificationFromData(
+  Map<String, dynamic> data, {
+  FlutterLocalNotificationsPlugin? plugin,
+}) async {
+  final title = data['title']?.toString() ?? _metalTitleTa;
+  final body = data['body']?.toString() ?? _metalBodyTa;
+
+  final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+  if (plugin == null) {
+    await _initLocalNotificationsPlugin(activePlugin);
+  }
+
+  if (Platform.isAndroid) {
+    final android = activePlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _metalChannelId,
+        _metalChannelName,
+        description: _metalChannelDescription,
+        importance: Importance.high,
+      ),
+    );
+  }
+
+  await activePlugin.show(
+    id: _metalFcmNotificationId,
+    title: title,
+    body: body,
+    notificationDetails: const NotificationDetails(
+      android: AndroidNotificationDetails(
+        _metalChannelId,
+        _metalChannelName,
+        channelDescription: _metalChannelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(),
+    ),
+    payload: kMetalRatesNotificationRoute,
+  );
+}
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (message.data['route'] == kPostNotificationRoute) {
+  final route = message.data['route']?.toString();
+  if (route == kPostNotificationRoute) {
     await _displayPostNotificationFromData(message.data);
+  } else if (route == kIndruNotificationRoute) {
+    await _displayIndruNotificationFromData(message.data);
+  } else if (route == kMetalRatesNotificationRoute) {
+    await _displayMetalRatesNotificationFromData(message.data);
   }
 }
 
@@ -156,13 +337,6 @@ class NotificationService {
   static const _budgetChannelName = 'வரவு செலவு நினைவூட்டல்';
   static const _budgetChannelDescription = 'தினசரி வரவு செலவு பதிவு நினைவூட்டல்';
 
-  static const _metalChannelId = 'metal_rates';
-  static const _metalChannelName = 'தங்கம் & வெள்ளி நிலவரம்';
-  static const _metalChannelDescription = 'இன்றைய தங்கம் மற்றும் வெள்ளி விலை நினைவூட்டல்';
-
-  static const _metalTitleTa = 'இன்றைய தங்கம் மற்றும் வெள்ளி நிலவரம்';
-  static const _metalBodyTa = 'இன்றைய தங்கம் & வெள்ளி விலை பாருங்கள்';
-
   static const _morningHour = 7;
   static const _morningMinute = 0;
   static const _budgetHour = 20;
@@ -170,7 +344,6 @@ class NotificationService {
   static const _daysAhead = 14;
   static const _morningBaseId = 1000;
   static const _budgetBaseId = 1500;
-  static const _metalFcmNotificationId = 2001;
 
   static const _morningTitleTa = 'இன்றைய நாள்';
   static const _morningBodyFallbackTa = 'இன்றைய பஞ்சாங்கம் & ராசிபலன் பாருங்கள்!';
@@ -182,7 +355,30 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
-  void Function(String payload)? onNotificationTap;
+  bool Function(String payload)? onNotificationTap;
+
+  String? _pendingNotificationPayload;
+  bool _updateReadyForNavigation = false;
+  bool _homeReadyForNavigation = false;
+
+  bool get isReadyForNavigation => _updateReadyForNavigation && _homeReadyForNavigation;
+
+  void markUpdateReadyForNavigation() {
+    _updateReadyForNavigation = true;
+    _tryOpenPendingNavigation();
+  }
+
+  void markHomeReadyForNavigation() {
+    _homeReadyForNavigation = true;
+    _tryOpenPendingNavigation();
+  }
+
+  void _tryOpenPendingNavigation() {
+    if (!isReadyForNavigation) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      processPendingLaunchNavigation();
+    });
+  }
 
   bool get _supported => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
@@ -202,8 +398,8 @@ class NotificationService {
 
     await _plugin.initialize(
       settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
-      onDidReceiveNotificationResponse: _onLocalNotificationTap,
-      onDidReceiveBackgroundNotificationResponse: _onLocalNotificationBackgroundTap,
+      onDidReceiveNotificationResponse: NotificationService.onNotificationResponseReceived,
+      onDidReceiveBackgroundNotificationResponse: onNotificationBackgroundResponseReceived,
     );
 
     if (Platform.isAndroid) {
@@ -241,6 +437,14 @@ class NotificationService {
           importance: Importance.high,
         ),
       );
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _indruChannelId,
+          _indruChannelName,
+          description: _indruChannelDescription,
+          importance: Importance.high,
+        ),
+      );
     }
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -250,16 +454,11 @@ class NotificationService {
     _initialized = true;
   }
 
-  static void _onLocalNotificationTap(NotificationResponse response) {
+  static void onNotificationResponseReceived(NotificationResponse response) {
     final payload = response.payload;
     if (payload != null && payload.isNotEmpty) {
-      instance.onNotificationTap?.call(payload);
+      instance._dispatchNotificationTap(payload);
     }
-  }
-
-  @pragma('vm:entry-point')
-  static void _onLocalNotificationBackgroundTap(NotificationResponse response) {
-    _onLocalNotificationTap(response);
   }
 
   Future<void> setupPushNotifications() async {
@@ -273,10 +472,38 @@ class NotificationService {
       await FirebaseMessaging.instance.subscribeToTopic(kMetalRatesFcmTopic);
     }
     await FirebaseMessaging.instance.subscribeToTopic(kPostsFcmTopic);
+    await FirebaseMessaging.instance.subscribeToTopic(kIndruFcmTopic);
 
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) {
       _handleFcmData(initial.data);
+    }
+  }
+
+  /// Call once update check is done and home/onboarding has finished.
+  Future<void> processPendingLaunchNavigation() async {
+    await handleLaunchNotification();
+    final stored = await _consumePersistedNotificationPayload();
+    if (stored != null) {
+      _pendingNotificationPayload = stored;
+    }
+    _flushPendingNotificationTap();
+  }
+
+  void _dispatchNotificationTap(String payload) {
+    _pendingNotificationPayload = payload;
+    unawaited(_persistPendingNotificationPayload(payload));
+    _flushPendingNotificationTap();
+  }
+
+  void _flushPendingNotificationTap() {
+    final payload = _pendingNotificationPayload;
+    if (payload == null) return;
+    final handler = onNotificationTap;
+    if (handler == null) return;
+    if (handler(payload)) {
+      _pendingNotificationPayload = null;
+      unawaited(_consumePersistedNotificationPayload());
     }
   }
 
@@ -308,6 +535,8 @@ class NotificationService {
     await prefs.setBool(_prefBudgetEnabled, enabled);
     if (!enabled) {
       await _cancelBudgetNotifications();
+    } else {
+      await scheduleDailyBudgetNotifications();
     }
   }
 
@@ -333,7 +562,7 @@ class NotificationService {
     if (launchDetails?.didNotificationLaunchApp ?? false) {
       final payload = launchDetails!.notificationResponse?.payload;
       if (payload != null && payload.isNotEmpty) {
-        onNotificationTap?.call(payload);
+        _dispatchNotificationTap(payload);
       }
     }
   }
@@ -371,6 +600,11 @@ class NotificationService {
               fcmGranted.authorizationStatus == AuthorizationStatus.provisional);
     }
     return true;
+  }
+
+  Future<void> scheduleAllDailyNotifications(CalendarRepository repository) async {
+    await scheduleDailyMorningNotifications(repository);
+    await scheduleDailyBudgetNotifications();
   }
 
   Future<void> scheduleDailyMorningNotifications(CalendarRepository repository) async {
@@ -468,31 +702,18 @@ class NotificationService {
   }
 
   void _onForegroundFcmMessage(RemoteMessage message) {
-    final route = message.data['route'];
+    final route = message.data['route']?.toString();
     if (route == kMetalRatesNotificationRoute) {
-      _showMetalRatesForeground(message);
+      unawaited(_displayMetalRatesNotificationFromData(message.data, plugin: _plugin));
     } else if (route == kPostNotificationRoute) {
       _showPostForeground(message);
+    } else if (route == kIndruNotificationRoute) {
+      _showIndruForeground(message);
     }
   }
 
-  void _showMetalRatesForeground(RemoteMessage message) {
-    _plugin.show(
-      id: _metalFcmNotificationId,
-      title: message.notification?.title ?? _metalTitleTa,
-      body: message.notification?.body ?? _metalBodyTa,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _metalChannelId,
-          _metalChannelName,
-          channelDescription: _metalChannelDescription,
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      payload: kMetalRatesNotificationRoute,
-    );
+  void _showIndruForeground(RemoteMessage message) {
+    unawaited(_displayIndruNotificationFromData(message.data, plugin: _plugin));
   }
 
   void _showPostForeground(RemoteMessage message) {
@@ -506,13 +727,17 @@ class NotificationService {
   void _handleFcmData(Map<String, dynamic> data) {
     final route = data['route']?.toString();
     if (route == kMetalRatesNotificationRoute) {
-      onNotificationTap?.call(kMetalRatesNotificationRoute);
+      _dispatchNotificationTap(kMetalRatesNotificationRoute);
+      return;
+    }
+    if (route == kIndruNotificationRoute) {
+      _dispatchNotificationTap(kIndruNotificationRoute);
       return;
     }
     if (route == kPostNotificationRoute) {
       final postId = data['post_id']?.toString();
       if (postId != null && postId.isNotEmpty) {
-        onNotificationTap?.call(postNotificationPayload(postId));
+        _dispatchNotificationTap(postNotificationPayload(postId));
       }
     }
   }

@@ -8,7 +8,8 @@ from app.data.metal_rates_service import get_admin_status, sync_retail
 from app.data.status_stories_service import add_story, delete_story, list_stories as list_status_stories
 from app.data import books_service
 from app.data import posts_service
-from app.push_service import send_post_push
+from app.data import indru_push_service
+from app.push_service import send_indru_push, send_post_push
 from app.data.indru_service import (
     LOOKAHEAD_DAYS,
     _today_ist,
@@ -28,6 +29,7 @@ from app.schemas import (
     BookCategoryIn,
     LibraryBookOut,
     PostOut,
+    IndruPushOut,
     IndruDailyOut,
     IndruDailyIn,
 )
@@ -435,4 +437,91 @@ def admin_push_post(post_id: str, request: Request, db: Session = Depends(get_db
 def admin_delete_post(post_id: str, db: Session = Depends(get_db)):
     if not posts_service.delete_post(db, post_id):
         raise HTTPException(404, detail="Post not found")
+    return {"ok": True}
+
+
+def _indru_push_out(entry, request: Request) -> IndruPushOut:
+    image_url = None
+    if entry.image_filename:
+        base = str(request.base_url).rstrip("/")
+        image_url = f"{base}{settings.api_prefix}/indru-push-media/{entry.image_filename}"
+    return IndruPushOut(
+        id=entry.id,
+        title=entry.title,
+        body=entry.body or "",
+        image_url=image_url,
+        push_sent=bool(entry.push_sent),
+        created_at=entry.created_at,
+    )
+
+
+@router.get("/indru/pushes", response_model=list[IndruPushOut])
+def admin_list_indru_pushes(request: Request, db: Session = Depends(get_db)):
+    return [_indru_push_out(p, request) for p in indru_push_service.list_pushes(db)]
+
+
+@router.post("/indru/pushes", response_model=IndruPushOut)
+async def admin_create_indru_push(
+    request: Request,
+    db: Session = Depends(get_db),
+    title: str = Form(...),
+    body: str = Form(default=""),
+    send_push: str = Form(default="false"),
+    file: UploadFile | None = File(default=None),
+):
+    image_bytes: bytes | None = None
+    filename: str | None = None
+    if file is not None and file.filename:
+        image_bytes = await file.read()
+        filename = file.filename
+    try:
+        row = indru_push_service.add_push(
+            db,
+            title=title,
+            body=body,
+            filename=filename,
+            image_bytes=image_bytes if image_bytes else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+
+    out = _indru_push_out(row, request)
+    api_base = str(request.base_url).rstrip("/")
+    if send_push.strip().lower() in {"true", "1", "yes", "on"}:
+        pushed = send_indru_push(
+            push_id=row.id,
+            title=row.title,
+            body=indru_push_service.push_notification_body(row.body),
+            image_filename=row.image_filename,
+            api_base=api_base,
+        )
+        if pushed:
+            indru_push_service.mark_push_sent(db, row)
+            out = _indru_push_out(row, request)
+    return out
+
+
+@router.post("/indru/pushes/{push_id}/send", response_model=IndruPushOut)
+def admin_send_indru_push(push_id: str, request: Request, db: Session = Depends(get_db)):
+    row = indru_push_service.get_push(db, push_id)
+    if not row:
+        raise HTTPException(404, detail="Indru push not found")
+    api_base = str(request.base_url).rstrip("/")
+    pushed = send_indru_push(
+        push_id=row.id,
+        title=row.title,
+        body=indru_push_service.push_notification_body(row.body),
+        image_filename=row.image_filename,
+        api_base=api_base,
+    )
+    if not pushed:
+        raise HTTPException(503, detail="Push notification unavailable (check FIREBASE_CREDENTIALS_PATH)")
+    indru_push_service.mark_push_sent(db, row)
+    return _indru_push_out(row, request)
+
+
+@router.delete("/indru/pushes/{push_id}")
+def admin_delete_indru_push(push_id: str, db: Session = Depends(get_db)):
+    if not indru_push_service.delete_push(db, push_id):
+        raise HTTPException(404, detail="Indru push not found")
     return {"ok": True}

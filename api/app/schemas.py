@@ -435,6 +435,15 @@ class PostOut(BaseModel):
     created_at: datetime | None = None
 
 
+class IndruPushOut(BaseModel):
+    id: str
+    title: str
+    body: str = ""
+    image_url: str | None = None
+    push_sent: bool = False
+    created_at: datetime | None = None
+
+
 class MetalRateCityOut(BaseModel):
     id: str
     name_ta: str

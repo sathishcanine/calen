@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'config/app_config.dart';
 import 'models/app_update_config.dart';
 import 'screens/budget/budget_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/metal_rates_screen.dart';
 import 'screens/post_detail_screen.dart';
 import 'services/ad_service.dart';
@@ -19,6 +20,8 @@ import 'widgets/force_update_overlay.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
+CalendarRepository? _appRepository;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FirebaseService.instance.initialize();
@@ -28,10 +31,9 @@ Future<void> main() async {
   runZonedGuarded(
     () async {
       final repository = await CalendarRepository.create();
-      NotificationService.instance.onNotificationTap = (payload) {
-        _openFromNotification(payload, repository);
-      };
-      await NotificationService.instance.scheduleDailyMorningNotifications(repository);
+      _appRepository = repository;
+      NotificationService.instance.onNotificationTap = _handleNotificationTap;
+      await NotificationService.instance.scheduleAllDailyNotifications(repository);
       await NotificationService.instance.setupPushNotifications();
       runApp(TamilarCalendarApp(repository: repository));
     },
@@ -41,15 +43,22 @@ Future<void> main() async {
   );
 }
 
-void _openFromNotification(String payload, CalendarRepository repository) {
+bool _handleNotificationTap(String payload) {
+  if (!NotificationService.instance.isReadyForNavigation ||
+      _appRepository == null ||
+      navigatorKey.currentState == null) {
+    return false;
+  }
+  _openFromNotification(payload);
+  return true;
+}
+
+void _openFromNotification(String payload) {
+  final repository = _appRepository;
+  if (repository == null) return;
+
   void navigate(Widget screen) {
-    if (navigatorKey.currentState == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => screen));
-      });
-    } else {
-      navigatorKey.currentState!.push(MaterialPageRoute(builder: (_) => screen));
-    }
+    navigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => screen));
   }
 
   if (payload == kMetalRatesNotificationRoute) {
@@ -59,6 +68,12 @@ void _openFromNotification(String payload, CalendarRepository repository) {
 
   if (payload == kBudgetNotificationRoute) {
     navigate(const BudgetScreen());
+    return;
+  }
+
+  if (payload == kIndruNotificationRoute) {
+    navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    HomeScreen.switchToTab?.call(HomeScreen.indruTabIndex);
     return;
   }
 
@@ -96,6 +111,9 @@ class _TamilarCalendarAppState extends State<TamilarCalendarApp> {
       _requiredUpdate = config;
       _checkingUpdate = false;
     });
+    if (_requiredUpdate == null) {
+      NotificationService.instance.markUpdateReadyForNavigation();
+    }
   }
 
   @override

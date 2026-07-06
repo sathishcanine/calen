@@ -49,6 +49,15 @@ export interface Post {
   created_at: string;
 }
 
+export interface IndruPush {
+  id: string;
+  title: string;
+  body: string;
+  image_url: string | null;
+  push_sent: boolean;
+  created_at: string;
+}
+
 export interface MetalRatesStatus {
   source: string | null;
   rate_date: string | null;
@@ -189,4 +198,30 @@ export const api = {
   },
   pushPost: (id: string) => request<Post>(`/admin/posts/${id}/push`, { method: 'POST' }),
   deletePost: (id: string) => request<{ ok: boolean }>(`/admin/posts/${id}`, { method: 'DELETE' }),
+  listIndruPushes: () => request<IndruPush[]>('/admin/indru/pushes'),
+  createIndruPush: async (params: {
+    file?: File | null;
+    title: string;
+    body?: string;
+    sendPush?: boolean;
+  }) => {
+    const form = new FormData();
+    if (params.file) form.append('file', params.file);
+    form.append('title', params.title);
+    form.append('body', params.body ?? '');
+    form.append('send_push', params.sendPush ? 'true' : 'false');
+    const res = await fetch(`${API_BASE}/admin/indru/pushes`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+    return res.json() as Promise<IndruPush>;
+  },
+  sendIndruPush: (id: string) =>
+    request<IndruPush>(`/admin/indru/pushes/${id}/send`, { method: 'POST' }),
+  deleteIndruPush: (id: string) =>
+    request<{ ok: boolean }>(`/admin/indru/pushes/${id}`, { method: 'DELETE' }),
 };

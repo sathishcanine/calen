@@ -74,18 +74,16 @@ def send_metal_rates_push() -> None:
         db.close()
 
     message = messaging.Message(
-        notification=messaging.Notification(
-            title=METAL_RATES_PUSH_TITLE_TA,
-            body=body,
-        ),
-        data={"route": "metal_rates"},
+        data={
+            "route": "metal_rates",
+            "title": METAL_RATES_PUSH_TITLE_TA,
+            "body": body,
+        },
         topic=METAL_RATES_TOPIC,
-        android=messaging.AndroidConfig(
-            priority="high",
-            notification=messaging.AndroidNotification(
-                channel_id="metal_rates",
-                title=METAL_RATES_PUSH_TITLE_TA,
-                body=body,
+        android=messaging.AndroidConfig(priority="high"),
+        apns=messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(content_available=True),
             ),
         ),
     )
@@ -147,4 +145,56 @@ def send_post_push(
         return True
     except Exception as exc:
         logger.warning("[push] Post notification failed: %s", exc)
+        return False
+
+
+INDRU_TOPIC = "indru_updates"
+
+
+def _indru_push_image_url(image_filename: str, api_base: str) -> str:
+    base = settings.public_base_url.strip().rstrip("/") or api_base.rstrip("/")
+    return f"{base}{settings.api_prefix}/indru-push-media/{image_filename}"
+
+
+def send_indru_push(
+    *,
+    push_id: str,
+    title: str,
+    body: str,
+    image_filename: str | None,
+    api_base: str,
+) -> bool:
+    """Broadcast an இன்று notification; tapping opens the இன்று tab in the app."""
+    if not _ensure_firebase():
+        return False
+
+    from firebase_admin import messaging
+
+    data: dict[str, str] = {
+        "route": "indru",
+        "push_id": push_id,
+        "title": title,
+    }
+    if body:
+        data["body"] = body
+    if image_filename:
+        data["image_url"] = _indru_push_image_url(image_filename, api_base)
+
+    message = messaging.Message(
+        data=data,
+        topic=INDRU_TOPIC,
+        android=messaging.AndroidConfig(priority="high"),
+        apns=messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(content_available=True),
+            ),
+        ),
+    )
+
+    try:
+        response = messaging.send(message)
+        logger.info("[push] Indru notification sent (%s): %s", push_id, response)
+        return True
+    except Exception as exc:
+        logger.warning("[push] Indru notification failed: %s", exc)
         return False

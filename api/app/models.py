@@ -201,6 +201,19 @@ class Post(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class IndruPush(Base):
+    """Admin-sent இன்று tab push notification (optional image)."""
+
+    __tablename__ = "indru_pushes"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(256))
+    body: Mapped[str] = mapped_column(Text, default="")
+    image_filename: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    push_sent: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class IndruDaily(Base):
     """Global இன்று content — one row per Gregorian date, shared by all users (no city)."""
 

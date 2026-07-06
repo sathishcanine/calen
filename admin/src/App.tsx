@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Stories from './pages/Stories';
 import Books from './pages/Books';
 import Posts from './pages/Posts';
+import IndruPushPage from './pages/IndruPush';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <NavLink to="/stories">Status stories</NavLink>
         <NavLink to="/books">Books library</NavLink>
         <NavLink to="/posts">Posts</NavLink>
+        <NavLink to="/indru-push">இன்று push</NavLink>
       </aside>
       <main className="main">
         <Routes>
@@ -28,6 +30,7 @@ export default function App() {
           <Route path="/stories" element={<Stories />} />
           <Route path="/books" element={<Books />} />
           <Route path="/posts" element={<Posts />} />
+          <Route path="/indru-push" element={<IndruPushPage />} />
         </Routes>
       </main>
     </div>

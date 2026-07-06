@@ -42,6 +42,12 @@ class HomeScreen extends StatefulWidget {
 
   final CalendarRepository repository;
 
+  /// Bottom nav index for the இன்று tab.
+  static const int indruTabIndex = 4;
+
+  /// Set from [_HomeScreenState] so notification taps can switch tabs.
+  static void Function(int tabIndex)? switchToTab;
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -62,9 +68,24 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    HomeScreen.switchToTab = _switchToTab;
     _load();
     _loadStatusStories();
     _loadIndru();
+  }
+
+  @override
+  void dispose() {
+    if (HomeScreen.switchToTab == _switchToTab) {
+      HomeScreen.switchToTab = null;
+    }
+    super.dispose();
+  }
+
+  void _switchToTab(int index) {
+    if (!mounted) return;
+    if (index < 0 || index > 4) return;
+    setState(() => _navIndex = index);
   }
 
   Future<void> _loadIndru() async {

@@ -33,7 +33,7 @@ def _schedule_metal_rates_push() -> None:
     print(f"[metal-rates cron] Push notification scheduled for {run_at:%H:%M} IST")
 
 
-def _run_sync() -> None:
+def _run_sync(*, send_push: bool = False) -> None:
     from app.data.metal_rates_service import sync_retail
 
     db = SessionLocal()
@@ -43,7 +43,8 @@ def _run_sync() -> None:
             f"[metal-rates cron] Retail synced {live.rate_date}: "
             f"22K ₹{live.gold_22k_per_gram}/g, 24K ₹{live.gold_24k_per_gram}/g"
         )
-        _schedule_metal_rates_push()
+        if send_push:
+            _schedule_metal_rates_push()
     except Exception as exc:
         print(f"[metal-rates cron] sync failed: {exc}")
     finally:
@@ -57,12 +58,30 @@ def start_metal_rates_scheduler() -> BackgroundScheduler:
 
     scheduler = BackgroundScheduler(timezone=IST)
     # Consumer sites update ~9:30–10 AM; also refresh after midday/evening sessions.
-    scheduler.add_job(_run_sync, "cron", hour=10, minute=0, id="retail_morning")
-    scheduler.add_job(_run_sync, "cron", hour=12, minute=35, id="retail_noon")
-    scheduler.add_job(_run_sync, "cron", hour=18, minute=35, id="retail_evening")
+    scheduler.add_job(
+        lambda: _run_sync(send_push=True),
+        "cron",
+        hour=10,
+        minute=0,
+        id="retail_morning",
+    )
+    scheduler.add_job(
+        lambda: _run_sync(send_push=False),
+        "cron",
+        hour=12,
+        minute=35,
+        id="retail_noon",
+    )
+    scheduler.add_job(
+        lambda: _run_sync(send_push=False),
+        "cron",
+        hour=18,
+        minute=35,
+        id="retail_evening",
+    )
     scheduler.start()
     _scheduler = scheduler
-    print("Metal rates cron: scheduled at 10:00, 12:35 & 18:35 IST (retail)")
+    print("Metal rates cron: sync at 10:00, 12:35 & 18:35 IST — push at 10:05 IST only")
     return scheduler
 
 

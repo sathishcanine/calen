@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../screens/app_intro_onboarding_screen.dart';
 import '../screens/home_screen.dart';
@@ -50,9 +51,48 @@ class _AppEntryState extends State<AppEntry> {
 
   void _onHomeReady() {
     NotificationService.instance.markHomeReadyForNavigation();
-    unawaited(
-      NotificationService.instance.scheduleAllDailyNotifications(widget.repository),
+    unawaited(_promptNotificationsIfNeeded());
+  }
+
+  Future<void> _promptNotificationsIfNeeded() async {
+    final hasPermission = await NotificationService.instance.hasNotificationPermission();
+    if (!mounted || hasPermission) {
+      if (hasPermission) {
+        await NotificationService.instance.requestPermissionFromUser(
+          repository: widget.repository,
+        );
+      }
+      return;
+    }
+
+    final firstPromptDone =
+        await NotificationService.instance.hasSystemPromptBeenAttempted();
+    if (!mounted) return;
+    if (!firstPromptDone) {
+      await NotificationService.instance.requestPermissionFromUser(
+        repository: widget.repository,
+      );
+      return;
+    }
+
+    final enable = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('அறிவிப்புகளை இயக்கவா?'),
+        content: const Text(
+          'தினசரி இன்று, தங்கம்-வெள்ளி விலை, மற்றும் வரவு செலவு நினைவூட்டல்களுக்கு Notifications அனுமதி தேவை.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('இயக்கு'),
+          ),
+        ],
+      ),
     );
+
+    if (!mounted || enable != true) return;
+    await openAppSettings();
   }
 
   @override

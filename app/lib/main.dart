@@ -24,17 +24,18 @@ CalendarRepository? _appRepository;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseService.instance.initialize();
-  await AdService.instance.initialize();
-  await NotificationService.instance.initialize();
 
   runZonedGuarded(
     () async {
+      // Keep startup non-blocking so slow device/plugin init never freezes
+      // the native launch screen before first Flutter frame is rendered.
+      unawaited(FirebaseService.instance.initialize());
+      unawaited(AdService.instance.initialize());
+      unawaited(NotificationService.instance.initialize());
+
       final repository = await CalendarRepository.create();
       _appRepository = repository;
       NotificationService.instance.onNotificationTap = _handleNotificationTap;
-      await NotificationService.instance.scheduleAllDailyNotifications(repository);
-      await NotificationService.instance.setupPushNotifications();
       runApp(TamilarCalendarApp(repository: repository));
     },
     (error, stack) {

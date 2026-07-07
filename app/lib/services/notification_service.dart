@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -48,6 +49,8 @@ const _metalChannelDescription = 'இன்றைய தங்கம் மற�
 const _metalTitleTa = 'இன்றைய தங்கம் மற்றும் வெள்ளி நிலவரம்';
 const _metalBodyTa = 'இன்றைய தங்கம் & வெள்ளி விலை பாருங்கள்';
 const _prefPendingNotificationPayload = 'pending_notification_payload';
+const _prefNotificationSystemPromptAttempted =
+    'notification_system_prompt_attempted';
 
 @pragma('vm:entry-point')
 void onNotificationBackgroundResponseReceived(NotificationResponse response) {
@@ -465,7 +468,7 @@ class NotificationService {
     if (!_supported) return;
     if (!_initialized) await initialize();
 
-    final permitted = await _requestPermission();
+    final permitted = await _hasNotificationPermission();
     if (!permitted) return;
 
     if (await isMetalRatesEnabled) {
@@ -602,6 +605,52 @@ class NotificationService {
     return true;
   }
 
+  Future<bool> _hasNotificationPermission() async {
+    if (!_supported) return true;
+    if (Platform.isAndroid) {
+      return Permission.notification.status.isGranted;
+    }
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
+  Future<bool> hasNotificationPermission() => _hasNotificationPermission();
+
+  Future<bool> hasSystemPromptBeenAttempted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefNotificationSystemPromptAttempted) ?? false;
+  }
+
+  /// Ask notification permission intentionally from UI flow (onboarding/home).
+  /// This avoids prompting during splash/startup.
+  Future<bool> requestPermissionFromUser({
+    CalendarRepository? repository,
+  }) async {
+    if (!_supported) return true;
+    if (!_initialized) await initialize();
+    final alreadyGranted = await _hasNotificationPermission();
+
+    if (alreadyGranted) {
+      if (repository != null) {
+        await scheduleAllDailyNotifications(repository);
+      }
+      await setupPushNotifications();
+      return true;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefNotificationSystemPromptAttempted, true);
+    final granted = await _requestPermission();
+    if (!granted) return false;
+
+    if (repository != null) {
+      await scheduleAllDailyNotifications(repository);
+    }
+    await setupPushNotifications();
+    return true;
+  }
+
   Future<void> scheduleAllDailyNotifications(CalendarRepository repository) async {
     await scheduleDailyMorningNotifications(repository);
     await scheduleDailyBudgetNotifications();
@@ -612,7 +661,7 @@ class NotificationService {
     if (!_initialized) await initialize();
     if (!await isMorningEnabled) return;
 
-    final permitted = await _requestPermission();
+    final permitted = await _hasNotificationPermission();
     if (!permitted) return;
 
     await _cancelMorningNotifications();
@@ -660,7 +709,7 @@ class NotificationService {
     if (!_initialized) await initialize();
     if (!await isBudgetEnabled) return;
 
-    final permitted = await _requestPermission();
+    final permitted = await _hasNotificationPermission();
     if (!permitted) return;
 
     await _cancelBudgetNotifications();

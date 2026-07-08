@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'config/app_config.dart';
 import 'models/app_update_config.dart';
@@ -24,6 +25,8 @@ CalendarRepository? _appRepository;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Use bundled fonts only — avoids fatal crashes when fonts.gstatic.com is unreachable.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   runZonedGuarded(
     () async {

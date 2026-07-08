@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -51,6 +52,25 @@ const _metalBodyTa = 'இன்றைய தங்கம் & வெள்ளி
 const _prefPendingNotificationPayload = 'pending_notification_payload';
 const _prefNotificationSystemPromptAttempted =
     'notification_system_prompt_attempted';
+
+/// Android and older OS builds may report deprecated IANA names that the
+/// timezone package no longer ships (e.g. Asia/Calcutta → Asia/Kolkata).
+const _deprecatedTimezoneAliases = {
+  'Asia/Calcutta': 'Asia/Kolkata',
+  'Asia/Rangoon': 'Asia/Yangon',
+  'Asia/Saigon': 'Asia/Ho_Chi_Minh',
+  'Europe/Kiev': 'Europe/Kyiv',
+  'America/Godthab': 'America/Nuuk',
+};
+
+tz.Location _resolveTimezoneLocation(String identifier) {
+  final normalized = _deprecatedTimezoneAliases[identifier] ?? identifier;
+  try {
+    return tz.getLocation(normalized);
+  } on tz.LocationNotFoundException {
+    return tz.UTC;
+  }
+}
 
 @pragma('vm:entry-point')
 void onNotificationBackgroundResponseReceived(NotificationResponse response) {
@@ -390,7 +410,7 @@ class NotificationService {
 
     tz_data.initializeTimeZones();
     final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+    tz.setLocalLocation(_resolveTimezoneLocation(timezoneInfo.identifier));
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -582,6 +602,55 @@ class NotificationService {
     }
   }
 
+  AndroidFlutterLocalNotificationsPlugin? get _androidPlugin =>
+      _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  Future<AndroidScheduleMode> _resolveAndroidScheduleMode() async {
+    if (!Platform.isAndroid) return AndroidScheduleMode.exactAllowWhileIdle;
+    final canScheduleExact = await _androidPlugin?.canScheduleExactNotifications();
+    if (canScheduleExact == false) {
+      return AndroidScheduleMode.inexactAllowWhileIdle;
+    }
+    return AndroidScheduleMode.exactAllowWhileIdle;
+  }
+
+  Future<void> _scheduleZonedNotification({
+    required int id,
+    required String title,
+    String? body,
+    required tz.TZDateTime scheduledDate,
+    required NotificationDetails notificationDetails,
+    String? payload,
+  }) async {
+    var scheduleMode = await _resolveAndroidScheduleMode();
+    try {
+      await _plugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: notificationDetails,
+        androidScheduleMode: scheduleMode,
+        payload: payload,
+      );
+    } on PlatformException catch (e) {
+      if (e.code != 'exact_alarms_not_permitted' ||
+          scheduleMode != AndroidScheduleMode.exactAllowWhileIdle) {
+        rethrow;
+      }
+      await _plugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload,
+      );
+    }
+  }
+
   Future<bool> _requestPermission() async {
     if (Platform.isAndroid) {
       final android = _plugin.resolvePlatformSpecificImplementation<
@@ -683,7 +752,7 @@ class NotificationService {
 
       final body = await _bodyForDate(repository, date);
 
-      await _plugin.zonedSchedule(
+      await _scheduleZonedNotification(
         id: _morningBaseId + offset,
         title: _morningTitleTa,
         body: body,
@@ -698,7 +767,6 @@ class NotificationService {
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: 'daily_morning',
       );
     }
@@ -729,7 +797,7 @@ class NotificationService {
       );
       if (!scheduled.isAfter(now)) continue;
 
-      await _plugin.zonedSchedule(
+      await _scheduleZonedNotification(
         id: _budgetBaseId + offset,
         title: _budgetTitleTa,
         body: _budgetBodyTa,
@@ -744,7 +812,6 @@ class NotificationService {
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: kBudgetNotificationRoute,
       );
     }

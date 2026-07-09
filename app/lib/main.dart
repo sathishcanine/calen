@@ -6,10 +6,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'config/app_config.dart';
 import 'models/app_update_config.dart';
-import 'screens/budget/budget_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/metal_rates_screen.dart';
 import 'screens/post_detail_screen.dart';
+import 'screens/temples/temples_screen.dart';
 import 'services/ad_service.dart';
 import 'services/calendar_repository.dart';
 import 'services/firebase_service.dart';
@@ -71,7 +71,8 @@ void _openFromNotification(String payload) {
   }
 
   if (payload == kBudgetNotificationRoute) {
-    navigate(const BudgetScreen());
+    navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    HomeScreen.switchToTab?.call(HomeScreen.budgetTabIndex);
     return;
   }
 
@@ -85,6 +86,14 @@ void _openFromNotification(String payload) {
     final postId = payload.substring(kPostNotificationRoute.length + 1);
     if (postId.isNotEmpty) {
       navigate(PostDetailScreen(repository: repository, postId: postId));
+    }
+    return;
+  }
+
+  if (payload.startsWith('$kTempleNotificationRoute:')) {
+    final slug = payload.substring(kTempleNotificationRoute.length + 1);
+    if (slug.isNotEmpty) {
+      navigate(TempleDetailLoaderScreen(repository: repository, slug: slug));
     }
   }
 }

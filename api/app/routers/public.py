@@ -23,7 +23,7 @@ from app.data.status_stories_service import PUBLIC_LIMIT, list_stories as list_s
 from app.data import books_service
 from app.data import posts_service
 from app.data.indru_service import get_indru_for_date, indru_to_dict
-from app.data.temples_service import list_temples
+from app.data.temples_service import get_temple_by_slug, list_temples
 from app.database import get_db
 from app.ingestion.spiritual_data import get_daily_fields
 from app.models import City, DailyCalendar, MonthCalendar
@@ -206,8 +206,21 @@ def spiritual_temples(
     request: Request,
     db: Session = Depends(get_db),
     limit: int = Query(default=30, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ):
-    return [_temple_out(row, request) for row in list_temples(db, limit=limit)]
+    return [_temple_out(row, request) for row in list_temples(db, limit=limit, offset=offset)]
+
+
+@router.get("/spiritual/temples/{slug}", response_model=TempleOut)
+def spiritual_temple_detail(
+    slug: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    row = get_temple_by_slug(db, slug)
+    if row is None:
+        raise HTTPException(404, detail="Temple not found")
+    return _temple_out(row, request)
 
 
 @router.get("/spiritual/metal-rates", response_model=MetalRatesOut)

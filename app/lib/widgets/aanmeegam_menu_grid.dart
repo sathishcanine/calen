@@ -30,11 +30,13 @@ class AanmeegamMenuGrid extends StatelessWidget {
     required this.spiritualItems,
     required this.palangalItems,
     required this.jyotishItems,
+    required this.onOpenTemples,
   });
 
   final List<AanmeegamMenuItem> spiritualItems;
   final List<AanmeegamMenuItem> palangalItems;
   final List<JyotishMenuItem> jyotishItems;
+  final VoidCallback onOpenTemples;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +47,8 @@ class AanmeegamMenuGrid extends StatelessWidget {
         const SizedBox(height: 12),
         JyotishHorizontalScroller(items: jyotishItems),
         const SizedBox(height: 24),
+        _TempleHeroButton(onTap: onOpenTemples),
+        const SizedBox(height: 18),
         const HomeSectionHeader(
           title: 'ஆன்மீக தகவல்கள்',
           subtitle: 'பஞ்சாங்கம் · நேரங்கள் · வாஸ்து',
@@ -91,6 +95,83 @@ class _MenuGrid extends StatelessWidget {
           imageAsset: item.imageAsset,
         );
       },
+    );
+  }
+}
+
+class _TempleHeroButton extends StatelessWidget {
+  const _TempleHeroButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2E1A47), Color(0xFF5B2E91)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2E1A47).withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/icon_temple.webp',
+                    width: 62,
+                    height: 62,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'பிரபல கோவில்கள்',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'படங்களுடன் ஆன்மிக யாத்திரை வழிகாட்டி',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFF5D78E),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Color(0xFFF5D78E),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

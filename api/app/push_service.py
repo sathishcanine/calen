@@ -198,3 +198,54 @@ def send_indru_push(
     except Exception as exc:
         logger.warning("[push] Indru notification failed: %s", exc)
         return False
+
+
+TEMPLES_TOPIC = "temples_updates"
+
+
+def _temple_push_image_url(image_filename: str, api_base: str) -> str:
+    base = settings.public_base_url.strip().rstrip("/") or api_base.rstrip("/")
+    return f"{base}{settings.api_prefix}/temple-media/{image_filename}"
+
+
+def send_temple_push(
+    *,
+    temple_slug: str,
+    title: str,
+    body: str,
+    image_filename: str,
+    api_base: str,
+) -> bool:
+    """Broadcast today's temple; tapping opens the kovil detail screen."""
+    if not _ensure_firebase():
+        return False
+
+    from firebase_admin import messaging
+
+    data: dict[str, str] = {
+        "route": "temple",
+        "temple_slug": temple_slug,
+        "title": title,
+        "image_url": _temple_push_image_url(image_filename, api_base),
+    }
+    if body:
+        data["body"] = body
+
+    message = messaging.Message(
+        data=data,
+        topic=TEMPLES_TOPIC,
+        android=messaging.AndroidConfig(priority="high"),
+        apns=messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(content_available=True),
+            ),
+        ),
+    )
+
+    try:
+        response = messaging.send(message)
+        logger.info("[push] Temple notification sent (%s): %s", temple_slug, response)
+        return True
+    except Exception as exc:
+        logger.warning("[push] Temple notification failed: %s", exc)
+        return False

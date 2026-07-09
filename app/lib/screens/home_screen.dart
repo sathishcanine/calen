@@ -43,6 +43,9 @@ class HomeScreen extends StatefulWidget {
 
   final CalendarRepository repository;
 
+  /// Bottom nav index for the வரவு செலவு tab.
+  static const int budgetTabIndex = 3;
+
   /// Bottom nav index for the இன்று tab.
   static const int indruTabIndex = 4;
 
@@ -212,10 +215,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => HoraWeekScreen(
-          repository: widget.repository,
-          initialDate: date,
-        ),
+        builder: (_) =>
+            HoraWeekScreen(repository: widget.repository, initialDate: date),
       ),
     );
   }
@@ -237,10 +238,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => VastuScreen(
-          repository: widget.repository,
-          initialYear: year,
-        ),
+        builder: (_) =>
+            VastuScreen(repository: widget.repository, initialYear: year),
       ),
     );
   }
@@ -260,21 +259,27 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openTemples() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => TemplesScreen(repository: widget.repository)),
+      MaterialPageRoute(
+        builder: (_) => TemplesScreen(repository: widget.repository),
+      ),
     );
   }
 
   void _openMarriagePorutham() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => MarriagePoruthamScreen(repository: widget.repository)),
+      MaterialPageRoute(
+        builder: (_) => MarriagePoruthamScreen(repository: widget.repository),
+      ),
     );
   }
 
   void _openNumerology() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => NumerologyScreen(repository: widget.repository)),
+      MaterialPageRoute(
+        builder: (_) => NumerologyScreen(repository: widget.repository),
+      ),
     );
   }
 
@@ -282,7 +287,10 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => NazhigaiConverterScreen(repository: widget.repository, initialDate: date),
+        builder: (_) => NazhigaiConverterScreen(
+          repository: widget.repository,
+          initialDate: date,
+        ),
       ),
     );
   }
@@ -291,7 +299,10 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChandrashtamamScreen(repository: widget.repository, initialDate: date),
+        builder: (_) => ChandrashtamamScreen(
+          repository: widget.repository,
+          initialDate: date,
+        ),
       ),
     );
   }
@@ -301,7 +312,8 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => TarabalamScreen(repository: widget.repository, initialDate: date),
+          builder: (_) =>
+              TarabalamScreen(repository: widget.repository, initialDate: date),
         ),
       );
       return;
@@ -328,25 +340,118 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<PalangalCategory> _defaultPalangalCategories() => const [
-        PalangalCategory(id: 'guru_peyarchi', titleTa: 'குரு பெயர்ச்சி', subtitleTa: '', icon: 'stars', color: '#2E7D32'),
-        PalangalCategory(id: 'sani_peyarchi', titleTa: 'சனிப் பெயர்ச்சி', subtitleTa: '', icon: 'schedule', color: '#E65100'),
-        PalangalCategory(id: 'rahu_ketu_peyarchi', titleTa: 'ராகு கேது பெயர்ச்சி', subtitleTa: '', icon: 'blur_on', color: '#6A1B9A'),
-        PalangalCategory(id: 'kanavu', titleTa: 'கனவு பலன்கள்', subtitleTa: '', icon: 'bedtime', color: '#FF6F00'),
-        PalangalCategory(id: 'palli_vizhum', titleTa: 'பல்லி விழும் பலன்கள்', subtitleTa: '', icon: 'pest_control', color: '#1565C0'),
-        PalangalCategory(id: 'tara', titleTa: 'தாரா பலன்கள்', subtitleTa: '', icon: 'stars', color: '#6A1B9A', kind: 'calculator'),
-        PalangalCategory(id: 'manaiyadi', titleTa: 'மனையடி சாஸ்திரம்', subtitleTa: '', icon: 'home_work', color: '#AD1457'),
-        PalangalCategory(id: 'vilakku', titleTa: 'விளக்கு ஏற்றும் பலன்கள்', subtitleTa: '', icon: 'light_mode', color: '#558B2F'),
-        PalangalCategory(id: 'kaagam', titleTa: 'காகம் கரையும் பலன்கள்', subtitleTa: '', icon: 'pets', color: '#4E342E'),
-        PalangalCategory(id: 'dhana', titleTa: 'தான பலன்கள்', subtitleTa: '', icon: 'volunteer_activism', color: '#7B1FA2'),
-        PalangalCategory(id: 'macha', titleTa: 'மச்ச பலன்கள்', subtitleTa: '', icon: 'face', color: '#C62828'),
-        PalangalCategory(id: 'thummal', titleTa: 'தும்மல் சகுனம்', subtitleTa: '', icon: 'air', color: '#00838F'),
-        PalangalCategory(id: 'palli_sollum', titleTa: 'பல்லி சொல்லும் பலன்கள்', subtitleTa: '', icon: 'record_voice_over', color: '#EF6C00'),
-        PalangalCategory(id: 'navagraha', titleTa: 'நவகிரக பலன்கள்', subtitleTa: '', icon: 'blur_circular', color: '#B71C1C'),
-        PalangalCategory(id: 'jyotidar_padigal', titleTa: 'ஜோதிடர் பதில்கள்', subtitleTa: '', icon: 'psychology', color: '#37474F'),
-      ];
+    PalangalCategory(
+      id: 'guru_peyarchi',
+      titleTa: 'குரு பெயர்ச்சி',
+      subtitleTa: '',
+      icon: 'stars',
+      color: '#2E7D32',
+    ),
+    PalangalCategory(
+      id: 'sani_peyarchi',
+      titleTa: 'சனிப் பெயர்ச்சி',
+      subtitleTa: '',
+      icon: 'schedule',
+      color: '#E65100',
+    ),
+    PalangalCategory(
+      id: 'rahu_ketu_peyarchi',
+      titleTa: 'ராகு கேது பெயர்ச்சி',
+      subtitleTa: '',
+      icon: 'blur_on',
+      color: '#6A1B9A',
+    ),
+    PalangalCategory(
+      id: 'kanavu',
+      titleTa: 'கனவு பலன்கள்',
+      subtitleTa: '',
+      icon: 'bedtime',
+      color: '#FF6F00',
+    ),
+    PalangalCategory(
+      id: 'palli_vizhum',
+      titleTa: 'பல்லி விழும் பலன்கள்',
+      subtitleTa: '',
+      icon: 'pest_control',
+      color: '#1565C0',
+    ),
+    PalangalCategory(
+      id: 'tara',
+      titleTa: 'தாரா பலன்கள்',
+      subtitleTa: '',
+      icon: 'stars',
+      color: '#6A1B9A',
+      kind: 'calculator',
+    ),
+    PalangalCategory(
+      id: 'manaiyadi',
+      titleTa: 'மனையடி சாஸ்திரம்',
+      subtitleTa: '',
+      icon: 'home_work',
+      color: '#AD1457',
+    ),
+    PalangalCategory(
+      id: 'vilakku',
+      titleTa: 'விளக்கு ஏற்றும் பலன்கள்',
+      subtitleTa: '',
+      icon: 'light_mode',
+      color: '#558B2F',
+    ),
+    PalangalCategory(
+      id: 'kaagam',
+      titleTa: 'காகம் கரையும் பலன்கள்',
+      subtitleTa: '',
+      icon: 'pets',
+      color: '#4E342E',
+    ),
+    PalangalCategory(
+      id: 'dhana',
+      titleTa: 'தான பலன்கள்',
+      subtitleTa: '',
+      icon: 'volunteer_activism',
+      color: '#7B1FA2',
+    ),
+    PalangalCategory(
+      id: 'macha',
+      titleTa: 'மச்ச பலன்கள்',
+      subtitleTa: '',
+      icon: 'face',
+      color: '#C62828',
+    ),
+    PalangalCategory(
+      id: 'thummal',
+      titleTa: 'தும்மல் சகுனம்',
+      subtitleTa: '',
+      icon: 'air',
+      color: '#00838F',
+    ),
+    PalangalCategory(
+      id: 'palli_sollum',
+      titleTa: 'பல்லி சொல்லும் பலன்கள்',
+      subtitleTa: '',
+      icon: 'record_voice_over',
+      color: '#EF6C00',
+    ),
+    PalangalCategory(
+      id: 'navagraha',
+      titleTa: 'நவகிரக பலன்கள்',
+      subtitleTa: '',
+      icon: 'blur_circular',
+      color: '#B71C1C',
+    ),
+    PalangalCategory(
+      id: 'jyotidar_padigal',
+      titleTa: 'ஜோதிடர் பதில்கள்',
+      subtitleTa: '',
+      icon: 'psychology',
+      color: '#37474F',
+    ),
+  ];
 
   List<PalangalCategory> _allPalangalCategories() =>
-      _palangalCategories.isNotEmpty ? _palangalCategories : _defaultPalangalCategories();
+      _palangalCategories.isNotEmpty
+      ? _palangalCategories
+      : _defaultPalangalCategories();
 
   PalangalCategory? _palangalById(String id) {
     for (final c in _allPalangalCategories()) {
@@ -367,7 +472,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  AanmeegamMenuItem _palangalMenuItem(PalangalCategory category, {String? labelOverride}) {
+  AanmeegamMenuItem _palangalMenuItem(
+    PalangalCategory category, {
+    String? labelOverride,
+  }) {
     return AanmeegamMenuItem(
       label: labelOverride ?? category.titleTa,
       iconKind: menuIconKindFromPalangalId(category.id),
@@ -377,91 +485,91 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<AanmeegamMenuItem> _aanmeegamSpiritualItems() => [
-        AanmeegamMenuItem(
-          label: 'இன்றைய பஞ்சாங்கம்',
-          iconKind: MenuIconKind.panchangam,
-          gradient: AppDecorations.spiritualGradient,
-          imageAsset: 'assets/images/icon_panchangam.webp',
-          onTap: () => _openTodaysPanchangam(_home!.gregorianDate),
-        ),
-        AanmeegamMenuItem(
-          label: 'ராகு, குளிகை, எமகண்டம்',
-          iconKind: MenuIconKind.inauspicious,
-          gradient: AppDecorations.tealGradient,
-          onTap: () => _openInauspiciousWeek(_home!.gregorianDate),
-        ),
-        AanmeegamMenuItem(
-          label: 'கௌரி பஞ்சாங்கம்',
-          iconKind: MenuIconKind.gowri,
-          gradient: AppDecorations.forestGradient,
-          onTap: () => _openGowriPanchangam(_home!.gregorianDate),
-        ),
-        AanmeegamMenuItem(
-          label: 'கிரக ஓரைகளின் காலம்',
-          iconKind: MenuIconKind.hora,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF8B1A1A), Color(0xFFC62828)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          onTap: () => _openHoraWeek(_home!.gregorianDate),
-        ),
-        AanmeegamMenuItem(
-          label: 'கரி நாட்கள், அஷ்டமி, நவமி',
-          iconKind: MenuIconKind.kariNaatkal,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6B4F0A), Color(0xFF8B6914)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          onTap: () => _openKariNaatkal(_home!.gregorianDate),
-        ),
-        AanmeegamMenuItem(
-          label: 'வாஸ்து தகவல்/நாட்கள்',
-          iconKind: MenuIconKind.vastu,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF3E2723), Color(0xFF5D4037)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          imageAsset: 'assets/images/icon_temple.webp',
-          onTap: () => _openVastu(_home!.gregorianDate.year),
-        ),
-        AanmeegamMenuItem(
-          label: 'பிரபல கோவில்கள்',
-          iconKind: MenuIconKind.vastu,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF512DA8), Color(0xFF7E57C2)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          imageAsset: 'assets/images/icon_temple.webp',
-          onTap: _openTemples,
-        ),
-        AanmeegamMenuItem(
-          label: 'ஜோதிடர் பதில்கள்',
-          iconKind: MenuIconKind.marriage,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF37474F), Color(0xFF546E7A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          onTap: () {
-            final c = _palangalById('jyotidar_padigal');
-            if (c != null) _openPalangalCategory(c, _home!.gregorianDate);
-          },
-        ),
-        AanmeegamMenuItem(
-          label: 'ஜோதிட தேடல்',
-          icon: Icons.manage_search_rounded,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          onTap: _openJyotishaSearch,
-        ),
-      ];
+    AanmeegamMenuItem(
+      label: 'இன்றைய பஞ்சாங்கம்',
+      iconKind: MenuIconKind.panchangam,
+      gradient: AppDecorations.spiritualGradient,
+      imageAsset: 'assets/images/icon_panchangam.webp',
+      onTap: () => _openTodaysPanchangam(_home!.gregorianDate),
+    ),
+    AanmeegamMenuItem(
+      label: 'ராகு, குளிகை, எமகண்டம்',
+      iconKind: MenuIconKind.inauspicious,
+      gradient: AppDecorations.tealGradient,
+      onTap: () => _openInauspiciousWeek(_home!.gregorianDate),
+    ),
+    AanmeegamMenuItem(
+      label: 'கௌரி பஞ்சாங்கம்',
+      iconKind: MenuIconKind.gowri,
+      gradient: AppDecorations.forestGradient,
+      onTap: () => _openGowriPanchangam(_home!.gregorianDate),
+    ),
+    AanmeegamMenuItem(
+      label: 'கிரக ஓரைகளின் காலம்',
+      iconKind: MenuIconKind.hora,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF8B1A1A), Color(0xFFC62828)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      onTap: () => _openHoraWeek(_home!.gregorianDate),
+    ),
+    AanmeegamMenuItem(
+      label: 'கரி நாட்கள், அஷ்டமி, நவமி',
+      iconKind: MenuIconKind.kariNaatkal,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF6B4F0A), Color(0xFF8B6914)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      onTap: () => _openKariNaatkal(_home!.gregorianDate),
+    ),
+    AanmeegamMenuItem(
+      label: 'வாஸ்து தகவல்/நாட்கள்',
+      iconKind: MenuIconKind.vastu,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF3E2723), Color(0xFF5D4037)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      imageAsset: 'assets/images/icon_temple.webp',
+      onTap: () => _openVastu(_home!.gregorianDate.year),
+    ),
+    AanmeegamMenuItem(
+      label: 'பிரபல கோவில்கள்',
+      iconKind: MenuIconKind.vastu,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF512DA8), Color(0xFF7E57C2)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      imageAsset: 'assets/images/icon_temple.webp',
+      onTap: _openTemples,
+    ),
+    AanmeegamMenuItem(
+      label: 'ஜோதிடர் பதில்கள்',
+      iconKind: MenuIconKind.marriage,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF37474F), Color(0xFF546E7A)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      onTap: () {
+        final c = _palangalById('jyotidar_padigal');
+        if (c != null) _openPalangalCategory(c, _home!.gregorianDate);
+      },
+    ),
+    AanmeegamMenuItem(
+      label: 'ஜோதிட தேடல்',
+      icon: Icons.manage_search_rounded,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      onTap: _openJyotishaSearch,
+    ),
+  ];
 
   List<AanmeegamMenuItem> _aanmeegamPalangalItems() {
     const orderedIds = [
@@ -508,43 +616,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<JyotishMenuItem> _jyotishItems() => [
-        JyotishMenuItem(
-          label: 'திருமண பொருத்தம்',
-          iconKind: MenuIconKind.marriage,
-          gradient: AppDecorations.forestGradient,
-          onTap: _openMarriagePorutham,
-        ),
-        JyotishMenuItem(
-          label: 'எண்கணிதம்',
-          iconKind: MenuIconKind.numerology,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF8B1A1A), Color(0xFFC62828)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          onTap: _openNumerology,
-        ),
-        JyotishMenuItem(
-          label: 'நாழிகை converter',
-          iconKind: MenuIconKind.nazhigai,
-          gradient: const LinearGradient(
-            colors: [Color(0xFFE65100), Color(0xFFF9A825)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          onTap: () => _openNazhigai(_home!.gregorianDate),
-        ),
-        JyotishMenuItem(
-          label: 'சந்திராஷ்டமம்',
-          iconKind: MenuIconKind.chandrashtamam,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0D3B66), Color(0xFF1565C0)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          onTap: () => _openChandrashtamam(_home!.gregorianDate),
-        ),
-      ];
+    JyotishMenuItem(
+      label: 'திருமண பொருத்தம்',
+      iconKind: MenuIconKind.marriage,
+      gradient: AppDecorations.forestGradient,
+      onTap: _openMarriagePorutham,
+    ),
+    JyotishMenuItem(
+      label: 'எண்கணிதம்',
+      iconKind: MenuIconKind.numerology,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF8B1A1A), Color(0xFFC62828)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      onTap: _openNumerology,
+    ),
+    JyotishMenuItem(
+      label: 'நாழிகை converter',
+      iconKind: MenuIconKind.nazhigai,
+      gradient: const LinearGradient(
+        colors: [Color(0xFFE65100), Color(0xFFF9A825)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      onTap: () => _openNazhigai(_home!.gregorianDate),
+    ),
+    JyotishMenuItem(
+      label: 'சந்திராஷ்டமம்',
+      iconKind: MenuIconKind.chandrashtamam,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF0D3B66), Color(0xFF1565C0)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      onTap: () => _openChandrashtamam(_home!.gregorianDate),
+    ),
+  ];
 
   List<PalangalMenuItem> _palangalItems() => _allPalangalCategories()
       .map(
@@ -595,7 +703,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: NavActionCard(
               compact: true,
-              gradient: const [AppColors.monthlyGreen, AppColors.monthlyGreenLight],
+              gradient: const [
+                AppColors.monthlyGreen,
+                AppColors.monthlyGreenLight,
+              ],
               iconKind: MenuIconKind.monthlyCalendar,
               title: 'மாத காட்டி',
               subtitle: 'விரதம் · பண்டிகை',
@@ -666,9 +777,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text(
             'தமிழ் மரபு · தினசரி வழிகாட்டி',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary.withValues(alpha: 0.7),
-                  fontStyle: FontStyle.italic,
-                ),
+              color: AppColors.textSecondary.withValues(alpha: 0.7),
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ),
       ],
@@ -680,6 +791,7 @@ class _HomeScreenState extends State<HomeScreen> {
       spiritualItems: _aanmeegamSpiritualItems(),
       palangalItems: _aanmeegamPalangalItems(),
       jyotishItems: _jyotishItems(),
+      onOpenTemples: _openTemples,
     );
   }
 
@@ -732,7 +844,9 @@ class _HomeScreenState extends State<HomeScreen> {
               emoji: '💡',
               title: 'இன்று ஒரு பொன்மொழி',
               body: indru.quoteTa,
-              detail: indru.quoteAuthorTa.isNotEmpty ? '— ${indru.quoteAuthorTa}' : '',
+              detail: indru.quoteAuthorTa.isNotEmpty
+                  ? '— ${indru.quoteAuthorTa}'
+                  : '',
               italicBody: true,
             ),
           ],
@@ -750,9 +864,9 @@ class _HomeScreenState extends State<HomeScreen> {
           AppCard(
             child: Text(
               'இன்றைய உள்ளடக்கம் விரைவில் புதுப்பிக்கப்படும்.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
           ),
           const SizedBox(height: 16),
@@ -768,7 +882,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: AppDecorations.spiritualGradient.colors.first.withValues(alpha: 0.35),
+                    color: AppDecorations.spiritualGradient.colors.first
+                        .withValues(alpha: 0.35),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -784,10 +899,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.goldLight.withValues(alpha: 0.4)),
+                        border: Border.all(
+                          color: AppColors.goldLight.withValues(alpha: 0.4),
+                        ),
                       ),
                       child: const Center(
-                        child: MenuIcon(kind: MenuIconKind.panchangam, size: 28),
+                        child: MenuIcon(
+                          kind: MenuIconKind.panchangam,
+                          size: 28,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -797,7 +917,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             'இன்றைய பஞ்சாங்கம்',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -805,14 +926,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'திதி · நட்சத்திரம் · நல்ல நேரம்',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: AppColors.goldLight,
-                                ),
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: AppColors.goldLight),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_rounded, color: AppColors.goldLight),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.goldLight,
+                    ),
                   ],
                 ),
               ),
@@ -830,7 +953,9 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.28))),
+          border: Border(
+            top: BorderSide(color: AppColors.gold.withValues(alpha: 0.28)),
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.maroon.withValues(alpha: 0.06),
@@ -852,7 +977,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 final selected = states.contains(WidgetState.selected);
                 return IconThemeData(
                   size: 22,
-                  color: selected ? AppColors.maroon : AppColors.textSecondary.withValues(alpha: 0.75),
+                  color: selected
+                      ? AppColors.maroon
+                      : AppColors.textSecondary.withValues(alpha: 0.75),
                 );
               }),
               labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -861,13 +988,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontSize: 9.5,
                   height: 1.0,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppColors.maroon : AppColors.textSecondary.withValues(alpha: 0.85),
+                  color: selected
+                      ? AppColors.maroon
+                      : AppColors.textSecondary.withValues(alpha: 0.85),
                 );
               }),
             ),
             child: NavigationBar(
               selectedIndex: _navIndex,
-              onDestinationSelected: (index) => setState(() => _navIndex = index),
+              onDestinationSelected: (index) =>
+                  setState(() => _navIndex = index),
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               animationDuration: const Duration(milliseconds: 280),
               destinations: const [
@@ -904,76 +1034,80 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorView(
-                  error: _error!,
-                  onRetry: _load,
-                  usesBundled: widget.repository.usesBundledCalendar,
-                )
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    await Future.wait([_load(), _loadStatusStories(), _loadIndru()]);
-                  },
-                  color: AppColors.maroon,
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverAppBar(
-                        expandedHeight: 88,
-                        floating: false,
-                        pinned: true,
-                        stretch: true,
-                        automaticallyImplyLeading: false,
-                        leadingWidth: 0,
-                        backgroundColor: AppColors.maroonDark,
-                        foregroundColor: Colors.white,
-                        centerTitle: false,
-                        titleSpacing: 0,
-                        flexibleSpace: FlexibleSpaceBar(
-                          expandedTitleScale: 1,
-                          titlePadding: const EdgeInsets.only(left: 16, bottom: 12, right: 16),
-                          title: _HomeHeaderTitle(
-                            greeting: _greeting(),
-                          ),
-                          background: Container(
-                            decoration: const BoxDecoration(
-                              gradient: AppDecorations.headerGradient,
-                            ),
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  right: -30,
-                                  top: -20,
-                                  child: Opacity(
-                                    opacity: 0.08,
-                                    child: Image.asset(
-                                      'assets/images/icon_panchangam.webp',
-                                      width: 140,
-                                      height: 140,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
+          ? _ErrorView(
+              error: _error!,
+              onRetry: _load,
+              usesBundled: widget.repository.usesBundledCalendar,
+            )
+          : RefreshIndicator(
+              onRefresh: () async {
+                await Future.wait([
+                  _load(),
+                  _loadStatusStories(),
+                  _loadIndru(),
+                ]);
+              },
+              color: AppColors.maroon,
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    expandedHeight: 88,
+                    floating: false,
+                    pinned: true,
+                    stretch: true,
+                    automaticallyImplyLeading: false,
+                    leadingWidth: 0,
+                    backgroundColor: AppColors.maroonDark,
+                    foregroundColor: Colors.white,
+                    centerTitle: false,
+                    titleSpacing: 0,
+                    flexibleSpace: FlexibleSpaceBar(
+                      expandedTitleScale: 1,
+                      titlePadding: const EdgeInsets.only(
+                        left: 16,
+                        bottom: 12,
+                        right: 16,
+                      ),
+                      title: _HomeHeaderTitle(greeting: _greeting()),
+                      background: Container(
+                        decoration: const BoxDecoration(
+                          gradient: AppDecorations.headerGradient,
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              right: -30,
+                              top: -20,
+                              child: Opacity(
+                                opacity: 0.08,
+                                child: Image.asset(
+                                  'assets/images/icon_panchangam.webp',
+                                  width: 140,
+                                  height: 140,
+                                  fit: BoxFit.cover,
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                          child: _buildTabContent(),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      child: _buildTabContent(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
 
 class _HomeHeaderTitle extends StatelessWidget {
-  const _HomeHeaderTitle({
-    required this.greeting,
-  });
+  const _HomeHeaderTitle({required this.greeting});
 
   final String greeting;
 
@@ -988,9 +1122,9 @@ class _HomeHeaderTitle extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.goldLight.withValues(alpha: 0.95),
-                fontWeight: FontWeight.w500,
-              ),
+            color: AppColors.goldLight.withValues(alpha: 0.95),
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
@@ -998,9 +1132,9 @@ class _HomeHeaderTitle extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -1022,7 +1156,9 @@ class _HeroDateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final parts = home.gregorianDisplay.split('-');
     final dayNum = parts.isNotEmpty ? parts[0] : '';
-    final monthYear = parts.length >= 3 ? '${parts[1]}-${parts[2]}' : home.gregorianDisplay;
+    final monthYear = parts.length >= 3
+        ? '${parts[1]}-${parts[2]}'
+        : home.gregorianDisplay;
 
     return Material(
       color: Colors.transparent,
@@ -1033,7 +1169,10 @@ class _HeroDateCard extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: AppDecorations.heroGradient,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.35), width: 1),
+            border: Border.all(
+              color: AppColors.gold.withValues(alpha: 0.35),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: AppColors.maroon.withValues(alpha: 0.35),
@@ -1052,15 +1191,21 @@ class _HeroDateCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.goldLight.withValues(alpha: 0.45)),
+                          border: Border.all(
+                            color: AppColors.goldLight.withValues(alpha: 0.45),
+                          ),
                         ),
                         child: Text(
                           home.bannerLineTa,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
                                 color: AppColors.goldLight,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1074,7 +1219,11 @@ class _HeroDateCard extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: const Center(
-                          child: MenuIcon(kind: MenuIconKind.panchangam, size: 20, color: AppColors.goldLight),
+                          child: MenuIcon(
+                            kind: MenuIconKind.panchangam,
+                            size: 20,
+                            color: AppColors.goldLight,
+                          ),
                         ),
                       ),
                     ],
@@ -1086,7 +1235,8 @@ class _HeroDateCard extends StatelessWidget {
                     children: [
                       Text(
                         dayNum,
-                        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        style: Theme.of(context).textTheme.displayLarge
+                            ?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               height: 1,
@@ -1107,7 +1257,8 @@ class _HeroDateCard extends StatelessWidget {
                           children: [
                             Text(
                               monthYear,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
                                     color: AppColors.goldLight,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -1115,9 +1266,8 @@ class _HeroDateCard extends StatelessWidget {
                             if (today != null)
                               Text(
                                 today!.subtitleLine2Ta,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white70,
-                                    ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.white70),
                               ),
                           ],
                         ),
@@ -1128,7 +1278,10 @@ class _HeroDateCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
@@ -1137,15 +1290,18 @@ class _HeroDateCard extends StatelessWidget {
                         today!.subtitleLine1Ta,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.92),
-                              height: 1.4,
-                            ),
+                          color: Colors.white.withValues(alpha: 0.92),
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
                   const SizedBox(height: 14),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.gold.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -1153,11 +1309,16 @@ class _HeroDateCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.touch_app_rounded, color: AppColors.goldLight, size: 16),
+                        const Icon(
+                          Icons.touch_app_rounded,
+                          color: AppColors.goldLight,
+                          size: 16,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'முழு விவரம் பார்க்க',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
                                 color: AppColors.goldLight,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1224,22 +1385,25 @@ class _TempleHeroButton extends StatelessWidget {
                       Text(
                         'பிரபல கோவில்கள்',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'படங்களுடன் ஆன்மிக யாத்திரை வழிகாட்டி',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.goldLight,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.goldLight,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_forward_rounded, color: AppColors.goldLight),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: AppColors.goldLight,
+                ),
               ],
             ),
           ),
@@ -1278,9 +1442,9 @@ class _IndruSectionCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.maroon,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.maroon,
+                  ),
                 ),
               ),
             ],
@@ -1289,19 +1453,19 @@ class _IndruSectionCard extends StatelessWidget {
           Text(
             body,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.5,
-                  fontStyle: italicBody ? FontStyle.italic : FontStyle.normal,
-                  color: AppColors.textPrimary,
-                ),
+              height: 1.5,
+              fontStyle: italicBody ? FontStyle.italic : FontStyle.normal,
+              color: AppColors.textPrimary,
+            ),
           ),
           if (detail.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               detail,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    height: 1.45,
-                    color: AppColors.textSecondary,
-                  ),
+                height: 1.45,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ],
@@ -1330,21 +1494,33 @@ class _ErrorView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.maroon.withValues(alpha: 0.6)),
+              Icon(
+                Icons.cloud_off_rounded,
+                size: 48,
+                color: AppColors.maroon.withValues(alpha: 0.6),
+              ),
               const SizedBox(height: 16),
               Text(
                 usesBundled ? 'தரவு இல்லை' : 'இணைப்பு தோல்வி',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text(error, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
               const SizedBox(height: 8),
               Text(
                 usesBundled
                     ? 'ஆஃப்லைன்: சென்னை 2026 தரவு மட்டும் (365 நாட்கள்).'
                     : 'இணையம் தேவை — அல்லது சென்னை (ஆஃப்லைன்) தேர்வு செய்யுங்கள்.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 20),
               FilledButton.icon(
@@ -1354,7 +1530,10 @@ class _ErrorView extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.maroon,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ],

@@ -235,6 +235,16 @@ class IndruDaily(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class TempleDailyPush(Base):
+    """Tracks one temple push per calendar day (IST)."""
+
+    __tablename__ = "temple_daily_pushes"
+
+    push_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    temple_slug: Mapped[str] = mapped_column(String(96))
+    sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Temple(Base):
     """Famous temple directory content for spiritual discovery screens."""
 

@@ -28,9 +28,11 @@ import 'spiritual_static_bundle.dart';
 
 /// Hybrid data access: bundled Chennai 2026 SQLite offline + API for other cities.
 class CalendarRepository {
-  CalendarRepository._({required ApiService? api, required LocalCalendarService local})
-      : _api = api,
-        _local = local;
+  CalendarRepository._({
+    required ApiService? api,
+    required LocalCalendarService local,
+  }) : _api = api,
+       _local = local;
 
   final ApiService? _api;
   final LocalCalendarService _local;
@@ -207,7 +209,10 @@ class CalendarRepository {
     required DateTime date,
   }) {
     if (!_hasApi) {
-      return _local.fetchChandrashtamam(birthRashiIndex: birthRashiIndex, date: date);
+      return _local.fetchChandrashtamam(
+        birthRashiIndex: birthRashiIndex,
+        date: date,
+      );
     }
     return _online.fetchChandrashtamam(
       cityId: cityId,
@@ -216,7 +221,10 @@ class CalendarRepository {
     );
   }
 
-  Future<NumerologyResult> getNumerology({required String name, required DateTime date}) {
+  Future<NumerologyResult> getNumerology({
+    required String name,
+    required DateTime date,
+  }) {
     if (!_hasApi) {
       return _local.fetchNumerology(name: name, date: date);
     }
@@ -263,7 +271,10 @@ class CalendarRepository {
     required DateTime date,
   }) {
     if (!_hasApi) {
-      return _local.fetchTarabalam(birthNakshatraIndex: birthNakshatraIndex, date: date);
+      return _local.fetchTarabalam(
+        birthNakshatraIndex: birthNakshatraIndex,
+        date: date,
+      );
     }
     return _online.fetchTarabalam(
       cityId: cityId,
@@ -280,19 +291,24 @@ class CalendarRepository {
     return _local.fetchPalangalArticles(categoryId);
   }
 
-  Future<PalangalArticleDetail> getPalangalArticle(String categoryId, int articleId) {
+  Future<PalangalArticleDetail> getPalangalArticle(
+    String categoryId,
+    int articleId,
+  ) {
     return _local.fetchPalangalArticle(categoryId, articleId);
   }
 
   /// Admin status stories — requires network (not bundled).
   Future<List<StatusStory>> getStatusStories() => _online.fetchStatusStories();
 
-  Future<List<BookCategory>> getLibraryCategories() => _online.fetchLibraryCategories();
+  Future<List<BookCategory>> getLibraryCategories() =>
+      _online.fetchLibraryCategories();
 
   Future<List<LibraryBook>> getLibraryBooks(String categoryId) =>
       _online.fetchLibraryBooks(categoryId);
 
-  Future<List<MetalRateCity>> getMetalRateCities() => _online.fetchMetalRateCities();
+  Future<List<MetalRateCity>> getMetalRateCities() =>
+      _online.fetchMetalRateCities();
 
   Future<MetalRates> getMetalRates({String? cityId, String period = '7d'}) =>
       _online.fetchMetalRates(cityId: cityId ?? this.cityId, period: period);
@@ -309,7 +325,7 @@ class CalendarRepository {
 
   Future<Post> getPost(String postId) => _online.fetchPost(postId);
 
-  Future<List<Temple>> getTemples({int limit = 30}) async {
+  Future<List<Temple>> getTemples({int limit = 30, int offset = 0}) async {
     if (!_hasApi) {
       debugPrint(
         'Temples: API disabled (offline=${AppConfig.offlineMode}, hasApi=$_hasApi)',
@@ -317,11 +333,22 @@ class CalendarRepository {
       return const [];
     }
     try {
-      return await _online.fetchTemples(limit: limit);
+      return await _online.fetchTemples(limit: limit, offset: offset);
     } catch (error, stackTrace) {
       debugPrint('Temples: fetch failed -> $error');
       debugPrintStack(stackTrace: stackTrace);
       return const [];
+    }
+  }
+
+  Future<Temple?> getTempleBySlug(String slug) async {
+    if (!_hasApi || slug.isEmpty) return null;
+    try {
+      return await _online.fetchTempleBySlug(slug);
+    } catch (error, stackTrace) {
+      debugPrint('Temple detail: fetch failed -> $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return null;
     }
   }
 

@@ -1631,10 +1631,15 @@ def sync_temples(db: Session) -> int:
     return synced
 
 
-def list_temples(db: Session, limit: int = 30) -> list[Temple]:
+def list_temples(db: Session, limit: int = 30, offset: int = 0) -> list[Temple]:
     return (
         db.query(Temple)
         .order_by(Temple.is_featured.desc(), Temple.sort_order.asc(), Temple.id.asc())
+        .offset(offset)
         .limit(limit)
         .all()
     )
+
+
+def get_temple_by_slug(db: Session, slug: str) -> Temple | None:
+    return db.query(Temple).filter(Temple.slug == slug).first()

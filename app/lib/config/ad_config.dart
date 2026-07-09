@@ -61,6 +61,11 @@ class AdConfig {
     defaultValue: 'ca-app-pub-4789468551786381/5602054301',
   );
 
+  static const String androidTempleNativeUnitId = String.fromEnvironment(
+    'ADMOB_ANDROID_TEMPLE_NATIVE_ID',
+    defaultValue: 'ca-app-pub-4789468551786381/7645224713',
+  );
+
   static const String iosNativeUnitId = String.fromEnvironment(
     'ADMOB_IOS_NATIVE_ID',
     defaultValue: 'ca-app-pub-3940256099942544/3986624511',
@@ -78,6 +83,11 @@ class AdConfig {
 
   static const String iosBudgetNativeUnitId = String.fromEnvironment(
     'ADMOB_IOS_BUDGET_NATIVE_ID',
+    defaultValue: 'ca-app-pub-3940256099942544/3986624511',
+  );
+
+  static const String iosTempleNativeUnitId = String.fromEnvironment(
+    'ADMOB_IOS_TEMPLE_NATIVE_ID',
     defaultValue: 'ca-app-pub-3940256099942544/3986624511',
   );
 
@@ -100,8 +110,9 @@ class AdConfig {
   static String get interstitialUnitId =>
       Platform.isIOS ? iosInterstitialUnitId : androidInterstitialUnitId;
 
-  static String get budgetInterstitialUnitId =>
-      Platform.isIOS ? iosBudgetInterstitialUnitId : androidBudgetInterstitialUnitId;
+  static String get budgetInterstitialUnitId => Platform.isIOS
+      ? iosBudgetInterstitialUnitId
+      : androidBudgetInterstitialUnitId;
 
   static String get nativeUnitId =>
       Platform.isIOS ? iosNativeUnitId : androidNativeUnitId;
@@ -109,9 +120,13 @@ class AdConfig {
   static String get homeNativeUnitId =>
       Platform.isIOS ? iosHomeNativeUnitId : androidHomeNativeUnitId;
 
-  static String get metalRatesNativeUnitId =>
-      Platform.isIOS ? iosMetalRatesNativeUnitId : androidMetalRatesNativeUnitId;
+  static String get metalRatesNativeUnitId => Platform.isIOS
+      ? iosMetalRatesNativeUnitId
+      : androidMetalRatesNativeUnitId;
 
   static String get budgetNativeUnitId =>
       Platform.isIOS ? iosBudgetNativeUnitId : androidBudgetNativeUnitId;
+
+  static String get templeNativeUnitId =>
+      Platform.isIOS ? iosTempleNativeUnitId : androidTempleNativeUnitId;
 }

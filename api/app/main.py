@@ -14,6 +14,7 @@ from app.data.temples_service import IMAGES_DIR as TEMPLE_IMAGES_DIR
 from app.database import Base, SessionLocal, engine
 from app.metal_rates_scheduler import start_metal_rates_scheduler, stop_metal_rates_scheduler
 from app.indru_scheduler import bootstrap_indru, start_indru_scheduler, stop_indru_scheduler
+from app.temple_push_scheduler import start_temple_push_scheduler, stop_temple_push_scheduler
 from app.routers import admin, public
 from app.seed import ensure_cities
 
@@ -41,12 +42,18 @@ def _bootstrap_metal_rates() -> None:
 
 
 def _bootstrap_temples() -> None:
-    """Temples bootstrap is currently disabled.
+    """Seed curated temples on first deploy when the directory is empty."""
+    from app.data.temple_push_service import ensure_temples_synced
 
-    Reason: user requested to remove previously extracted temple data, and
-    we don't want the API to automatically re-populate it on every restart.
-    """
-    return
+    db = SessionLocal()
+    try:
+        count = ensure_temples_synced(db)
+        if count:
+            print(f"Temples ready: {count}")
+    except Exception as exc:
+        print(f"Temples bootstrap skipped: {exc}")
+    finally:
+        db.close()
 
 
 def _ensure_sqlite_columns() -> None:
@@ -88,7 +95,9 @@ async def lifespan(_app: FastAPI):
     bootstrap_indru()
     start_metal_rates_scheduler()
     start_indru_scheduler()
+    start_temple_push_scheduler()
     yield
+    stop_temple_push_scheduler()
     stop_indru_scheduler()
     stop_metal_rates_scheduler()
 

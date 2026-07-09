@@ -27,15 +27,22 @@ const kIndruNotificationRoute = 'indru';
 /// Payload prefix — tap opens [PostDetailScreen] (`post:<id>`).
 const kPostNotificationRoute = 'post';
 
+/// Payload prefix — tap opens [TempleDetailScreen] (`temple:<slug>`).
+const kTempleNotificationRoute = 'temple';
+
 /// FCM topics.
 const kMetalRatesFcmTopic = 'metal_rates_updates';
 const kPostsFcmTopic = 'posts_updates';
 const kIndruFcmTopic = 'indru_updates';
+const kTemplesFcmTopic = 'temples_updates';
 
 String postNotificationPayload(String postId) => '$kPostNotificationRoute:$postId';
 
+String templeNotificationPayload(String slug) => '$kTempleNotificationRoute:$slug';
+
 const _postFcmNotificationId = 3001;
 const _indruFcmNotificationId = 4001;
+const _templeFcmNotificationId = 5001;
 const _metalFcmNotificationId = 2001;
 const _postsChannelId = 'posts';
 const _postsChannelName = 'பதிவுகள்';
@@ -44,6 +51,10 @@ const _indruChannelId = 'indru';
 const _indruChannelName = 'இன்று';
 const _indruChannelDescription = 'இன்று தினசரி தகவல் நினைவூட்டல்கள்';
 const _indruTitleFallbackTa = 'இன்று — தினசரி தகவல்கள்';
+const _templeChannelId = 'temples';
+const _templeChannelName = 'பிரபல கோவில்கள்';
+const _templeChannelDescription = 'தினசரி கோவில் தகவல் நினைவூட்டல்கள்';
+const _templeTitleFallbackTa = 'இன்றைய பிரபல கோவில்';
 const _metalChannelId = 'metal_rates';
 const _metalChannelName = 'தங்கம் & வெள்ளி நிலவரம்';
 const _metalChannelDescription = 'இன்றைய தங்கம் மற்றும் வெள்ளி விலை நினைவூட்டல்';
@@ -201,6 +212,53 @@ Future<NotificationDetails> _buildIndruNotificationDetails({
   );
 }
 
+Future<NotificationDetails> _buildTempleNotificationDetails({
+  required String title,
+  required String body,
+  String? imageUrl,
+}) async {
+  AndroidNotificationDetails androidDetails;
+
+  if (imageUrl != null && imageUrl.isNotEmpty) {
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        androidDetails = AndroidNotificationDetails(
+          _templeChannelId,
+          _templeChannelName,
+          channelDescription: _templeChannelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+          styleInformation: BigPictureStyleInformation(
+            ByteArrayAndroidBitmap(response.bodyBytes),
+            contentTitle: body.isNotEmpty ? title : null,
+            summaryText: body.isNotEmpty ? body : null,
+            hideExpandedLargeIcon: true,
+          ),
+        );
+        return NotificationDetails(
+          android: androidDetails,
+          iOS: const DarwinNotificationDetails(),
+        );
+      }
+    } catch (_) {
+      // Fall back to text-only notification.
+    }
+  }
+
+  androidDetails = AndroidNotificationDetails(
+    _templeChannelId,
+    _templeChannelName,
+    channelDescription: _templeChannelDescription,
+    importance: Importance.high,
+    priority: Priority.high,
+  );
+  return NotificationDetails(
+    android: androidDetails,
+    iOS: const DarwinNotificationDetails(),
+  );
+}
+
 Future<void> _displayIndruNotificationFromData(
   Map<String, dynamic> data, {
   FlutterLocalNotificationsPlugin? plugin,
@@ -286,6 +344,50 @@ Future<void> _displayPostNotificationFromData(
   );
 }
 
+Future<void> _displayTempleNotificationFromData(
+  Map<String, dynamic> data, {
+  FlutterLocalNotificationsPlugin? plugin,
+}) async {
+  final slug = data['temple_slug']?.toString() ?? '';
+  if (slug.isEmpty) return;
+
+  final title = data['title']?.toString() ?? _templeTitleFallbackTa;
+  final body = data['body']?.toString() ?? '';
+  final imageUrl = data['image_url']?.toString();
+
+  final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+  if (plugin == null) {
+    await _initLocalNotificationsPlugin(activePlugin);
+  }
+
+  if (Platform.isAndroid) {
+    final android = activePlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _templeChannelId,
+        _templeChannelName,
+        description: _templeChannelDescription,
+        importance: Importance.high,
+      ),
+    );
+  }
+
+  final details = await _buildTempleNotificationDetails(
+    title: title,
+    body: body,
+    imageUrl: imageUrl,
+  );
+
+  await activePlugin.show(
+    id: _templeFcmNotificationId,
+    title: title,
+    body: body.isNotEmpty ? body : null,
+    notificationDetails: details,
+    payload: templeNotificationPayload(slug),
+  );
+}
+
 Future<void> _displayMetalRatesNotificationFromData(
   Map<String, dynamic> data, {
   FlutterLocalNotificationsPlugin? plugin,
@@ -337,6 +439,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await _displayPostNotificationFromData(message.data);
   } else if (route == kIndruNotificationRoute) {
     await _displayIndruNotificationFromData(message.data);
+  } else if (route == kTempleNotificationRoute) {
+    await _displayTempleNotificationFromData(message.data);
   } else if (route == kMetalRatesNotificationRoute) {
     await _displayMetalRatesNotificationFromData(message.data);
   }
@@ -468,6 +572,14 @@ class NotificationService {
           importance: Importance.high,
         ),
       );
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _templeChannelId,
+          _templeChannelName,
+          description: _templeChannelDescription,
+          importance: Importance.high,
+        ),
+      );
     }
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -496,6 +608,7 @@ class NotificationService {
     }
     await FirebaseMessaging.instance.subscribeToTopic(kPostsFcmTopic);
     await FirebaseMessaging.instance.subscribeToTopic(kIndruFcmTopic);
+    await FirebaseMessaging.instance.subscribeToTopic(kTemplesFcmTopic);
 
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) {
@@ -825,7 +938,13 @@ class NotificationService {
       _showPostForeground(message);
     } else if (route == kIndruNotificationRoute) {
       _showIndruForeground(message);
+    } else if (route == kTempleNotificationRoute) {
+      _showTempleForeground(message);
     }
+  }
+
+  void _showTempleForeground(RemoteMessage message) {
+    unawaited(_displayTempleNotificationFromData(message.data, plugin: _plugin));
   }
 
   void _showIndruForeground(RemoteMessage message) {
@@ -854,6 +973,13 @@ class NotificationService {
       final postId = data['post_id']?.toString();
       if (postId != null && postId.isNotEmpty) {
         _dispatchNotificationTap(postNotificationPayload(postId));
+      }
+      return;
+    }
+    if (route == kTempleNotificationRoute) {
+      final slug = data['temple_slug']?.toString();
+      if (slug != null && slug.isNotEmpty) {
+        _dispatchNotificationTap(templeNotificationPayload(slug));
       }
     }
   }

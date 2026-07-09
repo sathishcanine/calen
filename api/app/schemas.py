@@ -542,3 +542,19 @@ class IndruDailyIn(BaseModel):
     kural_ta: str = ""
     kural_meaning_ta: str = ""
     locked: bool = True
+
+
+class TempleOut(BaseModel):
+    id: int
+    slug: str
+    name_ta: str
+    name_en: str
+    location_ta: str
+    deity_ta: str
+    description_ta: str
+    image_url: str
+    source_label: str
+    source_url: str
+    sort_order: int
+    is_featured: bool
+    updated_at: datetime | None = None

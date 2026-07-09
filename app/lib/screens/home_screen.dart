@@ -32,6 +32,7 @@ import 'kari_naatkal_screen.dart';
 import 'metal_rates_screen.dart';
 import 'todays_panchangam_screen.dart';
 import 'pancha_pakshi_screen.dart';
+import 'temples/temples_screen.dart';
 import 'vastu_screen.dart';
 import 'budget/budget_screen.dart';
 import 'library/library_screen.dart';
@@ -256,6 +257,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openTemples() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TemplesScreen(repository: widget.repository)),
+    );
+  }
+
   void _openMarriagePorutham() {
     Navigator.push(
       context,
@@ -418,6 +426,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           imageAsset: 'assets/images/icon_temple.webp',
           onTap: () => _openVastu(_home!.gregorianDate.year),
+        ),
+        AanmeegamMenuItem(
+          label: 'பிரபல கோவில்கள்',
+          iconKind: MenuIconKind.vastu,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF512DA8), Color(0xFF7E57C2)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          imageAsset: 'assets/images/icon_temple.webp',
+          onTap: _openTemples,
         ),
         AanmeegamMenuItem(
           label: 'ஜோதிடர் பதில்கள்',
@@ -624,6 +643,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildCalendarCards(),
         const SizedBox(height: 20),
         MetalRatesMenuCard(onTap: _openMetalRates),
+        const SizedBox(height: 14),
+        _TempleHeroButton(onTap: _openTemples),
         const SizedBox(height: 24),
         SpiritualMenuGrid(
           onOpenPanchangam: () => _openTodaysPanchangam(_home!.gregorianDate),
@@ -633,6 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onOpenKariNaatkal: () => _openKariNaatkal(_home!.gregorianDate),
           onOpenVastu: () => _openVastu(_home!.gregorianDate.year),
           onOpenPanchaPakshi: () => _openPanchaPakshi(_home!.gregorianDate),
+          onOpenTemples: _openTemples,
         ),
         const SizedBox(height: 24),
         JyotishPalangalMenus(
@@ -1145,6 +1167,80 @@ class _HeroDateCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TempleHeroButton extends StatelessWidget {
+  const _TempleHeroButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2E1A47), Color(0xFF5B2E91)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2E1A47).withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/icon_temple.webp',
+                    width: 62,
+                    height: 62,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'பிரபல கோவில்கள்',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'படங்களுடன் ஆன்மிக யாத்திரை வழிகாட்டி',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.goldLight,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_rounded, color: AppColors.goldLight),
+              ],
             ),
           ),
         ),

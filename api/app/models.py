@@ -233,3 +233,23 @@ class IndruDaily(Base):
     locked: Mapped[bool] = mapped_column(default=False)
     source: Mapped[str] = mapped_column(String(16), default="cron")
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Temple(Base):
+    """Famous temple directory content for spiritual discovery screens."""
+
+    __tablename__ = "temples"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(96), unique=True, index=True)
+    name_ta: Mapped[str] = mapped_column(String(256))
+    name_en: Mapped[str] = mapped_column(String(256))
+    location_ta: Mapped[str] = mapped_column(String(256), default="")
+    deity_ta: Mapped[str] = mapped_column(String(256), default="")
+    description_ta: Mapped[str] = mapped_column(Text, default="")
+    image_url: Mapped[str] = mapped_column(Text, default="")
+    source_label: Mapped[str] = mapped_column(String(64), default="Wikipedia")
+    source_url: Mapped[str] = mapped_column(Text, default="")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_featured: Mapped[bool] = mapped_column(default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

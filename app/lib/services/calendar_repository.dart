@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
 import '../config/api_config.dart';
@@ -17,6 +18,7 @@ import '../models/library_book.dart';
 import '../models/post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
+import '../models/temple.dart';
 import 'api_service.dart';
 import 'local_calendar_service.dart';
 import 'local_database.dart';
@@ -306,6 +308,22 @@ class CalendarRepository {
   }
 
   Future<Post> getPost(String postId) => _online.fetchPost(postId);
+
+  Future<List<Temple>> getTemples({int limit = 30}) async {
+    if (!_hasApi) {
+      debugPrint(
+        'Temples: API disabled (offline=${AppConfig.offlineMode}, hasApi=$_hasApi)',
+      );
+      return const [];
+    }
+    try {
+      return await _online.fetchTemples(limit: limit);
+    } catch (error, stackTrace) {
+      debugPrint('Temples: fetch failed -> $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return const [];
+    }
+  }
 
   String formatDate(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 }

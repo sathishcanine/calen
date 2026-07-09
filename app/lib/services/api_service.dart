@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -19,6 +20,7 @@ import '../models/library_book.dart';
 import '../models/post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
+import '../models/temple.dart';
 
 class ApiService {
   ApiService({http.Client? client}) : _client = client ?? http.Client();
@@ -394,5 +396,14 @@ class ApiService {
     final res = await _client.get(_uri('/posts/$postId'));
     if (res.statusCode != 200) throw Exception('Post failed: ${res.body}');
     return Post.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<List<Temple>> fetchTemples({int limit = 30}) async {
+    final res = await _client
+        .get(_uri('/spiritual/temples', {'limit': '$limit'}))
+        .timeout(const Duration(seconds: 12));
+    if (res.statusCode != 200) throw Exception('Temples failed: ${res.body}');
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list.map((e) => Temple.fromJson(e as Map<String, dynamic>)).toList();
   }
 }

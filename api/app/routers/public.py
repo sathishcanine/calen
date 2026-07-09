@@ -23,6 +23,7 @@ from app.data.status_stories_service import PUBLIC_LIMIT, list_stories as list_s
 from app.data import books_service
 from app.data import posts_service
 from app.data.indru_service import get_indru_for_date, indru_to_dict
+from app.data.temples_service import list_temples
 from app.database import get_db
 from app.ingestion.spiritual_data import get_daily_fields
 from app.models import City, DailyCalendar, MonthCalendar
@@ -72,6 +73,7 @@ from app.schemas import (
     LibraryBookOut,
     PostOut,
     IndruDailyOut,
+    TempleOut,
 )
 from app.serializers import daily_to_schema, month_to_schema
 
@@ -175,6 +177,37 @@ def library_books(
 @router.get("/spiritual/metal-rates/cities", response_model=list[MetalRateCityOut])
 def metal_rate_cities():
     return [MetalRateCityOut(**c) for c in list_metal_cities()]
+
+
+def _temple_out(entry, request: Request) -> TempleOut:
+    base = str(request.base_url).rstrip("/")
+    image_url = ""
+    if entry.image_url:
+        image_url = f"{base}{settings.api_prefix}/temple-media/{entry.image_url}"
+    return TempleOut(
+        id=entry.id,
+        slug=entry.slug,
+        name_ta=entry.name_ta,
+        name_en=entry.name_en,
+        location_ta=entry.location_ta,
+        deity_ta=entry.deity_ta,
+        description_ta=entry.description_ta,
+        image_url=image_url,
+        source_label=entry.source_label,
+        source_url=entry.source_url,
+        sort_order=entry.sort_order,
+        is_featured=entry.is_featured,
+        updated_at=entry.updated_at,
+    )
+
+
+@router.get("/spiritual/temples", response_model=list[TempleOut])
+def spiritual_temples(
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Query(default=30, ge=1, le=100),
+):
+    return [_temple_out(row, request) for row in list_temples(db, limit=limit)]
 
 
 @router.get("/spiritual/metal-rates", response_model=MetalRatesOut)

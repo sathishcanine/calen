@@ -33,6 +33,7 @@ class SpiritualMenuGrid extends StatelessWidget {
     required this.onOpenKariNaatkal,
     required this.onOpenVastu,
     required this.onOpenPanchaPakshi,
+    required this.onOpenTemples,
   });
 
   final VoidCallback onOpenPanchangam;
@@ -42,6 +43,7 @@ class SpiritualMenuGrid extends StatelessWidget {
   final VoidCallback onOpenKariNaatkal;
   final VoidCallback onOpenVastu;
   final VoidCallback onOpenPanchaPakshi;
+  final VoidCallback onOpenTemples;
 
   List<SpiritualMenuItem> _items() => [
         SpiritualMenuItem(
@@ -93,6 +95,17 @@ class SpiritualMenuGrid extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
           onTap: onOpenVastu,
+          imageAsset: 'assets/images/icon_temple.webp',
+        ),
+        SpiritualMenuItem(
+          label: 'பிரபல கோவில்கள்',
+          iconKind: MenuIconKind.vastu,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF512DA8), Color(0xFF7E57C2)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          onTap: onOpenTemples,
           imageAsset: 'assets/images/icon_temple.webp',
         ),
         SpiritualMenuItem(

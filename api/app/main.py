@@ -10,6 +10,7 @@ from app.data.status_stories_service import IMAGES_DIR
 from app.data.books_service import PDFS_DIR, PREVIEWS_DIR, seed_default_categories
 from app.data.posts_service import IMAGES_DIR as POST_IMAGES_DIR
 from app.data.indru_push_service import IMAGES_DIR as INDRU_PUSH_IMAGES_DIR
+from app.data.temples_service import IMAGES_DIR as TEMPLE_IMAGES_DIR
 from app.database import Base, SessionLocal, engine
 from app.metal_rates_scheduler import start_metal_rates_scheduler, stop_metal_rates_scheduler
 from app.indru_scheduler import bootstrap_indru, start_indru_scheduler, stop_indru_scheduler
@@ -37,6 +38,15 @@ def _bootstrap_metal_rates() -> None:
         print(f"Metal rates bootstrap skipped: {exc}")
     finally:
         db.close()
+
+
+def _bootstrap_temples() -> None:
+    """Temples bootstrap is currently disabled.
+
+    Reason: user requested to remove previously extracted temple data, and
+    we don't want the API to automatically re-populate it on every restart.
+    """
+    return
 
 
 def _ensure_sqlite_columns() -> None:
@@ -74,6 +84,7 @@ async def lifespan(_app: FastAPI):
     finally:
         db.close()
     _bootstrap_metal_rates()
+    _bootstrap_temples()
     bootstrap_indru()
     start_metal_rates_scheduler()
     start_indru_scheduler()
@@ -105,6 +116,7 @@ PDFS_DIR.mkdir(parents=True, exist_ok=True)
 PREVIEWS_DIR.mkdir(parents=True, exist_ok=True)
 POST_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 INDRU_PUSH_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+TEMPLE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount(f"{prefix}/status-media", StaticFiles(directory=str(IMAGES_DIR)), name="status-media")
 app.mount(f"{prefix}/book-media", StaticFiles(directory=str(PDFS_DIR)), name="book-media")
 app.mount(
@@ -113,6 +125,11 @@ app.mount(
     name="book-preview-media",
 )
 app.mount(f"{prefix}/post-media", StaticFiles(directory=str(POST_IMAGES_DIR)), name="post-media")
+app.mount(
+    f"{prefix}/temple-media",
+    StaticFiles(directory=str(TEMPLE_IMAGES_DIR)),
+    name="temple-media",
+)
 app.mount(
     f"{prefix}/indru-push-media",
     StaticFiles(directory=str(INDRU_PUSH_IMAGES_DIR)),

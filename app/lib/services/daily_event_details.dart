@@ -81,6 +81,22 @@ class DailyEventResolver {
       header.add('சிவராத்திரி');
       if (!icons.contains('shiva')) icons.add('shiva');
     }
+    if (tithiText.contains('அஷ்டமி')) {
+      header.add('அஷ்டமி');
+      if (!icons.contains('ashtami')) icons.add('ashtami');
+    }
+    if (tithiText.contains('நவமி')) {
+      header.add('நவமி');
+      if (!icons.contains('navami')) icons.add('navami');
+    }
+    if (tithiText.contains('துவாதசி')) {
+      header.add('துவாதசி');
+      if (!icons.contains('dwadasi')) icons.add('dwadasi');
+    }
+    if (tithiText.contains('பிரதமை')) {
+      header.add('பிரதமை');
+      if (!icons.contains('pradhamai')) icons.add('pradhamai');
+    }
     if (nakText.contains('கிருத்திகை')) {
       header.add('கிருத்திகை');
       if (!icons.contains('star')) icons.add('star');
@@ -145,6 +161,10 @@ class DailyEventResolver {
       'amavasai',
       'sarva_amavasai',
       'pournami',
+      'ashtami',
+      'navami',
+      'dwadasi',
+      'pradhamai',
       'vastu',
     ];
     final ranked = icons.toSet();

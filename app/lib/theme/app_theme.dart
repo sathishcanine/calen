@@ -23,6 +23,17 @@ class AppColors {
   static const auspicious = Color(0xFF2D6A4F);
   static const inauspicious = Color(0xFF8B2500);
   static const sundayRed = Color(0xFFD32F2F);
+
+  // Premium panchangam palette — "நாள் காட்டி" detail screen.
+  static const crimson = Color(0xFF9D174D);
+  static const crimsonDark = Color(0xFF741238);
+  static const crimsonSoft = Color(0xFFFCE7F0);
+  static const emerald = Color(0xFF15803D);
+  static const emeraldDark = Color(0xFF0F5C2C);
+  static const emeraldSoft = Color(0xFFE3F5E9);
+  static const numberRed = Color(0xFFDC2626);
+  static const softCream = Color(0xFFFFFDF6);
+  static const borderGrey = Color(0xFFE7E1D8);
 }
 
 class AppDecorations {
@@ -59,6 +70,24 @@ class AppDecorations {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static const crimsonGradient = LinearGradient(
+    colors: [AppColors.crimsonDark, AppColors.crimson],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const emeraldGradient = LinearGradient(
+    colors: [AppColors.emeraldDark, AppColors.emerald],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static BoxDecoration softCard({Color? color}) => BoxDecoration(
+        color: color ?? Colors.white,
+        borderRadius: BorderRadius.circular(cardRadiusSm),
+        border: Border.all(color: AppColors.borderGrey),
+      );
 
   static const heroGradient = LinearGradient(
     colors: [AppColors.maroonDark, AppColors.maroon, AppColors.maroonLight],

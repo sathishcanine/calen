@@ -76,9 +76,42 @@ class _CalendarDayIconPainter extends CustomPainter {
         _drawVastu(canvas, canvasSize);
       case 'crescent':
         _drawCrescent(canvas, canvasSize);
+      case 'ashtami':
+        _drawTithiBud(canvas, canvasSize, const Color(0xFF6A1B9A));
+      case 'navami':
+        _drawTithiBud(canvas, canvasSize, const Color(0xFFC62828));
+      case 'dwadasi':
+        _drawTithiBud(canvas, canvasSize, const Color(0xFF00695C));
+      case 'pradhamai':
+        _drawTithiBud(canvas, canvasSize, const Color(0xFFEF6C00));
       default:
         _drawDot(canvas, canvasSize);
     }
+  }
+
+  /// Tiny lotus-bud glyph shared by plain tithi-name badges (அஷ்டமி, நவமி…) —
+  /// same silhouette, distinct accent colour per tithi so the row stays legible
+  /// even at a very small footprint.
+  void _drawTithiBud(Canvas canvas, Size s, Color hue) {
+    final color = themed ? hue : hue;
+    final cx = s.width / 2;
+    final baseY = size * 0.82;
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(cx, baseY), width: size * 0.5, height: size * 0.14),
+      Paint()..color = color.withValues(alpha: 0.35),
+    );
+    for (final dx in [-0.2, 0.0, 0.2]) {
+      canvas.save();
+      canvas.translate(cx, baseY - size * 0.06);
+      canvas.rotate(dx * math.pi);
+      final petal = Path()
+        ..moveTo(0, 0)
+        ..quadraticBezierTo(size * 0.16, -size * 0.28, 0, -size * 0.56)
+        ..quadraticBezierTo(-size * 0.16, -size * 0.28, 0, 0);
+      canvas.drawPath(petal, Paint()..color = color);
+      canvas.restore();
+    }
+    canvas.drawCircle(Offset(cx, baseY - size * 0.08), size * 0.07, Paint()..color = AppColors.goldLight);
   }
 
   void _drawThaali(Canvas canvas, Size s) {

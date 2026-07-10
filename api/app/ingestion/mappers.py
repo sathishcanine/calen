@@ -64,6 +64,12 @@ def _fmt_time_ta(dt: datetime | None) -> str:
     return f"{h}.{m:02d}"
 
 
+def _fmt_time_range_ta(start: datetime | None, end: datetime | None) -> str:
+    if not start or not end:
+        return ""
+    return f"{_fmt_time_ta(start)} - {_fmt_time_ta(end)}"
+
+
 def _tithi_description(entries) -> str:
     parts = []
     for t in entries:
@@ -145,12 +151,13 @@ def daily_from_panchanga(
     masa = panchanga.masa.name if panchanga.masa else ""
     tithi_main = panchanga.tithi[0] if panchanga.tithi else None
     tithi_day = (tithi_main.index % 15) + 1 if tithi_main else 0
+    tamil_day = int(panchanga.sun_rashi.degree) + 1 if panchanga.sun_rashi else tithi_day
 
     samvatsara = panchanga.samvatsara
     subtitle1 = ""
     if panchanga.sun_rashi and panchanga.moon_rashi:
         subtitle1 = f"{panchanga.sun_rashi.name} மாதம் - {panchanga.ritu_solar} - {panchanga.ayana}"
-    subtitle2 = f"{samvatsara} - {masa} - {tithi_day}" if masa else samvatsara
+    subtitle2 = f"{samvatsara} - {masa} - {tamil_day}" if masa else samvatsara
 
     panchangam = []
     if panchanga.sun and panchanga.sun.sunrise:
@@ -184,20 +191,23 @@ def daily_from_panchanga(
     inauspicious = []
     if panchanga.rahu_kala:
         inauspicious.append(
-            {"name": "இராகு", "time": _fmt_time_range(panchanga.rahu_kala.starts_at, panchanga.rahu_kala.ends_at)}
+            {
+                "name": "இராகு",
+                "time": _fmt_time_range_ta(panchanga.rahu_kala.starts_at, panchanga.rahu_kala.ends_at),
+            }
         )
     if panchanga.gulika_kala:
         inauspicious.append(
             {
                 "name": "குளிகை",
-                "time": _fmt_time_range(panchanga.gulika_kala.starts_at, panchanga.gulika_kala.ends_at),
+                "time": _fmt_time_range_ta(panchanga.gulika_kala.starts_at, panchanga.gulika_kala.ends_at),
             }
         )
     if panchanga.yamagandam:
         inauspicious.append(
             {
                 "name": "எமகண்டம்",
-                "time": _fmt_time_range(panchanga.yamagandam.starts_at, panchanga.yamagandam.ends_at),
+                "time": _fmt_time_range_ta(panchanga.yamagandam.starts_at, panchanga.yamagandam.ends_at),
             }
         )
 
@@ -231,7 +241,7 @@ def daily_from_panchanga(
         "gregorian_display": gregorian_display,
         "subtitle_line1_ta": subtitle1,
         "subtitle_line2_ta": subtitle2,
-        "banner_line_ta": f"{masa} - {tithi_day}, {weekday}" if masa else f"{tamil_month} - {weekday}",
+        "banner_line_ta": f"{masa} - {tamil_day}, {weekday}" if masa else f"{tamil_month} - {weekday}",
         "events_ta": "",
         "nalla_neram_json": json.dumps(
             nalla_neram_from_gowri(gowri_panchangam["day_slots"], gowri_panchangam["night_slots"]),

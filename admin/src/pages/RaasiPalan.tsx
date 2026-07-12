@@ -54,7 +54,7 @@ const SIGN_NAMES = [
 ];
 
 function isFilled(s: RaasiPalanSign, period: RaasiPalanPeriod): boolean {
-  if (period === 'yearly') {
+  if (period === 'yearly' || period === 'weekly') {
     return Boolean(
       s.graham_sancharam_ta.trim() ||
         s.general_ta.trim() ||
@@ -73,7 +73,7 @@ function isFilled(s: RaasiPalanSign, period: RaasiPalanPeriod): boolean {
 
 function payloadFrom(s: RaasiPalanSign, period: RaasiPalanPeriod) {
   const base = EMPTY_SIGN(s.sign_index, s.sign_ta);
-  if (period === 'yearly') {
+  if (period === 'yearly' || period === 'weekly') {
     return {
       ...base,
       graham_sancharam_ta: s.graham_sancharam_ta,
@@ -83,6 +83,7 @@ function payloadFrom(s: RaasiPalanSign, period: RaasiPalanPeriod) {
       cautions_ta: s.cautions_ta,
     };
   }
+  // today / monthly
   return {
     ...base,
     general_ta: s.general_ta,
@@ -116,6 +117,7 @@ export default function RaasiPalan() {
     [period],
   );
   const isYearly = period === 'yearly';
+  const isWeeklyOrYearly = period === 'weekly' || period === 'yearly';
 
   function load(nextPeriod: RaasiPalanPeriod) {
     setLoading(true);
@@ -286,7 +288,7 @@ export default function RaasiPalan() {
             {active.sign_ta} — {periodMeta.label}
           </h3>
 
-          {isYearly ? (
+          {isWeeklyOrYearly ? (
             <>
               <label>
                 கிரக சஞ்சார பலன்கள்
@@ -317,7 +319,7 @@ export default function RaasiPalan() {
                 />
               </label>
               <label style={{ marginTop: 12, display: 'block' }}>
-                🌟 இந்த ஆண்டின் சிறப்புகள்
+                🌟 {isYearly ? 'இந்த ஆண்டின் சிறப்புகள்' : 'இந்த வாரத்தின் சிறப்புகள்'}
                 <textarea
                   rows={5}
                   value={active.special_ta}

@@ -22,6 +22,7 @@ import '../models/koodiya_thagaval_post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
 import '../models/temple.dart';
+import '../models/raasi_palan.dart';
 
 class ApiService {
   ApiService({http.Client? client}) : _client = client ?? http.Client();
@@ -537,5 +538,20 @@ class ApiService {
         .timeout(const Duration(seconds: 12));
     if (res.statusCode != 200) throw Exception('Temple failed: ${res.body}');
     return Temple.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<RaasiPalanContent> fetchRaasiPalan({
+    required String period,
+    required int signIndex,
+  }) async {
+    final res = await _client
+        .get(_uri('/spiritual/raasi-palan/$period/$signIndex'))
+        .timeout(const Duration(seconds: 12));
+    if (res.statusCode != 200) {
+      throw Exception('Raasi palan failed: ${res.body}');
+    }
+    return RaasiPalanContent.fromJson(
+      jsonDecode(res.body) as Map<String, dynamic>,
+    );
   }
 }

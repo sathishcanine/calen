@@ -13,8 +13,12 @@ class AdService {
   bool _initialized = false;
   InterstitialAd? _interstitialAd;
   bool _loadingInterstitial = false;
+  bool _sessionInterstitialShown = false;
 
   bool get isInitialized => _initialized;
+
+  /// Whether a session interstitial has already been shown (any screen).
+  bool get sessionInterstitialShown => _sessionInterstitialShown;
 
   Future<void> initialize() async {
     if (!AdConfig.enabled || !AdConfig.isSupported || _initialized) return;
@@ -68,8 +72,53 @@ class AdService {
       await preloadInterstitial();
       return;
     }
+    _sessionInterstitialShown = true;
     await ad.show();
     _interstitialAd = null;
+  }
+
+  /// Shows an interstitial at most once per app session, then [onFinished].
+  Future<void> showInterstitialOncePerSession({
+    required VoidCallback onFinished,
+    String? adUnitId,
+  }) async {
+    if (_sessionInterstitialShown || !AdConfig.enabled || !_initialized) {
+      onFinished();
+      return;
+    }
+
+    await InterstitialAd.load(
+      adUnitId: adUnitId ?? AdConfig.interstitialUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _sessionInterstitialShown = true;
+          var finished = false;
+          void finish() {
+            if (finished) return;
+            finished = true;
+            onFinished();
+          }
+
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              finish();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              debugPrint('Interstitial failed to show: $error');
+              finish();
+            },
+          );
+          ad.show();
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('Interstitial failed to load: $error');
+          onFinished();
+        },
+      ),
+    );
   }
 
   /// Loads and shows an interstitial for a specific unit, then runs [onFinished].

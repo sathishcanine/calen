@@ -9,6 +9,7 @@ import Stories from './pages/Stories';
 import Books from './pages/Books';
 import Posts from './pages/Posts';
 import IndruPushPage from './pages/IndruPush';
+import RaasiPalan from './pages/RaasiPalan';
 import { api } from './api';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,7 @@ function AdminLayout() {
         <NavLink to="/stories">Status stories</NavLink>
         <NavLink to="/books">Books library</NavLink>
         <NavLink to="/koodiya-thagaval-post">கூடிய தகவல்</NavLink>
+        <NavLink to="/raasi-palan">ராசி பலன்</NavLink>
         <NavLink to="/indru-push">இன்று push</NavLink>
         <button
           type="button"
@@ -51,6 +53,7 @@ function AdminLayout() {
           <Route path="/stories" element={<Stories />} />
           <Route path="/books" element={<Books />} />
           <Route path="/koodiya-thagaval-post" element={<Posts />} />
+          <Route path="/raasi-palan" element={<RaasiPalan />} />
           <Route path="/news-post" element={<Navigate to="/koodiya-thagaval-post" replace />} />
           <Route path="/posts" element={<Navigate to="/koodiya-thagaval-post" replace />} />
           <Route path="/indru-push" element={<IndruPushPage />} />

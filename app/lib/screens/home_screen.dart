@@ -38,6 +38,8 @@ import '../models/koodiya_thagaval_post.dart';
 import '../widgets/koodiya_thagaval_section.dart';
 import 'budget/budget_screen.dart';
 import 'library/library_screen.dart';
+import 'raasi_palan_hub_screen.dart';
+import '../widgets/zodiac_sign_icon.dart';
 
 /// SS1 — Home with hero date banner, daily preview, and navigation cards.
 class HomeScreen extends StatefulWidget {
@@ -768,7 +770,18 @@ class _HomeScreenState extends State<HomeScreen> {
           today: _today,
           onTap: () => _openDailyCalendar(_home!.gregorianDate),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+        _RaasiPalanHomeCard(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RaasiPalanHubScreen(
+                repository: widget.repository,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         _buildCalendarCards(),
         const SizedBox(height: 20),
         MetalRatesMenuCard(onTap: _openMetalRates),
@@ -1354,6 +1367,102 @@ class _HeroDateCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────
+// Raasi Palan home card – below hero date card
+// ─────────────────────────────────────────
+class _RaasiPalanHomeCard extends StatelessWidget {
+  const _RaasiPalanHomeCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2D0061), Color(0xFF4A148C), Color(0xFF6A1B9A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4A148C).withValues(alpha: 0.45),
+                blurRadius: 20,
+                offset: const Offset(0, 7),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title row
+                Row(
+                  children: [
+                    // Leo artwork as card icon
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: ZodiacSignIcon(
+                        index: 4, // Leo (சிம்மம்)
+                        size: 46,
+                        borderRadius: 10,
+                        showGoldenBg: true,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ராசி பலன்கள்',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'இன்று · வாரம் · மாதம் · ஆண்டு',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

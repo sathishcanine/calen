@@ -66,6 +66,11 @@ class AdConfig {
     defaultValue: 'ca-app-pub-4789468551786381/7645224713',
   );
 
+  static const String androidRaasiPalanNativeUnitId = String.fromEnvironment(
+    'ADMOB_ANDROID_RAASI_PALAN_NATIVE_ID',
+    defaultValue: 'ca-app-pub-4789468551786381/2100790972',
+  );
+
   static const String iosNativeUnitId = String.fromEnvironment(
     'ADMOB_IOS_NATIVE_ID',
     defaultValue: 'ca-app-pub-3940256099942544/3986624511',
@@ -88,6 +93,11 @@ class AdConfig {
 
   static const String iosTempleNativeUnitId = String.fromEnvironment(
     'ADMOB_IOS_TEMPLE_NATIVE_ID',
+    defaultValue: 'ca-app-pub-3940256099942544/3986624511',
+  );
+
+  static const String iosRaasiPalanNativeUnitId = String.fromEnvironment(
+    'ADMOB_IOS_RAASI_PALAN_NATIVE_ID',
     defaultValue: 'ca-app-pub-3940256099942544/3986624511',
   );
 
@@ -129,4 +139,8 @@ class AdConfig {
 
   static String get templeNativeUnitId =>
       Platform.isIOS ? iosTempleNativeUnitId : androidTempleNativeUnitId;
+
+  static String get raasiPalanNativeUnitId => Platform.isIOS
+      ? iosRaasiPalanNativeUnitId
+      : androidRaasiPalanNativeUnitId;
 }

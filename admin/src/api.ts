@@ -94,6 +94,53 @@ export interface IndruPush {
   created_at: string;
 }
 
+export type RaasiPalanPeriod = 'today' | 'weekly' | 'monthly' | 'yearly';
+
+export interface RaasiPalanSignIn {
+  general_ta: string;
+  nakshatra_palan_ta: string;
+  balam_ta: string;
+  kavanam_ta: string;
+  ninaivu_ta: string;
+  lucky_numbers_ta: string;
+  lucky_colors_ta: string;
+  deity_ta: string;
+  career_ta: string;
+  business_ta: string;
+  family_ta: string;
+  income_ta: string;
+  arts_ta: string;
+  investments_ta: string;
+  jyotish_view_ta: string;
+  cautions_ta: string;
+  special_ta: string;
+  lucky_days_ta: string;
+  chandrashtamam_ta: string;
+  remedy_ta: string;
+  graham_sancharam_ta: string;
+}
+
+export interface RaasiPalanSignBulkItem extends RaasiPalanSignIn {
+  sign_index: number;
+}
+
+export interface RaasiPalanSign extends RaasiPalanSignIn {
+  period: string;
+  period_label: string;
+  current_label: string;
+  updated_at: string | null;
+  sign_index: number;
+  sign_ta: string;
+}
+
+export interface RaasiPalanPeriodData {
+  period: string;
+  period_label: string;
+  current_label: string;
+  updated_at: string | null;
+  signs: RaasiPalanSign[];
+}
+
 export interface MetalRatesStatus {
   source: string | null;
   rate_date: string | null;
@@ -296,4 +343,23 @@ export const api = {
     request<IndruPush>(`/admin/indru/pushes/${id}/send`, { method: 'POST' }),
   deleteIndruPush: (id: string) =>
     request<{ ok: boolean }>(`/admin/indru/pushes/${id}`, { method: 'DELETE' }),
+
+  getRaasiPalanPeriod: (period: RaasiPalanPeriod) =>
+    request<RaasiPalanPeriodData>(`/admin/raasi-palan/${period}`),
+  getRaasiPalanSign: (period: RaasiPalanPeriod, signIndex: number) =>
+    request<RaasiPalanSign>(`/admin/raasi-palan/${period}/${signIndex}`),
+  saveRaasiPalanSign: (
+    period: RaasiPalanPeriod,
+    signIndex: number,
+    body: RaasiPalanSignIn,
+  ) =>
+    request<RaasiPalanSign>(`/admin/raasi-palan/${period}/${signIndex}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  saveRaasiPalanPeriod: (period: RaasiPalanPeriod, body: { signs: RaasiPalanSignBulkItem[] }) =>
+    request<RaasiPalanPeriodData>(`/admin/raasi-palan/${period}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
 };

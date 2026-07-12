@@ -12,6 +12,7 @@ from app.data import books_service
 from app.data import posts_service
 from app.data.post_content import resolve_blocks_for_api
 from app.data import indru_push_service
+from app.data import raasi_palan_service
 from app.push_service import send_indru_push, send_post_push
 from app.data.indru_service import (
     LOOKAHEAD_DAYS,
@@ -38,6 +39,10 @@ from app.schemas import (
     IndruDailyIn,
     AdminLoginIn,
     AdminLoginOut,
+    RaasiPalanSignIn,
+    RaasiPalanSignOut,
+    RaasiPalanPeriodIn,
+    RaasiPalanPeriodOut,
 )
 from app.serializers import daily_from_schema, daily_to_schema, month_from_schema, month_to_schema
 
@@ -593,6 +598,96 @@ def admin_delete_indru_push(push_id: str, db: Session = Depends(get_db)):
     if not indru_push_service.delete_push(db, push_id):
         raise HTTPException(404, detail="Indru push not found")
     return {"ok": True}
+
+
+def _raasi_sign_out(data: dict) -> RaasiPalanSignOut:
+    return RaasiPalanSignOut(
+        period=data.get("period") or "",
+        period_label=data.get("period_label") or "",
+        current_label=data.get("current_label") or "",
+        updated_at=data.get("updated_at"),
+        sign_index=int(data["sign_index"]),
+        sign_ta=data.get("sign_ta") or "",
+        general_ta=data.get("general_ta") or "",
+        nakshatra_palan_ta=data.get("nakshatra_palan_ta") or "",
+        balam_ta=data.get("balam_ta") or "",
+        kavanam_ta=data.get("kavanam_ta") or "",
+        ninaivu_ta=data.get("ninaivu_ta") or "",
+        lucky_numbers_ta=data.get("lucky_numbers_ta") or "",
+        lucky_colors_ta=data.get("lucky_colors_ta") or "",
+        deity_ta=data.get("deity_ta") or "",
+        career_ta=data.get("career_ta") or "",
+        business_ta=data.get("business_ta") or "",
+        family_ta=data.get("family_ta") or "",
+        income_ta=data.get("income_ta") or "",
+        arts_ta=data.get("arts_ta") or "",
+        investments_ta=data.get("investments_ta") or "",
+        jyotish_view_ta=data.get("jyotish_view_ta") or "",
+        cautions_ta=data.get("cautions_ta") or "",
+        special_ta=data.get("special_ta") or "",
+        lucky_days_ta=data.get("lucky_days_ta") or "",
+        chandrashtamam_ta=data.get("chandrashtamam_ta") or "",
+        remedy_ta=data.get("remedy_ta") or "",
+        graham_sancharam_ta=data.get("graham_sancharam_ta") or "",
+    )
+
+
+def _raasi_period_out(data: dict) -> RaasiPalanPeriodOut:
+    return RaasiPalanPeriodOut(
+        period=data["period"],
+        period_label=data.get("period_label") or "",
+        current_label=data.get("current_label") or "",
+        updated_at=data.get("updated_at"),
+        signs=[
+            _raasi_sign_out({
+                **s,
+                "period": data["period"],
+                "period_label": data.get("period_label") or "",
+                "current_label": data.get("current_label") or "",
+                "updated_at": data.get("updated_at"),
+            })
+            for s in data["signs"]
+        ],
+    )
+
+
+@secured.get("/raasi-palan/{period}", response_model=RaasiPalanPeriodOut)
+def admin_list_raasi_palan(period: str):
+    try:
+        return _raasi_period_out(raasi_palan_service.list_period(period))
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+
+
+@secured.get("/raasi-palan/{period}/{sign_index}", response_model=RaasiPalanSignOut)
+def admin_get_raasi_palan(period: str, sign_index: int):
+    try:
+        return _raasi_sign_out(raasi_palan_service.get_sign(period, sign_index))
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+
+
+@secured.put("/raasi-palan/{period}/{sign_index}", response_model=RaasiPalanSignOut)
+def admin_upsert_raasi_palan(period: str, sign_index: int, body: RaasiPalanSignIn):
+    try:
+        return _raasi_sign_out(
+            raasi_palan_service.upsert_sign(period, sign_index, body.model_dump())
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+
+
+@secured.put("/raasi-palan/{period}", response_model=RaasiPalanPeriodOut)
+def admin_upsert_raasi_palan_period(period: str, body: RaasiPalanPeriodIn):
+    try:
+        return _raasi_period_out(
+            raasi_palan_service.upsert_period(
+                period,
+                [s.model_dump() for s in body.signs],
+            )
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
 
 
 router.include_router(secured)

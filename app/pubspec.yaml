@@ -94,6 +94,7 @@ flutter:
     - assets/images/icon_panchangam.webp
     - assets/images/icon_temple.webp
     - assets/images/icon_metal_rates.png
+    - assets/images/zodiac/
     - assets/images/gods/
     - google_fonts/
 

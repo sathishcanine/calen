@@ -16,6 +16,7 @@ from app.data.palangal_content import get_article as palangal_article
 from app.data.palangal_content import list_articles as palangal_articles
 from app.data.palangal_content import list_categories as palangal_categories
 from app.data import jyotish_service
+from app.data import raasi_palan_service
 from app.data.vastu_service import get_vastu_articles, get_vastu_days, get_vastu_years
 from app.config import settings
 from app.data.metal_rates_service import get_rates, has_today, list_cities as list_metal_cities, sync_retail
@@ -67,6 +68,8 @@ from app.schemas import (
     PalangalCategoryOut,
     PalangalArticleOut,
     PalangalArticleDetailOut,
+    RaasiPalanSignOut,
+    RaasiPalanPeriodOut,
     StatusStoryOut,
     MetalRateCityOut,
     MetalRatesOut,
@@ -624,6 +627,61 @@ def jyotish_nakshatras():
 @router.get("/spiritual/jyotish/rashis", response_model=list[JyotishRashiOut])
 def jyotish_rashis():
     return [JyotishRashiOut(**r) for r in jyotish_service.list_rashis()]
+
+
+@router.get("/spiritual/raasi-palan/{period}", response_model=RaasiPalanPeriodOut)
+def raasi_palan_period(period: str):
+    try:
+        data = raasi_palan_service.list_period(period)
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+    return RaasiPalanPeriodOut(
+        period=data["period"],
+        period_label=data.get("period_label") or "",
+        current_label=data.get("current_label") or "",
+        updated_at=data.get("updated_at"),
+        signs=[
+            RaasiPalanSignOut(
+                period=data["period"],
+                period_label=data.get("period_label") or "",
+                current_label=data.get("current_label") or "",
+                updated_at=data.get("updated_at"),
+                sign_index=s["sign_index"],
+                sign_ta=s["sign_ta"],
+                general_ta=s.get("general_ta") or "",
+                nakshatra_palan_ta=s.get("nakshatra_palan_ta") or "",
+                balam_ta=s.get("balam_ta") or "",
+                kavanam_ta=s.get("kavanam_ta") or "",
+                ninaivu_ta=s.get("ninaivu_ta") or "",
+                lucky_numbers_ta=s.get("lucky_numbers_ta") or "",
+                lucky_colors_ta=s.get("lucky_colors_ta") or "",
+                deity_ta=s.get("deity_ta") or "",
+                career_ta=s.get("career_ta") or "",
+                business_ta=s.get("business_ta") or "",
+                family_ta=s.get("family_ta") or "",
+                income_ta=s.get("income_ta") or "",
+                arts_ta=s.get("arts_ta") or "",
+                investments_ta=s.get("investments_ta") or "",
+                jyotish_view_ta=s.get("jyotish_view_ta") or "",
+                cautions_ta=s.get("cautions_ta") or "",
+                special_ta=s.get("special_ta") or "",
+                lucky_days_ta=s.get("lucky_days_ta") or "",
+                chandrashtamam_ta=s.get("chandrashtamam_ta") or "",
+                remedy_ta=s.get("remedy_ta") or "",
+                graham_sancharam_ta=s.get("graham_sancharam_ta") or "",
+            )
+            for s in data["signs"]
+        ],
+    )
+
+
+@router.get("/spiritual/raasi-palan/{period}/{sign_index}", response_model=RaasiPalanSignOut)
+def raasi_palan_sign(period: str, sign_index: int):
+    try:
+        data = raasi_palan_service.get_sign(period, sign_index)
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+    return RaasiPalanSignOut(**data)
 
 
 @router.get("/spiritual/jyotish/nazhigai-convert", response_model=NazhigaiConvertOut)

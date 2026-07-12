@@ -472,6 +472,97 @@ class IndruPushOut(BaseModel):
     created_at: datetime | None = None
 
 
+class RaasiPalanSignIn(BaseModel):
+    general_ta: str = ""
+    nakshatra_palan_ta: str = ""
+    balam_ta: str = ""
+    kavanam_ta: str = ""
+    ninaivu_ta: str = ""
+    lucky_numbers_ta: str = ""
+    lucky_colors_ta: str = ""
+    deity_ta: str = ""
+    career_ta: str = ""
+    business_ta: str = ""
+    family_ta: str = ""
+    income_ta: str = ""
+    arts_ta: str = ""
+    investments_ta: str = ""
+    jyotish_view_ta: str = ""
+    cautions_ta: str = ""
+    special_ta: str = ""
+    lucky_days_ta: str = ""
+    chandrashtamam_ta: str = ""
+    remedy_ta: str = ""
+    graham_sancharam_ta: str = ""
+
+
+class RaasiPalanSignOut(BaseModel):
+    period: str
+    period_label: str = ""
+    current_label: str = ""
+    updated_at: str | None = None
+    sign_index: int
+    sign_ta: str
+    general_ta: str = ""
+    nakshatra_palan_ta: str = ""
+    balam_ta: str = ""
+    kavanam_ta: str = ""
+    ninaivu_ta: str = ""
+    lucky_numbers_ta: str = ""
+    lucky_colors_ta: str = ""
+    deity_ta: str = ""
+    career_ta: str = ""
+    business_ta: str = ""
+    family_ta: str = ""
+    income_ta: str = ""
+    arts_ta: str = ""
+    investments_ta: str = ""
+    jyotish_view_ta: str = ""
+    cautions_ta: str = ""
+    special_ta: str = ""
+    lucky_days_ta: str = ""
+    chandrashtamam_ta: str = ""
+    remedy_ta: str = ""
+    graham_sancharam_ta: str = ""
+
+
+class RaasiPalanSignBulkItem(BaseModel):
+    sign_index: int
+    general_ta: str = ""
+    nakshatra_palan_ta: str = ""
+    balam_ta: str = ""
+    kavanam_ta: str = ""
+    ninaivu_ta: str = ""
+    lucky_numbers_ta: str = ""
+    lucky_colors_ta: str = ""
+    deity_ta: str = ""
+    career_ta: str = ""
+    business_ta: str = ""
+    family_ta: str = ""
+    income_ta: str = ""
+    arts_ta: str = ""
+    investments_ta: str = ""
+    jyotish_view_ta: str = ""
+    cautions_ta: str = ""
+    special_ta: str = ""
+    lucky_days_ta: str = ""
+    chandrashtamam_ta: str = ""
+    remedy_ta: str = ""
+    graham_sancharam_ta: str = ""
+
+
+class RaasiPalanPeriodIn(BaseModel):
+    signs: list[RaasiPalanSignBulkItem]
+
+
+class RaasiPalanPeriodOut(BaseModel):
+    period: str
+    period_label: str = ""
+    current_label: str = ""
+    updated_at: str | None = None
+    signs: list[RaasiPalanSignOut]
+
+
 class MetalRateCityOut(BaseModel):
     id: str
     name_ta: str

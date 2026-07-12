@@ -20,6 +20,7 @@ import '../models/koodiya_thagaval_post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
 import '../models/temple.dart';
+import '../models/raasi_palan.dart';
 import 'api_service.dart';
 import 'local_calendar_service.dart';
 import 'local_database.dart';
@@ -333,6 +334,23 @@ class CalendarRepository {
       debugPrint('Koodiya thagaval: fetch failed -> $error');
       debugPrintStack(stackTrace: stackTrace);
       return const [];
+    }
+  }
+
+  Future<RaasiPalanContent> getRaasiPalan({
+    required String period,
+    required int signIndex,
+  }) async {
+    if (!_hasApi) return RaasiPalanContent.empty;
+    try {
+      return await _online.fetchRaasiPalan(
+        period: period,
+        signIndex: signIndex,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Raasi palan: fetch failed -> $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return RaasiPalanContent.empty;
     }
   }
 

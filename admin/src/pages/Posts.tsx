@@ -1,6 +1,26 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import type { Post } from '../api';
+import BlockEditor, {
+  blocksForSubmit,
+  emptyBlocks,
+  hasImageBlock,
+  type EditorBlock,
+} from '../components/BlockEditor';
+
+function postPreview(post: Post): string {
+  if (post.blocks?.length) {
+    const text = post.blocks
+      .filter((block) => block.type === 'text')
+      .map((block) => block.value ?? '')
+      .join(' ')
+      .trim();
+    if (text) return text.length > 120 ? `${text.slice(0, 119)}…` : text;
+  }
+  const plain = (post.content || '').trim();
+  if (!plain || plain.startsWith('[')) return '';
+  return plain.length > 120 ? `${plain.slice(0, 119)}…` : plain;
+}
 
 export default function Posts() {
   const [items, setItems] = useState<Post[]>([]);
@@ -8,8 +28,8 @@ export default function Posts() {
   const [message, setMessage] = useState('');
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [blocks, setBlocks] = useState<EditorBlock[]>(emptyBlocks());
+  const [cover, setCover] = useState<File | null>(null);
   const [sendPush, setSendPush] = useState(false);
   const [pushingId, setPushingId] = useState<string | null>(null);
 
@@ -30,27 +50,36 @@ export default function Posts() {
       setError('Title is required');
       return;
     }
-    if (!file) {
-      setError('Choose an image');
+    const payload = blocksForSubmit(blocks);
+    if (payload.length === 0) {
+      setError('Add at least one text or image block');
+      return;
+    }
+    if (!hasImageBlock(blocks) && !cover) {
+      setError('Add at least one image block (or choose a cover thumbnail)');
+      return;
+    }
+    if (blocks.some((block) => block.type === 'image' && block.uploading)) {
+      setError('Wait for image uploads to finish');
       return;
     }
     setUploading(true);
     setError('');
     setMessage('');
     try {
-      const post = await api.createPost({ file, title, content, sendPush });
-      setFile(null);
+      const post = await api.createPost({ title, blocks: payload, cover, sendPush });
       setTitle('');
-      setContent('');
+      setBlocks(emptyBlocks());
+      setCover(null);
       setSendPush(false);
       setMessage(
         sendPush
-          ? 'Post published and push notification sent.'
-          : 'Post published (no push notification).',
+          ? 'Published and push notification sent.'
+          : 'Published (no push notification).',
       );
       refresh();
       if (sendPush && !post.push_sent) {
-        setMessage('Post saved, but push failed — check FIREBASE_CREDENTIALS_PATH on the API.');
+        setMessage('Saved, but push failed — check FIREBASE_CREDENTIALS_PATH on the API.');
       }
     } catch (err) {
       setError(String(err));
@@ -60,7 +89,7 @@ export default function Posts() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm('Delete this post?')) return;
+    if (!confirm('Delete this entry?')) return;
     setError('');
     try {
       await api.deletePost(id);
@@ -87,35 +116,33 @@ export default function Posts() {
 
   return (
     <div>
-      <h2>Posts</h2>
+      <h2>கூடிய தகவல்</h2>
       <p style={{ color: '#555', marginTop: 0 }}>
-        Publish image + text posts. Toggle push to notify app users — tapping opens the post detail screen.
-        Line breaks in content are preserved in the app.
+        Build blog-style content in Description — add text paragraphs and images in any order.
+        The first image is used as the list thumbnail (or choose an optional cover below).
       </p>
       {error && <p className="error">{error}</p>}
       {message && <p className="success">{message}</p>}
 
       <form className="card" onSubmit={onSubmit}>
-        <h3 style={{ marginTop: 0 }}>New post</h3>
+        <h3 style={{ marginTop: 0 }}>Add entry</h3>
         <label>Title</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Post title"
+          placeholder="Title"
           required
         />
-        <label>Content</label>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Post body — blank lines create paragraph spacing in the app"
-          rows={8}
-        />
-        <label>Image</label>
+        <label>Description (blog content)</label>
+        <BlockEditor blocks={blocks} onChange={setBlocks} disabled={uploading} />
+        <label>Optional cover thumbnail</label>
+        <p className="field-hint">
+          Used only for the app list card when you want a different image than the first block image.
+        </p>
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => setCover(e.target.files?.[0] ?? null)}
         />
         <label className="toggle-row">
           <input
@@ -123,17 +150,17 @@ export default function Posts() {
             checked={sendPush}
             onChange={(e) => setSendPush(e.target.checked)}
           />
-          <span>Send push notification to users</span>
+          <span>Send notification</span>
         </label>
         <button type="submit" disabled={uploading}>
-          {uploading ? 'Publishing…' : 'Publish post'}
+          {uploading ? 'Publishing…' : 'Publish'}
         </button>
       </form>
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>All posts ({items.length})</h3>
+        <h3 style={{ marginTop: 0 }}>All entries ({items.length})</h3>
         {items.length === 0 ? (
-          <p>No posts yet.</p>
+          <p>No entries yet.</p>
         ) : (
           <div className="story-grid">
             {items.map((post) => (
@@ -143,10 +170,8 @@ export default function Posts() {
                   <strong>{post.title}</strong>
                   <span>{new Date(post.created_at).toLocaleString()}</span>
                   {post.push_sent && <span className="badge-push">Push sent</span>}
-                  {post.content && (
-                    <p style={{ whiteSpace: 'pre-wrap' }}>
-                      {post.content.length > 120 ? `${post.content.slice(0, 120)}…` : post.content}
-                    </p>
+                  {postPreview(post) && (
+                    <p style={{ whiteSpace: 'pre-wrap' }}>{postPreview(post)}</p>
                   )}
                   <div className="post-actions">
                     <button

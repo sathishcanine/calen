@@ -1,7 +1,7 @@
 import 'post_block.dart';
 
-class Post {
-  const Post({
+class KoodiyaThagavalPost {
+  const KoodiyaThagavalPost({
     required this.id,
     required this.title,
     required this.content,
@@ -11,9 +11,9 @@ class Post {
     this.blocks = const [],
   });
 
-  factory Post.fromJson(Map<String, dynamic> json) {
+  factory KoodiyaThagavalPost.fromJson(Map<String, dynamic> json) {
     final blocks = parsePostBlocks(json);
-    return Post(
+    return KoodiyaThagavalPost(
       id: json['id'] as String,
       title: json['title'] as String? ?? '',
       content: json['content'] as String? ?? '',
@@ -34,7 +34,5 @@ class Post {
   final DateTime? createdAt;
   final List<PostBlock> blocks;
 
-  bool get hasBlocks => blocks.isNotEmpty;
-
-  String get previewText => previewFromBlocks(blocks);
+  String get preview => previewFromBlocks(blocks);
 }

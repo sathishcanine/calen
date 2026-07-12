@@ -16,6 +16,7 @@ import '../models/pancha_pakshi.dart';
 import '../models/status_story.dart';
 import '../models/library_book.dart';
 import '../models/post.dart';
+import '../models/koodiya_thagaval_post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
 import '../models/temple.dart';
@@ -323,6 +324,17 @@ class CalendarRepository {
   }
 
   Future<Post> getPost(String postId) => _online.fetchPost(postId);
+
+  Future<List<KoodiyaThagavalPost>> getKoodiyaThagavalPosts({int limit = 20}) async {
+    if (!_hasApi) return const [];
+    try {
+      return await _online.fetchKoodiyaThagavalPosts(limit: limit);
+    } catch (error, stackTrace) {
+      debugPrint('Koodiya thagaval: fetch failed -> $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return const [];
+    }
+  }
 
   Future<List<Temple>> getTemples({int limit = 30, int offset = 0}) async {
     if (!_hasApi) {

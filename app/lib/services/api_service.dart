@@ -18,6 +18,7 @@ import '../models/pancha_pakshi.dart';
 import '../models/status_story.dart';
 import '../models/library_book.dart';
 import '../models/post.dart';
+import '../models/koodiya_thagaval_post.dart';
 import '../models/vastu.dart';
 import '../models/indru_content.dart';
 import '../models/temple.dart';
@@ -499,9 +500,24 @@ class ApiService {
   }
 
   Future<Post> fetchPost(String postId) async {
-    final res = await _client.get(_uri('/posts/$postId'));
-    if (res.statusCode != 200) throw Exception('Post failed: ${res.body}');
+    final res = await _client.get(_uri('/koodiya-thagaval-post/$postId'));
+    if (res.statusCode != 200) {
+      throw Exception('Thagaval post failed: ${res.body}');
+    }
     return Post.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<List<KoodiyaThagavalPost>> fetchKoodiyaThagavalPosts({int limit = 20}) async {
+    final res = await _client.get(
+      _uri('/koodiya-thagaval-post', {'limit': '$limit'}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Koodiya thagaval failed: ${res.body}');
+    }
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list
+        .map((e) => KoodiyaThagavalPost.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<Temple>> fetchTemples({int limit = 30, int offset = 0}) async {

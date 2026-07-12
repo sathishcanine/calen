@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import json
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.orm import Session
@@ -9,6 +10,7 @@ from app.data.metal_rates_service import get_admin_status, sync_retail
 from app.data.status_stories_service import add_story, delete_story, list_stories as list_status_stories
 from app.data import books_service
 from app.data import posts_service
+from app.data.post_content import resolve_blocks_for_api
 from app.data import indru_push_service
 from app.push_service import send_indru_push, send_post_push
 from app.data.indru_service import (
@@ -30,6 +32,7 @@ from app.schemas import (
     BookCategoryIn,
     LibraryBookOut,
     PostOut,
+    PostBlockOut,
     IndruPushOut,
     IndruDailyOut,
     IndruDailyIn,
@@ -374,7 +377,14 @@ def admin_refresh_indru(
 
 def _post_out(entry, request: Request) -> PostOut:
     base = str(request.base_url).rstrip("/")
-    image_url = f"{base}{settings.api_prefix}/post-media/{entry.image_filename}"
+    prefix = settings.api_prefix
+
+    def media_url(filename: str) -> str:
+        return f"{base}{prefix}/post-media/{filename}"
+
+    image_url = media_url(entry.image_filename)
+    blocks_raw = resolve_blocks_for_api(entry.content or "", media_url)
+    blocks = [PostBlockOut(**block) for block in blocks_raw]
     return PostOut(
         id=entry.id,
         title=entry.title,
@@ -382,7 +392,27 @@ def _post_out(entry, request: Request) -> PostOut:
         image_url=image_url,
         push_sent=bool(entry.push_sent),
         created_at=entry.created_at,
+        blocks=blocks,
     )
+
+
+@secured.post("/post-media")
+async def admin_upload_post_media(
+    request: Request,
+    file: UploadFile = File(...),
+):
+    """Upload an inline image for the blog-style block editor."""
+    image_bytes = await file.read()
+    try:
+        filename = posts_service.store_image(
+            filename=file.filename or "image.jpg",
+            image_bytes=image_bytes,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+    base = str(request.base_url).rstrip("/")
+    image_url = f"{base}{settings.api_prefix}/post-media/{filename}"
+    return {"filename": filename, "image_url": image_url}
 
 
 @secured.get("/posts", response_model=list[PostOut])
@@ -394,22 +424,46 @@ def admin_list_posts(request: Request, db: Session = Depends(get_db)):
 async def admin_create_post(
     request: Request,
     db: Session = Depends(get_db),
-    file: UploadFile = File(...),
     title: str = Form(...),
-    content: str = Form(default=""),
     send_push: str = Form(default="false"),
+    blocks: str = Form(default=""),
+    file: UploadFile | None = File(default=None),
+    content: str = Form(default=""),
 ):
-    image_bytes = await file.read()
     try:
-        row = posts_service.add_post(
-            db,
-            title=title,
-            content=content,
-            filename=file.filename or "post.jpg",
-            image_bytes=image_bytes,
-        )
+        if blocks.strip():
+            parsed = json.loads(blocks)
+            if not isinstance(parsed, list):
+                raise ValueError("Invalid blocks format")
+            cover_filename = ""
+            if file is not None:
+                image_bytes = await file.read()
+                if image_bytes:
+                    cover_filename = posts_service.store_image(
+                        filename=file.filename or "cover.jpg",
+                        image_bytes=image_bytes,
+                    )
+            row = posts_service.add_post_with_blocks(
+                db,
+                title=title,
+                blocks=parsed,
+                cover_filename=cover_filename,
+            )
+        else:
+            if file is None:
+                raise HTTPException(400, detail="Choose a cover image or add image blocks")
+            image_bytes = await file.read()
+            row = posts_service.add_post(
+                db,
+                title=title,
+                content=content,
+                filename=file.filename or "post.jpg",
+                image_bytes=image_bytes,
+            )
     except ValueError as exc:
         raise HTTPException(400, detail=str(exc)) from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(400, detail="Invalid blocks JSON") from exc
 
     out = _post_out(row, request)
     api_base = str(request.base_url).rstrip("/")

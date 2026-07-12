@@ -72,6 +72,8 @@ from app.schemas import (
     BookCategoryOut,
     LibraryBookOut,
     PostOut,
+    PostBlockOut,
+    KoodiyaThagavalPostOut,
     IndruDailyOut,
     TempleOut,
 )
@@ -103,7 +105,14 @@ def status_stories(
 
 def _post_out(entry, request: Request) -> PostOut:
     base = str(request.base_url).rstrip("/")
-    image_url = f"{base}{settings.api_prefix}/post-media/{entry.image_filename}"
+    prefix = settings.api_prefix
+
+    def media_url(filename: str) -> str:
+        return f"{base}{prefix}/post-media/{filename}"
+
+    image_url = media_url(entry.image_filename)
+    blocks_raw = resolve_blocks_for_api(entry.content or "", media_url)
+    blocks = [PostBlockOut(**block) for block in blocks_raw]
     return PostOut(
         id=entry.id,
         title=entry.title,
@@ -111,6 +120,28 @@ def _post_out(entry, request: Request) -> PostOut:
         image_url=image_url,
         push_sent=bool(entry.push_sent),
         created_at=entry.created_at,
+        blocks=blocks,
+    )
+
+
+def _koodiya_thagaval_post_out(entry, request: Request) -> KoodiyaThagavalPostOut:
+    base = str(request.base_url).rstrip("/")
+    prefix = settings.api_prefix
+
+    def media_url(filename: str) -> str:
+        return f"{base}{prefix}/post-media/{filename}"
+
+    image_url = media_url(entry.image_filename)
+    blocks_raw = resolve_blocks_for_api(entry.content or "", media_url)
+    blocks = [PostBlockOut(**block) for block in blocks_raw]
+    return KoodiyaThagavalPostOut(
+        id=entry.id,
+        title=entry.title,
+        content=entry.content or "",
+        image_url=image_url,
+        push_sent=bool(entry.push_sent),
+        created_at=entry.created_at,
+        blocks=blocks,
     )
 
 
@@ -129,6 +160,31 @@ def get_post(post_id: str, request: Request, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(404, detail="Post not found")
     return _post_out(row, request)
+
+
+@router.get("/koodiya-thagaval-post", response_model=list[KoodiyaThagavalPostOut])
+def list_koodiya_thagaval_posts(
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Query(default=20, ge=1, le=50),
+):
+    """Supplementary தகவல் posts for the mobile இன்று tab."""
+    return [
+        _koodiya_thagaval_post_out(p, request)
+        for p in posts_service.list_posts(db, limit=limit)
+    ]
+
+
+@router.get("/koodiya-thagaval-post/{post_id}", response_model=KoodiyaThagavalPostOut)
+def get_koodiya_thagaval_post(
+    post_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    row = posts_service.get_post(db, post_id)
+    if not row:
+        raise HTTPException(404, detail="Not found")
+    return _koodiya_thagaval_post_out(row, request)
 
 
 def _library_book_out(entry, request: Request) -> LibraryBookOut:

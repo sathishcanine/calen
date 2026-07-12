@@ -34,6 +34,8 @@ import 'todays_panchangam_screen.dart';
 import 'pancha_pakshi_screen.dart';
 import 'temples/temples_screen.dart';
 import 'vastu_screen.dart';
+import '../models/koodiya_thagaval_post.dart';
+import '../widgets/koodiya_thagaval_section.dart';
 import 'budget/budget_screen.dart';
 import 'library/library_screen.dart';
 
@@ -65,6 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _statusStoriesLoading = true;
   IndruContent? _indru;
   bool _indruLoading = true;
+  List<KoodiyaThagavalPost> _koodiyaThagavalPosts = [];
+  bool _koodiyaThagavalLoading = true;
   String? _error;
   bool _loading = true;
   int _navIndex = 0;
@@ -76,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _load();
     _loadStatusStories();
     _loadIndru();
+    _loadKoodiyaThagaval();
   }
 
   @override
@@ -90,6 +95,18 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     if (index < 0 || index > 4) return;
     setState(() => _navIndex = index);
+  }
+
+  Future<void> _loadKoodiyaThagaval() async {
+    setState(() => _koodiyaThagavalLoading = true);
+    try {
+      final posts = await widget.repository.getKoodiyaThagavalPosts();
+      if (mounted) setState(() => _koodiyaThagavalPosts = posts);
+    } catch (_) {
+      if (mounted) setState(() => _koodiyaThagavalPosts = const []);
+    } finally {
+      if (mounted) setState(() => _koodiyaThagavalLoading = false);
+    }
   }
 
   Future<void> _loadIndru() async {
@@ -146,6 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _palangalCategories = palangal;
         });
         _loadIndru();
+        _loadKoodiyaThagaval();
       }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -871,6 +889,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
         ],
+        KoodiyaThagavalSection(
+          repository: widget.repository,
+          posts: _koodiyaThagavalPosts,
+          loading: _koodiyaThagavalLoading,
+        ),
+        if (!_koodiyaThagavalLoading && _koodiyaThagavalPosts.isNotEmpty)
+          const SizedBox(height: 16),
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -1045,6 +1070,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _load(),
                   _loadStatusStories(),
                   _loadIndru(),
+                  _loadKoodiyaThagaval(),
                 ]);
               },
               color: AppColors.maroon,

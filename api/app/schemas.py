@@ -442,6 +442,25 @@ class PostOut(BaseModel):
     image_url: str
     push_sent: bool = False
     created_at: datetime | None = None
+    blocks: list["PostBlockOut"] = Field(default_factory=list)
+
+
+class PostBlockOut(BaseModel):
+    type: str
+    value: str = ""
+    url: str = ""
+
+
+class KoodiyaThagavalPostOut(BaseModel):
+    """Public இன்று tab supplementary posts (admin-managed)."""
+
+    id: str
+    title: str
+    content: str = ""
+    image_url: str
+    push_sent: bool = False
+    created_at: datetime | None = None
+    blocks: list[PostBlockOut] = Field(default_factory=list)
 
 
 class IndruPushOut(BaseModel):

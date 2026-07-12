@@ -3,8 +3,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/post.dart';
+import '../models/post_block.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../widgets/post_content_view.dart';
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({
@@ -57,6 +59,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   String get _shareText {
     final post = _post;
     if (post == null) return '';
+    if (post.hasBlocks) {
+      return shareTextFromBlocks(post.title, post.blocks);
+    }
     final body = post.content.trim();
     if (body.isEmpty) return post.title;
     return '${post.title}\n\n$body';
@@ -146,66 +151,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             onFacebook: _shareFacebook,
           ),
           const SizedBox(height: 20),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppDecorations.cardRadius),
-            child: Image.network(
-              post.imageUrl,
-              fit: BoxFit.cover,
-              loadingBuilder: (_, child, progress) {
-                if (progress == null) return child;
-                return const AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              },
-              errorBuilder: (_, _, _) => Container(
-                height: 200,
-                color: AppColors.cream,
-                alignment: Alignment.center,
-                child: const Icon(Icons.broken_image_outlined, size: 48),
-              ),
-            ),
+          PostContentView(
+            blocks: post.blocks,
+            legacyContent: post.content,
+            legacyImageUrl: post.imageUrl,
+            useLegacyLayout: !post.hasBlocks,
           ),
-          if (post.content.trim().isNotEmpty) ...[
-            const SizedBox(height: 20),
-            ..._contentParagraphs(post.content, theme),
-          ],
         ],
       ),
     );
-  }
-
-  List<Widget> _contentParagraphs(String content, ThemeData theme) {
-    final blocks = content.split(RegExp(r'\n{2,}'));
-    final widgets = <Widget>[];
-
-    for (var i = 0; i < blocks.length; i++) {
-      final block = blocks[i].trimRight();
-      if (block.isEmpty) continue;
-      widgets.add(
-        Padding(
-          padding: EdgeInsets.only(bottom: i < blocks.length - 1 ? 14 : 0),
-          child: Text(
-            block,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              height: 1.6,
-              color: const Color(0xFF2C2C2C),
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (widgets.isEmpty && content.trim().isNotEmpty) {
-      widgets.add(
-        Text(
-          content,
-          style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
-        ),
-      );
-    }
-
-    return widgets;
   }
 }
 

@@ -69,6 +69,12 @@ export interface LibraryBook {
   created_at: string;
 }
 
+export interface PostBlock {
+  type: 'text' | 'image';
+  value?: string;
+  url?: string;
+}
+
 export interface Post {
   id: string;
   title: string;
@@ -76,6 +82,7 @@ export interface Post {
   image_url: string;
   push_sent: boolean;
   created_at: string;
+  blocks?: PostBlock[];
 }
 
 export interface IndruPush {
@@ -227,17 +234,30 @@ export const api = {
   syncMetalRates: () =>
     request<MetalRatesSyncResult>('/admin/metal-rates/sync', { method: 'POST' }),
   listPosts: () => request<Post[]>('/admin/posts'),
+  uploadPostMedia: async (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await authFetch('/admin/post-media', {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+    return res.json() as Promise<{ filename: string; image_url: string }>;
+  },
   createPost: async (params: {
-    file: File;
     title: string;
-    content?: string;
+    blocks: { type: string; value?: string; filename?: string }[];
+    cover?: File | null;
     sendPush?: boolean;
   }) => {
     const form = new FormData();
-    form.append('file', params.file);
     form.append('title', params.title);
-    form.append('content', params.content ?? '');
+    form.append('blocks', JSON.stringify(params.blocks));
     form.append('send_push', params.sendPush ? 'true' : 'false');
+    if (params.cover) form.append('file', params.cover);
     const res = await authFetch('/admin/posts', {
       method: 'POST',
       body: form,

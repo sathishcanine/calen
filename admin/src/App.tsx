@@ -30,7 +30,7 @@ function AdminLayout() {
         <NavLink to="/daily">Daily entries</NavLink>
         <NavLink to="/stories">Status stories</NavLink>
         <NavLink to="/books">Books library</NavLink>
-        <NavLink to="/posts">Posts</NavLink>
+        <NavLink to="/koodiya-thagaval-post">கூடிய தகவல்</NavLink>
         <NavLink to="/indru-push">இன்று push</NavLink>
         <button
           type="button"
@@ -50,7 +50,9 @@ function AdminLayout() {
           <Route path="/daily/:cityId/:date" element={<DailyEdit />} />
           <Route path="/stories" element={<Stories />} />
           <Route path="/books" element={<Books />} />
-          <Route path="/posts" element={<Posts />} />
+          <Route path="/koodiya-thagaval-post" element={<Posts />} />
+          <Route path="/news-post" element={<Navigate to="/koodiya-thagaval-post" replace />} />
+          <Route path="/posts" element={<Navigate to="/koodiya-thagaval-post" replace />} />
           <Route path="/indru-push" element={<IndruPushPage />} />
         </Routes>
       </main>

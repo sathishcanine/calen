@@ -172,7 +172,6 @@ export default function RaasiPalan() {
     try {
       const data = await api.saveRaasiPalanPeriod(period, {
         signs: signs.map((s) => ({
-          sign_index: s.sign_index,
           ...payloadFrom(s, period),
         })),
       });

@@ -63,7 +63,12 @@ function isFilled(s: RaasiPalanSign, period: RaasiPalanPeriod): boolean {
         s.cautions_ta.trim(),
     );
   }
-  return s.general_ta.trim().length > 0;
+  return Boolean(
+    s.general_ta.trim() ||
+      s.nakshatra_palan_ta.trim() ||
+      s.balam_ta.trim() ||
+      s.kavanam_ta.trim(),
+  );
 }
 
 function payloadFrom(s: RaasiPalanSign, period: RaasiPalanPeriod) {
@@ -81,6 +86,13 @@ function payloadFrom(s: RaasiPalanSign, period: RaasiPalanPeriod) {
   return {
     ...base,
     general_ta: s.general_ta,
+    nakshatra_palan_ta: s.nakshatra_palan_ta,
+    balam_ta: s.balam_ta,
+    kavanam_ta: s.kavanam_ta,
+    ninaivu_ta: s.ninaivu_ta,
+    lucky_numbers_ta: s.lucky_numbers_ta,
+    lucky_colors_ta: s.lucky_colors_ta,
+    deity_ta: s.deity_ta,
   };
 }
 
@@ -322,18 +334,88 @@ export default function RaasiPalan() {
               </label>
             </>
           ) : (
-            <label>
-              பொது பலன் (full text — paste everything here)
-              <textarea
-                rows={22}
-                value={active.general_ta}
-                onChange={(e) => updateActive({ general_ta: e.target.value })}
-                placeholder={`${active.sign_ta} ராசி அன்பர்களே!
-
-முழு பலனையும் இங்கே ஒட்டவும்…
-Bold: #முக்கியம்#`}
-              />
-            </label>
+            <>
+              <label>
+                பொதுப் பலன்
+                <textarea
+                  rows={6}
+                  value={active.general_ta}
+                  onChange={(e) => updateActive({ general_ta: e.target.value })}
+                  placeholder={`${active.sign_ta} ராசி அன்பர்களே! இன்று…`}
+                />
+              </label>
+              <label style={{ marginTop: 12, display: 'block' }}>
+                ⭐ நட்சத்திர பலன்
+                <textarea
+                  rows={4}
+                  value={active.nakshatra_palan_ta}
+                  onChange={(e) =>
+                    updateActive({ nakshatra_palan_ta: e.target.value })
+                  }
+                  placeholder={`அசுவினி – …\nபரணி – …\nகிருத்திகை – …`}
+                />
+              </label>
+              <label style={{ marginTop: 12, display: 'block' }}>
+                💪 இன்றைய பலம்
+                <textarea
+                  rows={3}
+                  value={active.balam_ta}
+                  onChange={(e) => updateActive({ balam_ta: e.target.value })}
+                  placeholder="பொருளாதார நிலை உயரும்…"
+                />
+              </label>
+              <label style={{ marginTop: 12, display: 'block' }}>
+                ⚠️ இன்றைய கவனம்
+                <textarea
+                  rows={3}
+                  value={active.kavanam_ta}
+                  onChange={(e) => updateActive({ kavanam_ta: e.target.value })}
+                  placeholder="அவசர முடிவுகள் வேண்டாம்…"
+                />
+              </label>
+              <label style={{ marginTop: 12, display: 'block' }}>
+                📝 நினைவில் கொள்ள வேண்டியவை
+                <textarea
+                  rows={3}
+                  value={active.ninaivu_ta}
+                  onChange={(e) => updateActive({ ninaivu_ta: e.target.value })}
+                  placeholder="1. …&#10;2. …&#10;3. …"
+                />
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 12 }}>
+                <label>
+                  🍀 அதிர்ஷ்ட எண்கள்
+                  <input
+                    type="text"
+                    value={active.lucky_numbers_ta}
+                    onChange={(e) =>
+                      updateActive({ lucky_numbers_ta: e.target.value })
+                    }
+                    placeholder="5, 9"
+                  />
+                </label>
+                <label>
+                  🎨 அதிர்ஷ்ட நிறங்கள்
+                  <input
+                    type="text"
+                    value={active.lucky_colors_ta}
+                    onChange={(e) =>
+                      updateActive({ lucky_colors_ta: e.target.value })
+                    }
+                    placeholder="சிவப்பு, மஞ்சள்"
+                  />
+                </label>
+                <label>
+                  🙏 வழிபட வேண்டிய தெய்வம்
+                  <input
+                    type="text"
+                    value={active.deity_ta}
+                    onChange={(e) => updateActive({ deity_ta: e.target.value })}
+                    placeholder="முருகன்"
+                  />
+                </label>
+              </div>
+            </>
           )}
 
           <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>

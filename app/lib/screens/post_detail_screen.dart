@@ -10,10 +10,8 @@ import '../models/post.dart';
 import '../models/post_block.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_share.dart';
 import '../widgets/post_content_view.dart';
-
-const _kAppFooter =
-    '\n\nமுருகன் காலண்டரை இலவசமாக உங்கள் ஆண்ட்ராய்டு மொபைலில் தரவிறக்கம் செய்ய :\nhttps://play.google.com/store/apps/details?id=com.tamilarworld.tamilar_calendar\nகிளிக் செய்யவும்';
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({
@@ -73,7 +71,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       final content = post.content.trim();
       body = content.isEmpty ? post.title : '${post.title}\n\n$content';
     }
-    return '$body$_kAppFooter';
+    return AppShare.withInstallFooter(body);
   }
 
   String? get _shareImageUrl {

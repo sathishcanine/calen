@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/daily_calendar.dart';
 import '../models/indru_content.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_share.dart';
 import '../widgets/aanmeegam_menu_grid.dart';
 import '../widgets/app_card.dart';
 import '../widgets/kolam_pattern.dart';
 import '../widgets/nav_action_card.dart';
 import '../models/palangal.dart';
 import '../models/status_story.dart';
+import '../models/koodiya_thagaval_post.dart';
 import '../services/status_story_service.dart';
 import '../widgets/jyotish_palangal_menus.dart';
+import '../widgets/koodiya_thagaval_section.dart';
 import '../widgets/metal_rates_menu_card.dart';
 import '../widgets/status_stories_bar.dart';
 import '../widgets/spiritual_menu_grid.dart';
@@ -34,8 +38,6 @@ import 'todays_panchangam_screen.dart';
 import 'pancha_pakshi_screen.dart';
 import 'temples/temples_screen.dart';
 import 'vastu_screen.dart';
-import '../models/koodiya_thagaval_post.dart';
-import '../widgets/koodiya_thagaval_section.dart';
 import 'budget/budget_screen.dart';
 import 'library/library_screen.dart';
 import 'raasi_palan_hub_screen.dart';
@@ -705,6 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCalendarCards() {
+    final spiritual = AppDecorations.spiritualGradient.colors;
     return SizedBox(
       height: 130,
       child: Row(
@@ -712,11 +715,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: NavActionCard(
               compact: true,
-              gradient: const [AppColors.dailyRed, AppColors.dailyRedLight],
-              iconKind: MenuIconKind.dailyCalendar,
-              title: 'நாள் காட்டி',
-              subtitle: 'பஞ்சாங்கம் · ராசிபலன்',
-              onTap: () => _openDailyCalendar(_home!.gregorianDate),
+              gradient: [spiritual.first, spiritual.last],
+              iconKind: MenuIconKind.panchangam,
+              imageAsset: 'assets/images/icon_panchangam.webp',
+              title: 'இன்றைய பஞ்சாங்கம்',
+              subtitle: 'இன்றைய விவரம் →',
+              onTap: () => _openTodaysPanchangam(_home!.gregorianDate),
             ),
           ),
           const SizedBox(width: 10),
@@ -789,7 +793,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _TempleHeroButton(onTap: _openTemples),
         const SizedBox(height: 24),
         SpiritualMenuGrid(
-          onOpenPanchangam: () => _openTodaysPanchangam(_home!.gregorianDate),
           onOpenInauspicious: () => _openInauspiciousWeek(_home!.gregorianDate),
           onOpenGowri: () => _openGowriPanchangam(_home!.gregorianDate),
           onOpenHora: () => _openHoraWeek(_home!.gregorianDate),
@@ -1203,71 +1206,84 @@ class _HeroDateCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
             gradient: AppDecorations.heroGradient,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.gold.withValues(alpha: 0.35),
+              color: AppColors.gold.withValues(alpha: 0.4),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.maroon.withValues(alpha: 0.35),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
+                color: AppColors.maroon.withValues(alpha: 0.28),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: KolamPattern(
-            opacity: 0.14,
+            opacity: 0.12,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               child: Column(
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.goldLight.withValues(alpha: 0.45),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.goldLight.withValues(
+                                  alpha: 0.4,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              home.bannerLineTa,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: AppColors.goldLight,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
+                            ),
                           ),
                         ),
-                        child: Text(
-                          home.bannerLineTa,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: AppColors.goldLight,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
-                        width: 36,
-                        height: 36,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.25),
+                          ),
                         ),
                         child: const Center(
                           child: MenuIcon(
                             kind: MenuIconKind.panchangam,
-                            size: 20,
+                            size: 15,
                             color: AppColors.goldLight,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -1278,72 +1294,93 @@ class _HeroDateCard extends StatelessWidget {
                             ?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              height: 1,
-                              fontSize: 80,
+                              height: 0.95,
+                              fontSize: 52,
+                              letterSpacing: -1,
                               shadows: [
                                 Shadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
+                                  color: Colors.black.withValues(alpha: 0.25),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 14, left: 10),
+                        padding: const EdgeInsets.only(bottom: 8, left: 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               monthYear,
-                              style: Theme.of(context).textTheme.titleMedium
+                              style: Theme.of(context).textTheme.titleSmall
                                   ?.copyWith(
                                     color: AppColors.goldLight,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 14,
                                   ),
                             ),
-                            if (today != null)
+                            if (today != null) ...[
+                              const SizedBox(height: 1),
                               Text(
                                 today!.subtitleLine2Ta,
                                 style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.white70),
+                                    ?.copyWith(
+                                      color: Colors.white70,
+                                      fontSize: 11,
+                                    ),
                               ),
+                            ],
                           ],
                         ),
                       ),
                     ],
                   ),
                   if (today != null) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
+                        horizontal: 10,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.black.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
                       ),
                       child: Text(
                         today!.subtitleLine1Ta,
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.92),
-                          height: 1.4,
+                          height: 1.25,
+                          fontSize: 11,
                         ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                      horizontal: 12,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.gold.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.gold.withValues(alpha: 0.28),
+                          AppColors.gold.withValues(alpha: 0.16),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.goldLight.withValues(alpha: 0.35),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1351,15 +1388,16 @@ class _HeroDateCard extends StatelessWidget {
                         const Icon(
                           Icons.touch_app_rounded,
                           color: AppColors.goldLight,
-                          size: 16,
+                          size: 14,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Text(
                           'முழு விவரம் பார்க்க',
-                          style: Theme.of(context).textTheme.labelMedium
+                          style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: AppColors.goldLight,
                                 fontWeight: FontWeight.w600,
+                                fontSize: 11,
                               ),
                         ),
                       ],
@@ -1563,6 +1601,30 @@ class _IndruSectionCard extends StatelessWidget {
   final String detail;
   final bool italicBody;
 
+  static const _shareAccent = Color(0xFF2E7D32);
+
+  String get _shareText {
+    final buf = StringBuffer()
+      ..writeln(title)
+      ..writeln()
+      ..writeln(body.trim());
+    if (detail.trim().isNotEmpty) {
+      buf
+        ..writeln()
+        ..writeln(detail.trim());
+    }
+    return AppShare.withInstallFooter(buf.toString());
+  }
+
+  Future<void> _share() async {
+    await SharePlus.instance.share(
+      ShareParams(
+        text: _shareText,
+        subject: title,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppCard(
@@ -1579,6 +1641,36 @@ class _IndruSectionCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.maroon,
+                  ),
+                ),
+              ),
+              Material(
+                color: _shareAccent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: _share,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.share_rounded,
+                          color: _shareAccent,
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'பகிர்',
+                          style: TextStyle(
+                            color: _shareAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

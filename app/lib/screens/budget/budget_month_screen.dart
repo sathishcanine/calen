@@ -9,6 +9,7 @@ import '../../services/budget_export_service.dart';
 import '../../services/budget_rating_service.dart';
 import '../../services/budget_service.dart';
 import '../../theme/budget_theme.dart';
+import '../../utils/app_share.dart';
 import '../../utils/budget_format.dart';
 import '../../widgets/budget/budget_category_filter_dialog.dart';
 import '../../widgets/budget/budget_currency_dialog.dart';
@@ -35,8 +36,6 @@ class BudgetMonthScreen extends StatefulWidget {
 }
 
 class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
-  static const _playStoreUrl = 'https://play.google.com/store/apps/details?id=com.tamilarworld.tamilar_calendar';
-
   BudgetMonthSummary? _summary;
   List<BudgetCategory> _allCategories = [];
   bool _loading = true;
@@ -87,7 +86,7 @@ class _BudgetMonthScreenState extends State<BudgetMonthScreen> {
   }
 
   Future<void> _openPlayStore() async {
-    final uri = Uri.parse(_playStoreUrl);
+    final uri = Uri.parse(AppShare.playStoreUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

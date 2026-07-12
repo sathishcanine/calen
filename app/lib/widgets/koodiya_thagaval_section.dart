@@ -30,13 +30,10 @@ class KoodiyaThagavalSection extends StatelessWidget {
     }
     if (posts.isEmpty) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        _SectionHeader(theme: theme),
-        const SizedBox(height: 14),
         ...posts.asMap().entries.map((entry) {
           final index = entry.key;
           final post = entry.value;
@@ -58,78 +55,6 @@ class KoodiyaThagavalSection extends StatelessWidget {
         }),
         const SizedBox(height: 4),
       ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.theme});
-
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5C1A28), AppColors.maroon, Color(0xFF9E2A42)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.maroon.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: AppColors.goldLight.withValues(alpha: 0.45),
-              ),
-            ),
-            child: const Icon(
-              Icons.auto_stories_rounded,
-              color: AppColors.goldLight,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'கூடிய தகவல்',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'இன்றைய சிறப்பு பதிவுகள்',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.goldLight.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

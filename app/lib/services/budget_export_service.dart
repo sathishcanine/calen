@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/budget.dart';
+import '../utils/app_share.dart';
 import '../utils/budget_format.dart';
 
 /// Export monthly budget data as a shareable CSV file.
@@ -27,6 +28,9 @@ class BudgetExportService {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path)],
+        text: AppShare.withInstallFooter(
+          'தமிழர் உலகம் — ${BudgetFormat.monthName(month)} $year செலவு அறிக்கை',
+        ),
         subject: 'Budget ${BudgetFormat.monthName(month)} $year',
       ),
     );

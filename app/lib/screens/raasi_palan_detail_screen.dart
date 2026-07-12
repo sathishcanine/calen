@@ -8,6 +8,7 @@ import '../services/ad_service.dart';
 import '../services/budget_rating_service.dart';
 import '../services/calendar_repository.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_share.dart';
 import '../widgets/budget/budget_rating_dialog.dart';
 import '../widgets/native_ad_widget.dart';
 import '../widgets/zodiac_sign_icon.dart';
@@ -32,9 +33,6 @@ class RaasiPalanDetailScreen extends StatefulWidget {
 }
 
 class _RaasiPalanDetailScreenState extends State<RaasiPalanDetailScreen> {
-  static const _playStoreUrl =
-      'https://play.google.com/store/apps/details?id=com.tamilarworld.tamilar_calendar';
-
   RaasiPalanContent _content = RaasiPalanContent.empty;
   bool _loading = true;
   bool _handlingBack = false;
@@ -123,7 +121,7 @@ class _RaasiPalanDetailScreenState extends State<RaasiPalanDetailScreen> {
     buf
       ..writeln()
       ..writeln('— தமிழர் உலகம்');
-    return buf.toString().trim();
+    return AppShare.withInstallFooter(buf.toString());
   }
 
   Future<void> _share() async {
@@ -137,7 +135,7 @@ class _RaasiPalanDetailScreenState extends State<RaasiPalanDetailScreen> {
   }
 
   Future<void> _openPlayStore() async {
-    final uri = Uri.parse(_playStoreUrl);
+    final uri = Uri.parse(AppShare.playStoreUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

@@ -12,6 +12,7 @@ class NavActionCard extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.compact = false,
+    this.imageAsset,
   });
 
   final List<Color> gradient;
@@ -20,6 +21,7 @@ class NavActionCard extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final bool compact;
+  final String? imageAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +32,7 @@ class NavActionCard extends StatelessWidget {
         title: title,
         subtitle: subtitle,
         onTap: onTap,
+        imageAsset: imageAsset,
       );
     }
 
@@ -113,6 +116,7 @@ class _CompactNavCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.imageAsset,
   });
 
   final List<Color> gradient;
@@ -120,6 +124,7 @@ class _CompactNavCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final String? imageAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -149,21 +154,35 @@ class _CompactNavCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                if (imageAsset != null)
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      imageAsset!,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                else
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(child: MenuIcon(kind: iconKind, size: 22)),
                   ),
-                  child: Center(child: MenuIcon(kind: iconKind, size: 22)),
-                ),
                 const Spacer(),
                 Text(
                   title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                        height: 1.15,
                       ),
                 ),
                 const SizedBox(height: 2),

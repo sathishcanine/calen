@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/status_story.dart';
 import '../services/status_story_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_share.dart';
 
 class StatusStoryViewerScreen extends StatefulWidget {
   const StatusStoryViewerScreen({
@@ -150,13 +151,17 @@ class _StatusStoryViewerScreenState extends State<StatusStoryViewerScreen>
     final story = widget.stories[_index];
     try {
       final file = await _resolveShareFile(story);
-      final text = story.caption.isNotEmpty
-          ? story.caption
-          : 'தமிழர் உலகம் — தமிழ் காலண்டர்';
+      final body = [
+        if (story.title.isNotEmpty) story.title,
+        if (story.caption.isNotEmpty) story.caption,
+        if (story.title.isEmpty && story.caption.isEmpty)
+          'தமிழர் உலகம் — தமிழ் காலண்டர்',
+      ].join('\n');
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: text,
+          text: AppShare.withInstallFooter(body),
+          subject: story.title.isNotEmpty ? story.title : 'தமிழர் உலகம்',
         ),
       );
     } catch (e) {
@@ -244,22 +249,14 @@ class _StatusStoryViewerScreenState extends State<StatusStoryViewerScreen>
                 ),
               ),
               Positioned(
-                top: 20,
-                right: 8,
-                child: IconButton(
-                  icon: const Icon(Icons.share_outlined, color: Colors.white),
-                  onPressed: _shareCurrent,
-                ),
-              ),
-              if (story.title.isNotEmpty || story.caption.isNotEmpty)
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 24,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+                left: 16,
+                right: 16,
+                bottom: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (story.title.isNotEmpty || story.caption.isNotEmpty) ...[
                       if (story.title.isNotEmpty)
                         Text(
                           story.title,
@@ -267,6 +264,9 @@ class _StatusStoryViewerScreenState extends State<StatusStoryViewerScreen>
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
+                            shadows: [
+                              Shadow(color: Colors.black54, blurRadius: 6),
+                            ],
                           ),
                         ),
                       if (story.caption.isNotEmpty) ...[
@@ -274,14 +274,72 @@ class _StatusStoryViewerScreenState extends State<StatusStoryViewerScreen>
                         Text(
                           story.caption,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: Colors.white.withValues(alpha: 0.92),
                             fontSize: 14,
+                            shadows: const [
+                              Shadow(color: Colors.black54, blurRadius: 6),
+                            ],
                           ),
                         ),
                       ],
+                      const SizedBox(height: 14),
                     ],
-                  ),
+                    Center(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _shareCurrent,
+                          borderRadius: BorderRadius.circular(28),
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFC2185B), Color(0xFFAD1457)],
+                              ),
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: AppColors.gold.withValues(alpha: 0.55),
+                              ),
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 22,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.share_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'பகிர்',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),

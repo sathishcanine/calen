@@ -22,6 +22,7 @@ from app.data.metal_rates_service import get_rates, has_today, list_cities as li
 from app.data.status_stories_service import PUBLIC_LIMIT, list_stories as list_status_stories
 from app.data import books_service
 from app.data import posts_service
+from app.data.post_content import resolve_blocks_for_api
 from app.data.indru_service import get_indru_for_date, indru_to_dict
 from app.data.temples_service import get_temple_by_slug, list_temples
 from app.database import get_db

@@ -1515,8 +1515,8 @@ class _ErrorView extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 usesBundled
-                    ? 'ஆஃப்லைன்: சென்னை 2026 தரவு மட்டும் (365 நாட்கள்).'
-                    : 'இணையம் தேவை — அல்லது சென்னை (ஆஃப்லைன்) தேர்வு செய்யுங்கள்.',
+                    ? 'ஆஃப்லைன்: 2026 தமிழ் காலண்டர் தரவு மட்டும் (365 நாட்கள்).'
+                    : 'இணையம் தேவை — அல்லது ஆஃப்லைன் தமிழ் காலண்டர் தரவை பயன்படுத்துங்கள்.',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,

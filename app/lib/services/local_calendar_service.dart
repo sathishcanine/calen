@@ -43,7 +43,7 @@ class LocalCalendarService {
       row = await _dailyRow(target);
     }
     if (row == null) {
-      throw Exception('No offline data for ${formatSqlDate(target)} (Chennai 2026 only)');
+      throw Exception('No offline data for ${formatSqlDate(target)} (2026 Tamil calendar only)');
     }
     return homeFromRow(row);
   }

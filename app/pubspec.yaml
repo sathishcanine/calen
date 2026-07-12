@@ -94,6 +94,7 @@ flutter:
     - assets/images/icon_panchangam.webp
     - assets/images/icon_temple.webp
     - assets/images/icon_metal_rates.png
+    - assets/images/gods/
     - google_fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see

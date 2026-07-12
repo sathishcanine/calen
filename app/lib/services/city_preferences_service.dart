@@ -16,7 +16,7 @@ class CityPreferencesService {
   static const _keyOnboardingDone = 'city_onboarding_done';
   static const _keyLocationDiscoverySeen = 'location_discovery_seen';
 
-  /// Matches bundled assets/data/calendar.db (Chennai 2026).
+  /// Internal key for the bundled standard Tamil calendar data.
   static const defaultCity = City(
     id: 'chennai',
     nameEn: 'Chennai',
@@ -79,7 +79,7 @@ class CityPreferencesService {
         country: 'IN',
       );
     }
-    // Fresh install: persist bundled default (Chennai 2026 in calendar.db).
+    // Fresh install: persist bundled default calendar data.
     if (_selectedCity == null && id == null) {
       await setCity(defaultCity, markOnboardingDone: false);
     }

@@ -38,69 +38,90 @@ class DailyEventResolver {
     final header = <String>[];
     final icons = <String>[];
 
+    void addMarker(String label, String iconId) {
+      if (!header.contains(label)) header.add(label);
+      if (!icons.contains(iconId)) icons.add(iconId);
+    }
+
     if (_isVastuDay(day.gregorianDate)) {
-      header.add('வாஸ்து நாள்');
-      icons.add('vastu');
+      addMarker('வாஸ்து நாள்', 'vastu');
     }
 
     if (tithiText.contains('சதுர்த்தி')) {
       if (tithiText.contains('தேய்பிறை')) {
-        header.add('சங்கடஹர சதுர்த்தி');
+        addMarker('சங்கடஹர சதுர்த்தி', 'ganesha');
       } else {
-        header.add('விநாயகர் சதுர்த்தி');
+        addMarker('சதுர்த்தி', 'ganesha');
       }
-      icons.add('ganesha');
     }
 
     if (_isSubaMuhurtham(tithiText, nakText, dateKey)) {
-      header.add('சுபமுகூர்த்தம்');
-      if (!icons.contains('thaali')) icons.add('thaali');
+      addMarker('சுப முகூர்த்த நாள்', 'thaali');
+      if (!icons.contains('home_good')) icons.add('home_good');
+      if (!icons.contains('vehicle_good')) icons.add('vehicle_good');
     }
 
     if (tithiText.contains('அமாவாசை')) {
-      header.add(weekday == 'திங்கள்' ? 'சர்வ அமாவாசை' : 'அமாவாசை');
-      icons.add(weekday == 'திங்கள்' ? 'sarva_amavasai' : 'amavasai');
+      addMarker(
+        weekday == 'திங்கள்' ? 'சர்வ அமாவாசை' : 'அமாவாசை',
+        weekday == 'திங்கள்' ? 'sarva_amavasai' : 'amavasai',
+      );
     } else if (tithiText.contains('பௌர்ணமி')) {
-      header.add('பௌர்ணமி');
-      icons.add('pournami');
+      addMarker('பௌர்ணமி', 'pournami');
     }
 
     if (tithiText.contains('சஷ்டி')) {
-      header.add('சஷ்டி');
-      if (!icons.contains('murugan')) icons.add('murugan');
+      addMarker('சஷ்டி', 'murugan');
     }
     if (tithiText.contains('ஏகாதசி')) {
-      header.add('ஏகாதசி');
-      if (!icons.contains('perumal')) icons.add('perumal');
+      addMarker('ஏகாதசி', 'perumal');
+    }
+    if (tithiText.contains('அஷ்டமி')) {
+      addMarker('அஷ்டமி', 'ashtami');
+    }
+    if (tithiText.contains('நவமி')) {
+      addMarker('நவமி', 'navami');
+    }
+    if (tithiText.contains('துவாதசி')) {
+      addMarker('துவாதசி', 'dwadashi');
+    }
+    if (tithiText.contains('பிரதமை')) {
+      addMarker('பிரதமை', 'prathamai');
     }
     if (tithiText.contains('திரயோதசி')) {
-      header.add('பிரதோஷம்');
-      if (!icons.contains('nandi')) icons.add('nandi');
+      addMarker('பிரதோஷம்', 'nandi');
     }
     if (tithiText.contains('சதுர்த்தசி') && tithiText.contains('தேய்பிறை')) {
-      header.add('சிவராத்திரி');
-      if (!icons.contains('shiva')) icons.add('shiva');
+      addMarker('சிவராத்திரி', 'shiva');
     }
     if (nakText.contains('கிருத்திகை')) {
-      header.add('கிருத்திகை');
-      if (!icons.contains('star')) icons.add('star');
+      addMarker('கிருத்திகை', 'krittigai');
     }
     if (nakText.contains('உத்திரம்') && !nakText.contains('உத்திராட')) {
-      header.add('திருவோணம்');
-      if (!icons.contains('thiruvonam')) icons.add('thiruvonam');
+      addMarker('திருவோணம்', 'thiruvonam');
     }
 
     if (tithiText.contains('தேய்பிறை') &&
         !tithiText.contains('அமாவாசை') &&
-        !icons.any((id) => id == 'amavasai' || id == 'sarva_amavasai' || id == 'pournami')) {
+        !icons.any(
+          (id) =>
+              id == 'amavasai' || id == 'sarva_amavasai' || id == 'pournami',
+        )) {
       icons.add('crescent');
     }
 
     final footer = <String>[];
+    void addFooter(String title) {
+      final clean = title.trim();
+      if (clean.isNotEmpty && !footer.contains(clean)) footer.add(clean);
+      final icon = _festivalIcon(clean);
+      if (icon != null && !icons.contains(icon)) icons.add(icon);
+    }
+
     if (day.eventsTa.trim().isNotEmpty) {
-      footer.addAll(
-        day.eventsTa.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-      );
+      for (final title in day.eventsTa.split(',')) {
+        addFooter(title);
+      }
     }
 
     if (month != null) {
@@ -114,14 +135,14 @@ class DailyEventResolver {
         for (final item in list) {
           if ('${item['day']}' == dayNum) {
             final title = '${item['title']}'.trim();
-            if (title.isNotEmpty && !footer.contains(title)) footer.add(title);
+            addFooter(title);
           }
         }
       }
     }
 
     for (final title in _staticFestivals(dateKey)) {
-      if (!footer.contains(title)) footer.add(title);
+      addFooter(title);
     }
 
     return DailyEventDetails(
@@ -141,10 +162,24 @@ class DailyEventResolver {
       'star',
       'thiruvonam',
       'thaali',
+      'home_good',
+      'vehicle_good',
+      'land_good',
+      'business_good',
+      'jewel_good',
+      'education_good',
+      'amman',
       'crescent',
       'amavasai',
       'sarva_amavasai',
       'pournami',
+      'ashtami',
+      'navami',
+      'dwadashi',
+      'prathamai',
+      'krittigai',
+      'tamil_month',
+      'festival',
       'vastu',
     ];
     final ranked = icons.toSet();
@@ -158,32 +193,104 @@ class DailyEventResolver {
     return out;
   }
 
+  static String? _festivalIcon(String text) {
+    if (text.isEmpty) return null;
+    if (text.contains('திருமண') || text.contains('முகூர்த்த')) return 'thaali';
+    if (text.contains('கிரகப்பிரவேச') || text.contains('வீடு')) {
+      return 'home_good';
+    }
+    if (text.contains('வாகனம்')) return 'vehicle_good';
+    if (text.contains('நிலம்')) return 'land_good';
+    if (text.contains('தொழில்')) return 'business_good';
+    if (text.contains('நகை')) return 'jewel_good';
+    if (text.contains('கல்வி')) return 'education_good';
+    if (text.contains('அம்மன்')) return 'amman';
+    if (text.contains('முருக')) return 'murugan';
+    if (text.contains('பெருமாள்') || text.contains('விஷ்ணு')) return 'perumal';
+    if (text.contains('சிவ') || text.contains('ருத்ர')) return 'shiva';
+    if (text.contains('தமிழ் மாத') || text.contains('மாத பிறப்பு')) {
+      return 'tamil_month';
+    }
+    if (text.contains('பண்டிகை') || text.contains('திருவிழா')) {
+      return 'festival';
+    }
+    return null;
+  }
+
   static bool _isVastuDay(DateTime date) {
     final bundle = SpiritualStaticBundle.instance.data;
     final byYear = bundle['vastu_days_by_year'] as Map<String, dynamic>?;
     if (byYear == null) return false;
     final list = byYear[date.year.toString()] as List<dynamic>? ?? [];
     final key = _dateKey(date);
-    return list.any((e) => (e as Map<String, dynamic>)['gregorian_date'] == key);
+    return list.any(
+      (e) => (e as Map<String, dynamic>)['gregorian_date'] == key,
+    );
   }
 
-  static bool _isSubaMuhurtham(String tithiText, String nakText, String dateKey) {
+  static bool _isSubaMuhurtham(
+    String tithiText,
+    String nakText,
+    String dateKey,
+  ) {
     const kariNaal = {
-      '2026-01-15', '2026-01-16', '2026-01-17', '2026-01-25', '2026-01-31',
-      '2026-02-27', '2026-02-28', '2026-03-01', '2026-03-20', '2026-03-29',
-      '2026-04-02', '2026-04-19', '2026-04-28', '2026-05-21', '2026-05-30',
-      '2026-05-31', '2026-06-15', '2026-06-20', '2026-07-18', '2026-07-26',
-      '2026-08-05', '2026-08-19', '2026-08-26', '2026-09-14', '2026-10-03',
-      '2026-10-16', '2026-10-23', '2026-11-17', '2026-11-23', '2026-11-26',
-      '2026-12-03', '2026-12-21', '2026-12-24', '2026-12-26',
+      '2026-01-15',
+      '2026-01-16',
+      '2026-01-17',
+      '2026-01-25',
+      '2026-01-31',
+      '2026-02-27',
+      '2026-02-28',
+      '2026-03-01',
+      '2026-03-20',
+      '2026-03-29',
+      '2026-04-02',
+      '2026-04-19',
+      '2026-04-28',
+      '2026-05-21',
+      '2026-05-30',
+      '2026-05-31',
+      '2026-06-15',
+      '2026-06-20',
+      '2026-07-18',
+      '2026-07-26',
+      '2026-08-05',
+      '2026-08-19',
+      '2026-08-26',
+      '2026-09-14',
+      '2026-10-03',
+      '2026-10-16',
+      '2026-10-23',
+      '2026-11-17',
+      '2026-11-23',
+      '2026-11-26',
+      '2026-12-03',
+      '2026-12-21',
+      '2026-12-24',
+      '2026-12-26',
     };
     if (kariNaal.contains(dateKey)) return false;
     if (['அமாவாசை', 'அஷ்டமி', 'நவமி'].any(tithiText.contains)) return false;
-    if (tithiText.contains('சதுர்த்தசி') && tithiText.contains('தேய்பிறை')) return false;
+    if (tithiText.contains('சதுர்த்தசி') && tithiText.contains('தேய்பிறை')) {
+      return false;
+    }
     const subaNak = {
-      'ரோகிணி', 'மிருகசீரிடம்', 'திருவாதிரை', 'புனர்பூசம்', 'உத்திரம்',
-      'ஹஸ்தம்', 'சுவாதி', 'அனுஷம்', 'மகம்', 'மூலம்', 'உத்திராடம்',
-      'உத்திரட்டாதி', 'ரேவதி', 'சித்திரை', 'அவிட்டம்', 'பூசம்',
+      'ரோகிணி',
+      'மிருகசீரிடம்',
+      'திருவாதிரை',
+      'புனர்பூசம்',
+      'உத்திரம்',
+      'ஹஸ்தம்',
+      'சுவாதி',
+      'அனுஷம்',
+      'மகம்',
+      'மூலம்',
+      'உத்திராடம்',
+      'உத்திரட்டாதி',
+      'ரேவதி',
+      'சித்திரை',
+      'அவிட்டம்',
+      'பூசம்',
     };
     return subaNak.any(nakText.contains);
   }

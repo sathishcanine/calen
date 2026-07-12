@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// Bundled Chennai 2026 SQLite (365 daily + 12 monthly rows).
+/// Bundled Tamil calendar 2026 SQLite (365 daily + 12 monthly rows).
 ///
 /// Copied from assets on first launch and again whenever [bundledDbVersion]
 /// increases (so Play Store / App Store updates ship fresh panchang data).
@@ -20,7 +20,7 @@ class LocalDatabase {
   static const _prefsKey = 'calendar_db_version';
 
   /// Bump when assets/data/calendar.db changes (nalla neram, rahu, etc.).
-  static const bundledDbVersion = 2;
+  static const bundledDbVersion = 3;
 
   Database? _db;
 

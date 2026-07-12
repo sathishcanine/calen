@@ -26,7 +26,7 @@ import 'pancha_pakshi_engine.dart';
 import 'city_preferences_service.dart';
 import 'spiritual_static_bundle.dart';
 
-/// Hybrid data access: bundled Chennai 2026 SQLite offline + API for other cities.
+/// Hybrid data access: bundled Tamil calendar SQLite offline + API-backed content.
 class CalendarRepository {
   CalendarRepository._({
     required ApiService? api,
@@ -38,9 +38,8 @@ class CalendarRepository {
   final LocalCalendarService _local;
 
   /// True when calendar reads come from bundled assets (no network).
-  /// Chennai always uses bundled calendar.db — even when OFFLINE_MODE=false.
-  bool get usesBundledCalendar =>
-      AppConfig.offlineMode || CityPreferencesService.instance.isDefaultCity;
+  /// The bundled calendar uses the standard Tamil calendar data source.
+  bool get usesBundledCalendar => true;
 
   bool get isOffline => AppConfig.offlineMode;
 
@@ -61,7 +60,7 @@ class CalendarRepository {
     }
   }
 
-  /// Bundled calendar.db contains Chennai 2026 only.
+  /// Bundled calendar.db contains the app's standard 2026 calendar data.
   List<City> _bundledCities() => [CityPreferencesService.defaultCity];
 
   ApiService get _online {

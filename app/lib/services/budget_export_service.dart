@@ -29,7 +29,7 @@ class BudgetExportService {
       ShareParams(
         files: [XFile(file.path)],
         text: AppShare.withInstallFooter(
-          'தமிழர் உலகம் — ${BudgetFormat.monthName(month)} $year செலவு அறிக்கை',
+          '${BudgetFormat.monthName(month)} $year செலவு அறிக்கை',
         ),
         subject: 'Budget ${BudgetFormat.monthName(month)} $year',
       ),

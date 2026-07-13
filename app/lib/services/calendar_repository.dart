@@ -84,14 +84,27 @@ class CalendarRepository {
     return CalendarRepository._(api: ApiService(), local: local);
   }
 
-  Future<HomeSummary> getHome({DateTime? date}) {
-    if (usesBundledCalendar) return _local.fetchHome(date: date);
-    return _online.fetchHome(cityId: cityId, date: date ?? DateTime.now());
+  Future<HomeSummary> getHome({DateTime? date}) async {
+    final HomeSummary home;
+    if (usesBundledCalendar) {
+      home = await _local.fetchHome(date: date);
+    } else {
+      home = await _online.fetchHome(
+        cityId: cityId,
+        date: date ?? DateTime.now(),
+      );
+    }
+    return home.withLiveTamilSolarBanner();
   }
 
-  Future<DailyCalendar> getDay(DateTime date) {
-    if (usesBundledCalendar) return _local.fetchDay(date);
-    return _online.fetchDay(cityId: cityId, date: date);
+  Future<DailyCalendar> getDay(DateTime date) async {
+    final DailyCalendar day;
+    if (usesBundledCalendar) {
+      day = await _local.fetchDay(date);
+    } else {
+      day = await _online.fetchDay(cityId: cityId, date: date);
+    }
+    return day.withLiveTamilSolarBanner();
   }
 
   Future<HoraWeek> getHoraWeek(DateTime date) {
@@ -163,9 +176,22 @@ class CalendarRepository {
     );
   }
 
-  Future<MonthCalendar> getMonth(int year, int month) {
-    if (usesBundledCalendar) return _local.fetchMonth(year, month);
-    return _online.fetchMonth(cityId: cityId, year: year, month: month);
+  Future<MonthCalendar> getMonth(int year, int month) async {
+    final MonthCalendar monthCal;
+    if (usesBundledCalendar) {
+      monthCal = await _local.fetchMonth(year, month);
+    } else {
+      monthCal = await _online.fetchMonth(
+        cityId: cityId,
+        year: year,
+        month: month,
+      );
+    }
+    return monthCal
+        .withLiveToday()
+        .withLiveMuhurtham()
+        .withLiveFastingObservances()
+        .withLiveTamilSolarDays();
   }
 
   Future<List<JyotishNakshatra>> getJyotishNakshatras() {

@@ -1,31 +1,12 @@
 import 'dart:convert';
 
+import '../data/fasting_observance_dates.dart';
+import '../data/suba_muhurtham_dates.dart';
 import '../models/month_calendar.dart';
 
 /// Derive calendar cell icons from bundled daily panchangam rows (kaalavidya data).
 class MonthCellEnrichment {
   MonthCellEnrichment._();
-
-  static const _subaNakshatras = {
-    'ரோகிணி',
-    'மிருகசீரிடம்',
-    'திருவாதிரை',
-    'புனர்பூசம்',
-    'உத்திரம்',
-    'ஹஸ்தம்',
-    'சுவாதி',
-    'அனுஷம்',
-    'மகம்',
-    'மூலம்',
-    'உத்திராடம்',
-    'உத்திரட்டாதி',
-    'ரேவதி',
-    'சித்திரை',
-    'அவிட்டம்',
-    'பூசம்',
-  };
-
-  static const _badTithi = ['அமாவாசை', 'அஷ்டமி', 'நவமி'];
 
   static const _kariNaal2026 = {
     '2026-01-15',
@@ -86,13 +67,18 @@ class MonthCellEnrichment {
     '2026-12-25',
   };
 
-  static MonthCalendar enrich(MonthCalendar month, Map<String, Map<String, Object?>> dailyByDate) {
+  static MonthCalendar enrich(
+    MonthCalendar month,
+    Map<String, Map<String, Object?>> dailyByDate,
+  ) {
     final enrichedDays = month.days.map((cell) {
       if (cell.isOtherMonth || cell.gregorianDay == null) return cell;
 
       final dateKey = _dateKey(month.year, month.month, cell.gregorianDay!);
       final row = dailyByDate[dateKey];
-      final icons = row != null ? _iconsFromRow(row) : cell.icons;
+      final icons = row != null
+          ? _iconsFromRow(row)
+          : _stripLooseThaali(cell.icons, dateKey);
       final moon = row != null ? _moonFromRow(row) : cell.moonPhase;
 
       var highlight = cell.highlightColor;
@@ -109,7 +95,7 @@ class MonthCellEnrichment {
         isToday: cell.isToday,
         isHighlight: cell.isToday || highlight == 'red',
         highlightColor: highlight,
-        icons: icons.isNotEmpty ? icons : cell.icons,
+        icons: icons,
         moonPhase: moon ?? cell.moonPhase,
         isOtherMonth: cell.isOtherMonth,
       );
@@ -123,13 +109,18 @@ class MonthCellEnrichment {
       tamilMonthsTa: month.tamilMonthsTa,
       days: enrichedDays,
       fastingDays: month.fastingDays,
-      weddingDays: month.weddingDays,
+      weddingDays: weddingDayLabelsForMonth(month.year, month.month),
       otherDays: month.otherDays,
       hinduFestivals: month.hinduFestivals,
       muslimFestivals: month.muslimFestivals,
       christianFestivals: month.christianFestivals,
       governmentHolidays: month.governmentHolidays,
     );
+  }
+
+  static List<String> _stripLooseThaali(List<String> icons, String dateKey) {
+    if (isSubaMuhurthamDate(dateKey)) return icons;
+    return icons.where((id) => id != 'thaali').toList();
   }
 
   static List<String> _iconsFromRow(Map<String, Object?> row) {
@@ -139,26 +130,33 @@ class MonthCellEnrichment {
     for (final item in panchangam) {
       final map = item as Map<String, dynamic>;
       if (map['label'] == 'திதி') tithiText = map['value'] as String? ?? '';
-      if (map['label'] == 'நட்சத்திரம்') nakText = map['value'] as String? ?? '';
+      if (map['label'] == 'நட்சத்திரம்') {
+        nakText = map['value'] as String? ?? '';
+      }
     }
 
     final banner = row['banner_line_ta'] as String? ?? '';
     final weekday = banner.contains(',') ? banner.split(',').last.trim() : '';
+    final dateKey = row['gregorian_date'] as String? ?? '';
 
     final icons = <String>[];
-    if (_isSubaMuhurtham(tithiText, nakText, row)) icons.add('thaali');
+    if (isSubaMuhurthamDate(dateKey) && !_kariNaal2026.contains(dateKey)) {
+      icons.add('thaali');
+    }
 
-    if (tithiText.contains('அமாவாசை')) {
+    if (dayHasAmavasai(tithiText)) {
       icons.add(weekday == 'திங்கள்' ? 'sarva_amavasai' : 'amavasai');
     }
-    if (tithiText.contains('பௌர்ணமி')) icons.add('pournami');
-    if (tithiText.contains('சஷ்டி')) icons.add('murugan');
-    if (tithiText.contains('சதுர்த்தி')) icons.add('ganesha');
-    if (tithiText.contains('ஏகாதசி')) icons.add('perumal');
-    if (tithiText.contains('திரயோதசி')) icons.add('nandi');
-    if (tithiText.contains('சதுர்த்தசி') && tithiText.contains('தேய்பிறை')) icons.add('shiva');
-    if (nakText.contains('கிருத்திகை')) icons.add('star');
-    if (nakText.contains('உத்திரம்') && !nakText.contains('உத்திராட')) icons.add('thiruvonam');
+    if (dayHasPournami(tithiText)) icons.add('pournami');
+    if (dayHasSashti(tithiText)) icons.add('murugan');
+    if (dayHasChaturthi(tithiText) || dayHasSankatahara(tithiText)) {
+      icons.add('ganesha');
+    }
+    if (dayHasEkadasi(tithiText)) icons.add('perumal');
+    if (dayHasPradosham(tithiText)) icons.add('nandi');
+    if (dayHasSivaratri(tithiText)) icons.add('shiva');
+    if (dayHasKiruthigai(nakText)) icons.add('star');
+    if (dayHasThiruvonam(nakText)) icons.add('thiruvonam');
 
     return _dedupe(icons);
   }
@@ -169,18 +167,10 @@ class MonthCellEnrichment {
       final map = item as Map<String, dynamic>;
       if (map['label'] != 'திதி') continue;
       final val = map['value'] as String? ?? '';
-      if (val.contains('அமாவாசை')) return 'amavasai';
-      if (val.contains('பௌர்ணமி')) return 'pournami';
+      if (dayHasAmavasai(val)) return 'amavasai';
+      if (dayHasPournami(val)) return 'pournami';
     }
     return null;
-  }
-
-  static bool _isSubaMuhurtham(String tithiText, String nakText, Map<String, Object?> row) {
-    final dateKey = row['gregorian_date'] as String? ?? '';
-    if (_kariNaal2026.contains(dateKey)) return false;
-    if (_badTithi.any((token) => tithiText.contains(token))) return false;
-    if (tithiText.contains('சதுர்த்தசி') && tithiText.contains('தேய்பிறை')) return false;
-    return _subaNakshatras.any((nak) => nakText.contains(nak));
   }
 
   static List<dynamic> _decodeList(String? raw) {

@@ -1,3 +1,5 @@
+import '../data/tamil_solar_month.dart';
+
 class TimeSlot {
   TimeSlot({required this.period, required this.time});
 
@@ -70,6 +72,40 @@ class DailyCalendar {
     required this.birthdaysTa,
     required this.noteTa,
   });
+
+  /// Fix banner/subtitle Tamil solar day (DB mixed lunar masa + sun degree).
+  DailyCalendar withLiveTamilSolarBanner() {
+    final solar = tamilSolarDayFor(gregorianDate);
+    if (solar == null) return this;
+    final weekday = _weekdayFromBannerLine(bannerLineTa);
+    final banner = weekday.isEmpty
+        ? '${solar.monthTa} - ${solar.day}'
+        : '${solar.monthTa} - ${solar.day}, $weekday';
+    final subtitle2 = _rewriteSubtitleSolarDay(subtitleLine2Ta, solar);
+    return DailyCalendar(
+      cityId: cityId,
+      gregorianDate: gregorianDate,
+      monthLabelTa: monthLabelTa,
+      gregorianDisplay: gregorianDisplay,
+      subtitleLine1Ta: subtitleLine1Ta,
+      subtitleLine2Ta: subtitle2,
+      bannerLineTa: banner,
+      eventsTa: eventsTa,
+      nallaNeram: nallaNeram,
+      gowriNallaNeram: gowriNallaNeram,
+      panchangam: panchangam,
+      inauspicious: inauspicious,
+      shoolamTa: shoolamTa,
+      pariharamTa: pariharamTa,
+      lagnamTa: lagnamTa,
+      rasiChart: rasiChart,
+      rasiCenterTa: rasiCenterTa,
+      horoscope: horoscope,
+      quoteTa: quoteTa,
+      birthdaysTa: birthdaysTa,
+      noteTa: noteTa,
+    );
+  }
 
   factory DailyCalendar.fromJson(Map<String, dynamic> json) => DailyCalendar(
         cityId: json['city_id'] as String? ?? '',
@@ -146,4 +182,39 @@ class HomeSummary {
   final String bannerLineTa;
   final String gregorianDisplay;
   final DateTime gregorianDate;
+
+  HomeSummary withLiveTamilSolarBanner() {
+    final solar = tamilSolarDayFor(gregorianDate);
+    if (solar == null) return this;
+    final weekday = _weekdayFromBannerLine(bannerLineTa);
+    final banner = weekday.isEmpty
+        ? '${solar.monthTa} - ${solar.day}'
+        : '${solar.monthTa} - ${solar.day}, $weekday';
+    return HomeSummary(
+      bannerLineTa: banner,
+      gregorianDisplay: gregorianDisplay,
+      gregorianDate: gregorianDate,
+    );
+  }
+}
+
+String _weekdayFromBannerLine(String banner) {
+  if (!banner.contains(',')) return '';
+  return banner.split(',').last.trim();
+}
+
+String _rewriteSubtitleSolarDay(String subtitle, TamilSolarDay solar) {
+  // e.g. "பராபவ - ஆனி - 27" → "பராபவ - ஆனி - 29"
+  final parts = subtitle.split(' - ').map((e) => e.trim()).toList();
+  if (parts.length >= 3) {
+    parts[parts.length - 2] = solar.monthTa;
+    parts[parts.length - 1] = '${solar.day}';
+    return parts.join(' - ');
+  }
+  if (parts.length == 2) {
+    return '${parts.first} - ${solar.monthTa} - ${solar.day}';
+  }
+  return subtitle.isEmpty
+      ? '${solar.monthTa} - ${solar.day}'
+      : subtitle;
 }

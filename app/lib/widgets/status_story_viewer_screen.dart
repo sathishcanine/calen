@@ -154,14 +154,12 @@ class _StatusStoryViewerScreenState extends State<StatusStoryViewerScreen>
       final body = [
         if (story.title.isNotEmpty) story.title,
         if (story.caption.isNotEmpty) story.caption,
-        if (story.title.isEmpty && story.caption.isEmpty)
-          'தமிழர் உலகம் — தமிழ் காலண்டர்',
       ].join('\n');
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
           text: AppShare.withInstallFooter(body),
-          subject: story.title.isNotEmpty ? story.title : 'தமிழர் உலகம்',
+          subject: story.title.isNotEmpty ? story.title : 'தமிழ் காலண்டர்',
         ),
       );
     } catch (e) {

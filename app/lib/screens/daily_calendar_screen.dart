@@ -350,7 +350,6 @@ _DeityKind _selectDeity(DailyCalendar day) {
   }
   if (weekday.contains('திங்கள்') ||
       tithi.contains('திரயோதசி') ||
-      (tithi.contains('சதுர்த்தசி') && tithi.contains('தேய்பிறை')) ||
       eventText.contains('பிரதோஷ') ||
       eventText.contains('சிவராத்திரி') ||
       nakshatram.contains('திருவாதிரை')) {

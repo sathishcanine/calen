@@ -9,28 +9,21 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from kaalavidya.models import DailyPanchanga
 
+from app.data.fasting_observance_dates import (
+    day_has_amavasai,
+    day_has_chaturthi,
+    day_has_ekadasi,
+    day_has_kiruthigai,
+    day_has_pournami,
+    day_has_pradosham,
+    day_has_sankatahara,
+    day_has_sashti,
+    day_has_sivaratri,
+    day_has_thiruvonam,
+)
+from app.data.suba_muhurtham_dates import is_suba_muhurtham_date
 from app.ingestion.other_days import _is_kari_naal
 from app.models import City
-
-# Nakshatras traditionally used for suba muhurtham (Tamil almanac convention).
-_SUBA_MUHURTHAM_NAK = {
-    "ரோகிணி",
-    "மிருகசீரிடம்",
-    "திருவாதிரை",
-    "புனர்பூசம்",
-    "உத்திரம்",
-    "ஹஸ்தம்",
-    "சுவாதி",
-    "அனுஷம்",
-    "மகம்",
-    "மூலம்",
-    "உத்திராடம்",
-    "உத்திரட்டாதி",
-    "ரேவதி",
-    "சித்திரை",
-    "அவிட்டம்",
-    "பூசம்",
-}
 
 _BAD_SUNRISE_TITHI = ("அமாவாசை", "அஷ்டமி", "நவமி")
 
@@ -56,17 +49,14 @@ def _tithi_blob(panchanga: DailyPanchanga) -> str:
 def _is_bad_sunrise_tithi(name: str) -> bool:
     if any(token in name for token in _BAD_SUNRISE_TITHI):
         return True
-    # Krishna paksha chaturdashi (Sivaratri eve) — not a wedding day.
     return "சதுர்த்தசி" in name and "தேய்பிறை" in name
 
 
 def is_suba_muhurtham(panchanga: DailyPanchanga, city: City, on_date: date) -> bool:
+    """True only for curated publisher muhurtham dates (Nithra-style)."""
     if _is_kari_naal(city, on_date):
         return False
-    sunrise_tithi = _sunrise_tithi_name(panchanga)
-    if _is_bad_sunrise_tithi(sunrise_tithi):
-        return False
-    return _sunrise_nakshatra_name(panchanga) in _SUBA_MUHURTHAM_NAK
+    return is_suba_muhurtham_date(on_date)
 
 
 def icons_from_panchanga(panchanga: DailyPanchanga, city: City, on_date: date) -> list[str]:
@@ -79,26 +69,23 @@ def icons_from_panchanga(panchanga: DailyPanchanga, city: City, on_date: date) -
     if is_suba_muhurtham(panchanga, city, on_date):
         icons.append("thaali")
 
-    if "அமாவாசை" in tithi_text:
-        if vara == "திங்கள்":
-            icons.append("sarva_amavasai")
-        else:
-            icons.append("amavasai")
-    if "பௌர்ணமி" in tithi_text:
+    if day_has_amavasai(tithi_text):
+        icons.append("sarva_amavasai" if vara == "திங்கள்" else "amavasai")
+    if day_has_pournami(tithi_text):
         icons.append("pournami")
-    if "சஷ்டி" in tithi_text:
+    if day_has_sashti(tithi_text):
         icons.append("murugan")
-    if "சதுர்த்தி" in tithi_text:
+    if day_has_chaturthi(tithi_text) or day_has_sankatahara(tithi_text):
         icons.append("ganesha")
-    if "ஏகாதசி" in tithi_text:
+    if day_has_ekadasi(tithi_text):
         icons.append("perumal")
-    if "திரயோதசி" in tithi_text:
+    if day_has_pradosham(tithi_text):
         icons.append("nandi")
-    if "சதுர்த்தசி" in tithi_text and "தேய்பிறை" in tithi_text:
+    if day_has_sivaratri(tithi_text):
         icons.append("shiva")
-    if nak == "கிருத்திகை":
+    if day_has_kiruthigai(nak):
         icons.append("star")
-    if nak == "உத்திரம்":
+    if day_has_thiruvonam(nak):
         icons.append("thiruvonam")
 
     return _dedupe(icons)
@@ -127,23 +114,23 @@ def icons_from_daily_row(row: dict, city: City, on_date: date) -> list[str]:
     if _is_suba_muhurtham_from_text(tithi_text, nak_text, city, on_date):
         icons.append("thaali")
 
-    if "அமாவாசை" in tithi_text:
+    if day_has_amavasai(tithi_text):
         icons.append("sarva_amavasai" if weekday == "திங்கள்" else "amavasai")
-    if "பௌர்ணமி" in tithi_text:
+    if day_has_pournami(tithi_text):
         icons.append("pournami")
-    if "சஷ்டி" in tithi_text:
+    if day_has_sashti(tithi_text):
         icons.append("murugan")
-    if "சதுர்த்தி" in tithi_text:
+    if day_has_chaturthi(tithi_text) or day_has_sankatahara(tithi_text):
         icons.append("ganesha")
-    if "ஏகாதசி" in tithi_text:
+    if day_has_ekadasi(tithi_text):
         icons.append("perumal")
-    if "திரயோதசி" in tithi_text:
+    if day_has_pradosham(tithi_text):
         icons.append("nandi")
-    if "சதுர்த்தசி" in tithi_text and "தேய்பிறை" in tithi_text:
+    if day_has_sivaratri(tithi_text):
         icons.append("shiva")
-    if "கிருத்திகை" in nak_text:
+    if day_has_kiruthigai(nak_text):
         icons.append("star")
-    if "உத்திரம்" in nak_text and "உத்திராட" not in nak_text:
+    if day_has_thiruvonam(nak_text):
         icons.append("thiruvonam")
 
     return _dedupe(icons)
@@ -157,13 +144,10 @@ def moon_phase_from_row(row: dict | None) -> str | None:
         if item.get("label") != "திதி":
             continue
         val = item.get("value", "")
-        if "அமாவாசை" in val:
+        if day_has_amavasai(val):
             return "amavasai"
-        if "பௌர்ணமி" in val:
+        if day_has_pournami(val):
             return "pournami"
-    sub = row.get("subtitle_line2_ta", "")
-    if "அமாவாசை" in sub:
-        return "amavasai"
     return None
 
 
@@ -200,18 +184,12 @@ def wedding_day_label(row: dict, on_date: date, city: City) -> str | None:
     return " - ".join(parts)
 
 
-def _is_suba_muhurtham_from_text(tithi_text: str, nak_text: str, city: City, on_date: date) -> bool:
+def _is_suba_muhurtham_from_text(
+    tithi_text: str, nak_text: str, city: City, on_date: date
+) -> bool:
     if _is_kari_naal(city, on_date):
         return False
-    if any(token in tithi_text for token in _BAD_SUNRISE_TITHI):
-        return False
-    if "சதுர்த்தசி" in tithi_text and "தேய்பிறை" in tithi_text:
-        return False
-    first_nak = nak_text.split(" பின்பு ")[0].split(" வரை ")[-1].strip()
-    for token in first_nak.split():
-        if token in _SUBA_MUHURTHAM_NAK:
-            return True
-    return any(nak in nak_text for nak in _SUBA_MUHURTHAM_NAK)
+    return is_suba_muhurtham_date(on_date)
 
 
 def _dedupe(items: list[str]) -> list[str]:

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Small panchangam glyphs for monthly calendar date cells (SS2 reference).
+/// Small panchangam glyphs for monthly calendar date cells.
+/// Prefers bundled PNG images; falls back to CustomPaint for unknown ids.
 class CalendarDayIcon extends StatelessWidget {
   const CalendarDayIcon({
     super.key,
@@ -19,8 +20,89 @@ class CalendarDayIcon extends StatelessWidget {
   final bool onDark;
   final bool themed;
 
+  /// Generated PNG icons (< 50KB each) for clear small-size rendering.
+  static const _pngById = <String, String>{
+    'thaali': 'assets/images/calendar_icons/thaali.png',
+    'amavasai': 'assets/images/calendar_icons/amavasai.png',
+    'sarva_amavasai': 'assets/images/calendar_icons/amavasai.png',
+    'pournami': 'assets/images/calendar_icons/pournami.png',
+    'murugan': 'assets/images/calendar_icons/murugan.png',
+    'ganesha': 'assets/images/calendar_icons/ganesha.png',
+    'perumal': 'assets/images/calendar_icons/perumal.png',
+    'nandi': 'assets/images/calendar_icons/nandi.png',
+    'shiva': 'assets/images/calendar_icons/shiva.png',
+    'star': 'assets/images/calendar_icons/star.png',
+    'krittigai': 'assets/images/calendar_icons/star.png',
+    'thiruvonam': 'assets/images/calendar_icons/thiruvonam.png',
+    'sankatahara': 'assets/images/calendar_icons/ganesha.png',
+  };
+
+  /// Resolve icon id from fasting/festival Tamil title when API icon missing.
+  static String? iconIdForTitle(String title) {
+    final t = title.trim();
+    if (t.contains('அமாவாசை')) return 'amavasai';
+    if (t.contains('பௌர்ணமி')) return 'pournami';
+    if (t.contains('கிருத்திகை')) return 'star';
+    if (t.contains('திருவோணம்')) return 'thiruvonam';
+    if (t.contains('ஏகாதசி')) return 'perumal';
+    if (t.contains('சஷ்டி')) return 'murugan';
+    if (t.contains('சங்கடஹர')) return 'sankatahara';
+    if (t.contains('சதுர்த்தி')) return 'ganesha';
+    if (t.contains('சிவராத்திரி')) return 'shiva';
+    if (t.contains('பிரதோஷம்')) return 'nandi';
+    if (t.contains('முகூர்த்த') || t.contains('திருமண')) return 'thaali';
+    if (t.contains('கரி')) return 'kari';
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Amavasai / Pournami: draw perfect circles (PNG assets are oval + cream BG).
+    final isMoon = iconId == 'amavasai' ||
+        iconId == 'sarva_amavasai' ||
+        iconId == 'pournami';
+    if (isMoon) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _CalendarDayIconPainter(
+            iconId: iconId,
+            size: size,
+            onDark: onDark,
+            themed: themed,
+          ),
+        ),
+      );
+    }
+
+    final png = _pngById[iconId];
+    if (png != null) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(size * 0.18),
+          child: Image.asset(
+            png,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.medium,
+            errorBuilder: (_, error, stackTrace) => CustomPaint(
+              size: Size.square(size),
+              painter: _CalendarDayIconPainter(
+                iconId: iconId,
+                size: size,
+                onDark: onDark,
+                themed: themed,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       width: size,
       height: size,
@@ -103,9 +185,31 @@ class _CalendarDayIconPainter extends CustomPainter {
         _drawTamilMonth(canvas, canvasSize);
       case 'festival':
         _drawFestival(canvas, canvasSize);
+      case 'kari':
+        _drawKari(canvas, canvasSize);
       default:
         _drawDot(canvas, canvasSize);
     }
+  }
+
+  void _drawKari(Canvas canvas, Size s) {
+    final cx = s.width / 2;
+    final cy = s.height / 2;
+    final r = size * 0.36;
+    final color = onDark
+        ? Colors.white.withValues(alpha: 0.92)
+        : const Color(0xFFC62828);
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size * 0.1
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(Offset(cx, cy), r, stroke);
+    canvas.drawLine(
+      Offset(cx - r * 0.55, cy - r * 0.55),
+      Offset(cx + r * 0.55, cy + r * 0.55),
+      stroke..strokeWidth = size * 0.12,
+    );
   }
 
   void _drawThaali(Canvas canvas, Size s) {
@@ -136,25 +240,34 @@ class _CalendarDayIconPainter extends CustomPainter {
   void _drawMoon(Canvas canvas, Size s, {required bool filled}) {
     final cx = s.width / 2;
     final cy = s.height / 2;
-    final r = size * 0.34;
-    final Color color;
-    if (onDark) {
-      color = Colors.white.withValues(alpha: filled ? 0.95 : 0.85);
-    } else if (themed) {
-      color = filled ? AppColors.textPrimary : AppColors.textSecondary;
-    } else {
-      color = filled ? Colors.black87 : Colors.black54;
-    }
+    // Fill most of the box — no cream padding around the circle.
+    final r = size * 0.46;
     if (filled) {
+      final color = onDark
+          ? Colors.white.withValues(alpha: 0.95)
+          : const Color(0xFF1A1A1A);
       canvas.drawCircle(Offset(cx, cy), r, Paint()..color = color);
-    } else {
+      return;
+    }
+    // Full moon: round disc + ring (not oval PNG).
+    if (onDark) {
       canvas.drawCircle(
         Offset(cx, cy),
         r,
         Paint()
-          ..color = color
+          ..color = Colors.white
           ..style = PaintingStyle.stroke
           ..strokeWidth = size * 0.1,
+      );
+    } else {
+      canvas.drawCircle(Offset(cx, cy), r, Paint()..color = Colors.white);
+      canvas.drawCircle(
+        Offset(cx, cy),
+        r,
+        Paint()
+          ..color = Colors.black87
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = size * 0.08,
       );
     }
   }

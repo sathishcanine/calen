@@ -6,6 +6,18 @@ import calendar
 import json
 from datetime import date
 
+from app.data.fasting_observance_dates import (
+    day_has_amavasai,
+    day_has_chaturthi,
+    day_has_ekadasi,
+    day_has_kiruthigai,
+    day_has_pournami,
+    day_has_pradosham,
+    day_has_sankatahara,
+    day_has_sashti,
+    day_has_sivaratri,
+    day_has_thiruvonam,
+)
 from app.ingestion.calendar_icons import (
     icons_from_daily_row,
     moon_phase_from_row,
@@ -129,6 +141,7 @@ def _collect_fasting_days(year: int, month: int, by_date: dict) -> list[dict]:
     pradosham: list[str] = []
     sivaratri: list[str] = []
     chaturthi: list[str] = []
+    sankatahara: list[str] = []
     thiruvonam: list[str] = []
 
     for d, row in sorted(by_date.items()):
@@ -145,23 +158,25 @@ def _collect_fasting_days(year: int, month: int, by_date: dict) -> list[dict]:
             if p.get("label") == "நட்சத்திரம்":
                 nak_text = p.get("value", "")
 
-        if "அமாவாசை" in tithi_text:
+        if day_has_amavasai(tithi_text):
             amavasai.append(label)
-        if "பௌர்ணமி" in tithi_text:
+        if day_has_pournami(tithi_text):
             pournami.append(label)
-        if "கிருத்திகை" in nak_text:
+        if day_has_kiruthigai(nak_text):
             kiruthigai.append(label)
-        if "ஏகாதசி" in tithi_text:
+        if day_has_ekadasi(tithi_text):
             ekadasi.append(label)
-        if "சஷ்டி" in tithi_text:
+        if day_has_sashti(tithi_text):
             sashti.append(label)
-        if "திரயோதசி" in tithi_text:
+        if day_has_pradosham(tithi_text):
             pradosham.append(label)
-        if "சதுர்த்தசி" in tithi_text and "தேய்பிறை" in tithi_text:
+        if day_has_sivaratri(tithi_text):
             sivaratri.append(label)
-        if "சதுர்த்தி" in tithi_text:
+        if day_has_sankatahara(tithi_text):
+            sankatahara.append(label)
+        elif day_has_chaturthi(tithi_text):
             chaturthi.append(label)
-        if "உத்திரம்" in nak_text and "உத்திராட" not in nak_text:
+        if day_has_thiruvonam(nak_text):
             thiruvonam.append(label)
 
     if amavasai:
@@ -170,18 +185,20 @@ def _collect_fasting_days(year: int, month: int, by_date: dict) -> list[dict]:
         items.append({"icon": "pournami", "title_ta": "பௌர்ணமி", "dates_ta": ", ".join(pournami)})
     if kiruthigai:
         items.append({"icon": "star", "title_ta": "கிருத்திகை", "dates_ta": ", ".join(kiruthigai)})
+    if thiruvonam:
+        items.append({"icon": "thiruvonam", "title_ta": "திருவோணம்", "dates_ta": ", ".join(thiruvonam)})
     if ekadasi:
         items.append({"icon": "perumal", "title_ta": "ஏகாதசி", "dates_ta": ", ".join(ekadasi)})
     if sashti:
         items.append({"icon": "murugan", "title_ta": "சஷ்டி", "dates_ta": ", ".join(sashti)})
-    if pradosham:
-        items.append({"icon": "nandi", "title_ta": "பிரதோஷம்", "dates_ta": ", ".join(pradosham)})
+    if sankatahara:
+        items.append({"icon": "sankatahara", "title_ta": "சங்கடஹர சதுர்த்தி", "dates_ta": ", ".join(sankatahara)})
     if sivaratri:
         items.append({"icon": "shiva", "title_ta": "சிவராத்திரி", "dates_ta": ", ".join(sivaratri)})
+    if pradosham:
+        items.append({"icon": "nandi", "title_ta": "பிரதோஷம்", "dates_ta": ", ".join(pradosham)})
     if chaturthi:
         items.append({"icon": "ganesha", "title_ta": "சதுர்த்தி", "dates_ta": ", ".join(chaturthi)})
-    if thiruvonam:
-        items.append({"icon": "thiruvonam", "title_ta": "திருவோணம்", "dates_ta": ", ".join(thiruvonam)})
     return items
 
 

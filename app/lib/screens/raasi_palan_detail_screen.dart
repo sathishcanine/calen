@@ -118,9 +118,6 @@ class _RaasiPalanDetailScreenState extends State<RaasiPalanDetailScreen> {
       }
     }
 
-    buf
-      ..writeln()
-      ..writeln('— தமிழர் உலகம்');
     return AppShare.withInstallFooter(buf.toString());
   }
 

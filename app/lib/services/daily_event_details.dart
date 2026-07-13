@@ -1,3 +1,5 @@
+import '../data/fasting_observance_dates.dart';
+import '../data/suba_muhurtham_dates.dart';
 import '../models/daily_calendar.dart';
 import '../models/month_calendar.dart';
 import 'spiritual_static_bundle.dart';
@@ -47,62 +49,64 @@ class DailyEventResolver {
       addMarker('வாஸ்து நாள்', 'vastu');
     }
 
-    if (tithiText.contains('சதுர்த்தி')) {
-      if (tithiText.contains('தேய்பிறை')) {
-        addMarker('சங்கடஹர சதுர்த்தி', 'ganesha');
-      } else {
-        addMarker('சதுர்த்தி', 'ganesha');
-      }
-    }
-
     if (_isSubaMuhurtham(tithiText, nakText, dateKey)) {
       addMarker('சுப முகூர்த்த நாள்', 'thaali');
       if (!icons.contains('home_good')) icons.add('home_good');
       if (!icons.contains('vehicle_good')) icons.add('vehicle_good');
     }
 
-    if (tithiText.contains('அமாவாசை')) {
+    // Curated timing-correct dates (Nithra-style) — do not OR with raw tithi text
+    // or eve+sunrise double-marking returns.
+    final sunTithi = sunriseTithiText(tithiText);
+    final ama = isAmavasaiDate(dateKey);
+    final pou = isPournamiDate(dateKey);
+    if (ama) {
       addMarker(
         weekday == 'திங்கள்' ? 'சர்வ அமாவாசை' : 'அமாவாசை',
         weekday == 'திங்கள்' ? 'sarva_amavasai' : 'amavasai',
       );
-    } else if (tithiText.contains('பௌர்ணமி')) {
+    } else if (pou) {
       addMarker('பௌர்ணமி', 'pournami');
     }
 
-    if (tithiText.contains('சஷ்டி')) {
+    if (isSashtiDate(dateKey)) {
       addMarker('சஷ்டி', 'murugan');
     }
-    if (tithiText.contains('ஏகாதசி')) {
+    if (isEkadasiDate(dateKey)) {
       addMarker('ஏகாதசி', 'perumal');
     }
-    if (tithiText.contains('அஷ்டமி')) {
+    if (sunTithi.contains('அஷ்டமி')) {
       addMarker('அஷ்டமி', 'ashtami');
     }
-    if (tithiText.contains('நவமி')) {
+    if (sunTithi.contains('நவமி')) {
       addMarker('நவமி', 'navami');
     }
-    if (tithiText.contains('துவாதசி')) {
+    if (sunTithi.contains('துவாதசி')) {
       addMarker('துவாதசி', 'dwadashi');
     }
-    if (tithiText.contains('பிரதமை')) {
+    if (sunTithi.contains('பிரதமை')) {
       addMarker('பிரதமை', 'prathamai');
     }
-    if (tithiText.contains('திரயோதசி')) {
+    if (isPradoshamDate(dateKey)) {
       addMarker('பிரதோஷம்', 'nandi');
     }
-    if (tithiText.contains('சதுர்த்தசி') && tithiText.contains('தேய்பிறை')) {
+    if (isSivaratriDate(dateKey)) {
       addMarker('சிவராத்திரி', 'shiva');
     }
-    if (nakText.contains('கிருத்திகை')) {
+    if (isSankataharaDate(dateKey)) {
+      addMarker('சங்கடஹர சதுர்த்தி', 'sankatahara');
+    } else if (isChaturthiDate(dateKey)) {
+      addMarker('சதுர்த்தி', 'ganesha');
+    }
+    if (isKiruthigaiDate(dateKey)) {
       addMarker('கிருத்திகை', 'krittigai');
     }
-    if (nakText.contains('உத்திரம்') && !nakText.contains('உத்திராட')) {
+    if (isThiruvonamDate(dateKey)) {
       addMarker('திருவோணம்', 'thiruvonam');
     }
 
-    if (tithiText.contains('தேய்பிறை') &&
-        !tithiText.contains('அமாவாசை') &&
+    if (sunTithi.contains('தேய்பிறை') &&
+        !ama &&
         !icons.any(
           (id) =>
               id == 'amavasai' || id == 'sarva_amavasai' || id == 'pournami',
@@ -233,66 +237,7 @@ class DailyEventResolver {
     String nakText,
     String dateKey,
   ) {
-    const kariNaal = {
-      '2026-01-15',
-      '2026-01-16',
-      '2026-01-17',
-      '2026-01-25',
-      '2026-01-31',
-      '2026-02-27',
-      '2026-02-28',
-      '2026-03-01',
-      '2026-03-20',
-      '2026-03-29',
-      '2026-04-02',
-      '2026-04-19',
-      '2026-04-28',
-      '2026-05-21',
-      '2026-05-30',
-      '2026-05-31',
-      '2026-06-15',
-      '2026-06-20',
-      '2026-07-18',
-      '2026-07-26',
-      '2026-08-05',
-      '2026-08-19',
-      '2026-08-26',
-      '2026-09-14',
-      '2026-10-03',
-      '2026-10-16',
-      '2026-10-23',
-      '2026-11-17',
-      '2026-11-23',
-      '2026-11-26',
-      '2026-12-03',
-      '2026-12-21',
-      '2026-12-24',
-      '2026-12-26',
-    };
-    if (kariNaal.contains(dateKey)) return false;
-    if (['அமாவாசை', 'அஷ்டமி', 'நவமி'].any(tithiText.contains)) return false;
-    if (tithiText.contains('சதுர்த்தசி') && tithiText.contains('தேய்பிறை')) {
-      return false;
-    }
-    const subaNak = {
-      'ரோகிணி',
-      'மிருகசீரிடம்',
-      'திருவாதிரை',
-      'புனர்பூசம்',
-      'உத்திரம்',
-      'ஹஸ்தம்',
-      'சுவாதி',
-      'அனுஷம்',
-      'மகம்',
-      'மூலம்',
-      'உத்திராடம்',
-      'உத்திரட்டாதி',
-      'ரேவதி',
-      'சித்திரை',
-      'அவிட்டம்',
-      'பூசம்',
-    };
-    return subaNak.any(nakText.contains);
+    return isSubaMuhurthamDate(dateKey);
   }
 
   static String _weekdayFromBanner(String banner) {

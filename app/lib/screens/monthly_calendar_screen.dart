@@ -111,9 +111,9 @@ class _MonthlyCalendarScreenState extends State<MonthlyCalendarScreen> {
                           onNext: () => _changeMonth(1),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
                           child: AppCard(
-                            padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+                            padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
                             child: Column(
                               children: [
                                 _WeekdayRow(labels: _weekdays),
@@ -286,11 +286,12 @@ class _CalendarGrid extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+      padding: EdgeInsets.zero,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 0.82,
-        crossAxisSpacing: 3,
+        // ~10% taller cells for clearer icons / Tamil day.
+        childAspectRatio: 0.69,
+        crossAxisSpacing: 2,
         mainAxisSpacing: 3,
       ),
       itemCount: days.length,
@@ -317,8 +318,9 @@ class _CalendarGrid extends StatelessWidget {
 
         final onDark = isHoliday || isToday;
         final topIcons = calendarTopIcons(cell.icons);
-        final bottomIcons = calendarBottomIcons(cell.icons, moonPhase: cell.moonPhase);
-        final iconSize = bottomIcons.length > 2 ? 8.5 : 10.0;
+        final bottomIcons =
+            calendarBottomIcons(cell.icons, moonPhase: cell.moonPhase);
+        final iconSize = bottomIcons.length > 2 ? 14.0 : 17.0;
 
         Color dateColor;
         if (cell.isOtherMonth) {
@@ -378,18 +380,18 @@ class _CalendarGrid extends StatelessWidget {
                     ),
                   if (topIcons.isNotEmpty)
                     Positioned(
-                      left: 2,
+                      left: 1,
                       top: 1,
                       child: CalendarDayIcon(
                         iconId: topIcons.first,
-                        size: 11,
+                        size: 18,
                         onDark: onDark,
                         themed: !onDark,
                       ),
                     ),
                   Center(
                     child: Padding(
-                      padding: EdgeInsets.only(top: topIcons.isNotEmpty ? 2 : 0),
+                      padding: EdgeInsets.only(top: topIcons.isNotEmpty ? 4 : 0),
                       child: Text(
                         '$day',
                         style: TextStyle(
@@ -403,16 +405,15 @@ class _CalendarGrid extends StatelessWidget {
                   ),
                   if (bottomIcons.isNotEmpty)
                     Positioned(
-                      left: 2,
-                      right: 2,
-                      bottom: 2,
+                      left: 1,
+                      bottom: 1,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: bottomIcons
                             .take(3)
                             .map(
                               (id) => Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 0.5),
+                                padding: const EdgeInsets.only(right: 1),
                                 child: CalendarDayIcon(
                                   iconId: id,
                                   size: iconSize,
@@ -482,38 +483,57 @@ class _FastingList extends StatelessWidget {
           children: items.asMap().entries.map((entry) {
             final item = entry.value;
             final isLast = entry.key == items.length - 1;
+            final iconId = item.icon ?? CalendarDayIcon.iconIdForTitle(item.titleTa);
             return Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                border: isLast ? null : Border(bottom: BorderSide(color: AppColors.creamDark)),
+                border: isLast
+                    ? null
+                    : Border(
+                        bottom: BorderSide(
+                          color: AppColors.creamDark,
+                          style: BorderStyle.solid,
+                        ),
+                      ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.maroon.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.restaurant_outlined, color: AppColors.maroon, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.titleTa,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                      ),
-                    ],
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: iconId != null
+                        ? CalendarDayIcon(iconId: iconId, size: 40, themed: true)
+                        : Icon(
+                            Icons.restaurant_outlined,
+                            color: AppColors.maroon.withValues(alpha: 0.7),
+                            size: 28,
+                          ),
                   ),
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 46),
-                    child: _DateChips(dates: item.datesTa, accent: AppColors.maroon),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.titleTa,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      item.datesTa,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
                   ),
                 ],
               ),

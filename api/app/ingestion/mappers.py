@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from kaalavidya.models import DailyPanchanga
 
+from app.data.tamil_solar_month import tamil_solar_day_for
 from app.ingestion.gowri_panchangam import (
     gowri_from_panchanga,
     gowri_nalla_neram_from_gowri,
@@ -151,13 +152,21 @@ def daily_from_panchanga(
     masa = panchanga.masa.name if panchanga.masa else ""
     tithi_main = panchanga.tithi[0] if panchanga.tithi else None
     tithi_day = (tithi_main.index % 15) + 1 if tithi_main else 0
-    tamil_day = int(panchanga.sun_rashi.degree) + 1 if panchanga.sun_rashi else tithi_day
+    # Prefer curated Tamil solar (சௌர) month — not lunar masa + sun degree.
+    solar = tamil_solar_day_for(d)
+    if solar:
+        solar_month_ta, tamil_day = solar
+    else:
+        solar_month_ta = masa
+        tamil_day = int(panchanga.sun_rashi.degree) + 1 if panchanga.sun_rashi else tithi_day
 
     samvatsara = panchanga.samvatsara
     subtitle1 = ""
     if panchanga.sun_rashi and panchanga.moon_rashi:
         subtitle1 = f"{panchanga.sun_rashi.name} மாதம் - {panchanga.ritu_solar} - {panchanga.ayana}"
-    subtitle2 = f"{samvatsara} - {masa} - {tamil_day}" if masa else samvatsara
+    subtitle2 = (
+        f"{samvatsara} - {solar_month_ta} - {tamil_day}" if solar_month_ta else samvatsara
+    )
 
     panchangam = []
     if panchanga.sun and panchanga.sun.sunrise:
@@ -241,7 +250,11 @@ def daily_from_panchanga(
         "gregorian_display": gregorian_display,
         "subtitle_line1_ta": subtitle1,
         "subtitle_line2_ta": subtitle2,
-        "banner_line_ta": f"{masa} - {tamil_day}, {weekday}" if masa else f"{tamil_month} - {weekday}",
+        "banner_line_ta": (
+            f"{solar_month_ta} - {tamil_day}, {weekday}"
+            if solar_month_ta
+            else f"{tamil_month} - {weekday}"
+        ),
         "events_ta": "",
         "nalla_neram_json": json.dumps(
             nalla_neram_from_gowri(gowri_panchangam["day_slots"], gowri_panchangam["night_slots"]),

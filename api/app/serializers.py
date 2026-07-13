@@ -88,13 +88,37 @@ def daily_from_schema(data) -> dict:
 
 
 def month_to_schema(row: MonthCalendar) -> MonthCalendarOut:
+    today = date.today()
+    days_raw = json.loads(row.days_json or "[]")
+    days: list[MonthDayCell] = []
+    for cell in days_raw:
+        is_other = bool(cell.get("is_other_month"))
+        day = cell.get("gregorian_day")
+        is_today = (
+            not is_other
+            and day is not None
+            and row.year == today.year
+            and row.month == today.month
+            and int(day) == today.day
+        )
+        is_holiday = cell.get("highlight_color") == "red"
+        cell = {
+            **cell,
+            "is_today": is_today,
+            "is_highlight": is_today or is_holiday,
+            "highlight_color": (
+                "red" if is_holiday else ("green" if is_today else None)
+            ),
+        }
+        days.append(MonthDayCell(**cell))
+
     return MonthCalendarOut(
         city_id=row.city_id,
         year=row.year,
         month=row.month,
         month_label_ta=row.month_label_ta,
         tamil_months_ta=row.tamil_months_ta,
-        days=[MonthDayCell(**x) for x in json.loads(row.days_json or "[]")],
+        days=days,
         fasting_days=[MonthListItem(**x) for x in json.loads(row.fasting_days_json or "[]")],
         wedding_days=json.loads(row.wedding_days_json or "[]"),
         other_days=json.loads(row.other_days_json or "[]"),

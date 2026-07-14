@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -24,27 +25,28 @@ final navigatorKey = GlobalKey<NavigatorState>();
 CalendarRepository? _appRepository;
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Use bundled fonts only — avoids fatal crashes when fonts.gstatic.com is unreachable.
-  GoogleFonts.config.allowRuntimeFetching = false;
+  // Binding + runApp must share the same zone (avoids debugCheckZone crashes).
+  await runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    // Use bundled fonts only — avoids fatal crashes when fonts.gstatic.com is unreachable.
+    GoogleFonts.config.allowRuntimeFetching = false;
 
-  runZonedGuarded(
-    () async {
-      // Keep startup non-blocking so slow device/plugin init never freezes
-      // the native launch screen before first Flutter frame is rendered.
-      unawaited(FirebaseService.instance.initialize());
-      unawaited(AdService.instance.initialize());
-      unawaited(NotificationService.instance.initialize());
+    // Register once, before runApp (Firebase requirement).
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-      final repository = await CalendarRepository.create();
-      _appRepository = repository;
-      NotificationService.instance.onNotificationTap = _handleNotificationTap;
-      runApp(TamilarCalendarApp(repository: repository));
-    },
-    (error, stack) {
-      FirebaseService.instance.recordError(error, stack, fatal: true);
-    },
-  );
+    // Keep startup non-blocking so slow device/plugin init never freezes
+    // the native launch screen before first Flutter frame is rendered.
+    unawaited(FirebaseService.instance.initialize());
+    unawaited(AdService.instance.initialize());
+    unawaited(NotificationService.instance.initialize());
+
+    final repository = await CalendarRepository.create();
+    _appRepository = repository;
+    NotificationService.instance.onNotificationTap = _handleNotificationTap;
+    runApp(TamilarCalendarApp(repository: repository));
+  }, (error, stack) {
+    FirebaseService.instance.recordError(error, stack, fatal: false);
+  });
 }
 
 bool _handleNotificationTap(String payload) {
@@ -53,7 +55,11 @@ bool _handleNotificationTap(String payload) {
       navigatorKey.currentState == null) {
     return false;
   }
-  _openFromNotification(payload);
+  try {
+    _openFromNotification(payload);
+  } catch (_) {
+    // Never crash on notification tap routing.
+  }
   return true;
 }
 
@@ -67,6 +73,13 @@ void _openFromNotification(String payload) {
 
   if (payload == kMetalRatesNotificationRoute) {
     navigate(MetalRatesScreen(repository: repository));
+    return;
+  }
+
+  if (payload == kHomeNotificationRoute ||
+      payload == kDailyMorningLocalPayload) {
+    navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    HomeScreen.switchToTab?.call(HomeScreen.homeTabIndex);
     return;
   }
 
@@ -118,13 +131,22 @@ class _TamilarCalendarAppState extends State<TamilarCalendarApp> {
   }
 
   Future<void> _checkForUpdate() async {
-    final config = await RemoteConfigService.instance.checkForRequiredUpdate();
-    if (!mounted) return;
-    setState(() {
-      _requiredUpdate = config;
-      _checkingUpdate = false;
-    });
-    if (_requiredUpdate == null) {
+    try {
+      final config = await RemoteConfigService.instance.checkForRequiredUpdate();
+      if (!mounted) return;
+      setState(() {
+        _requiredUpdate = config;
+        _checkingUpdate = false;
+      });
+      if (_requiredUpdate == null) {
+        NotificationService.instance.markUpdateReadyForNavigation();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _requiredUpdate = null;
+        _checkingUpdate = false;
+      });
       NotificationService.instance.markUpdateReadyForNavigation();
     }
   }

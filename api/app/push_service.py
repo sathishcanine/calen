@@ -201,6 +201,7 @@ def send_indru_push(
 
 
 TEMPLES_TOPIC = "temples_updates"
+DAILY_MORNING_TOPIC = "daily_morning_updates"
 
 
 def _temple_push_image_url(image_filename: str, api_base: str) -> str:
@@ -248,4 +249,47 @@ def send_temple_push(
         return True
     except Exception as exc:
         logger.warning("[push] Temple notification failed: %s", exc)
+        return False
+
+
+def send_daily_morning_push(
+    *,
+    title: str,
+    body: str = "",
+    image_filename: str | None = None,
+    api_base: str = "",
+) -> bool:
+    """Broadcast home-screen FCM; tapping opens the app home screen."""
+    if not _ensure_firebase():
+        return False
+
+    from firebase_admin import messaging
+
+    data: dict[str, str] = {
+        "route": "home",
+        "title": title,
+    }
+    if body:
+        data["body"] = body
+    if image_filename:
+        base = settings.public_base_url.strip().rstrip("/") or api_base.rstrip("/")
+        data["image_url"] = f"{base}{settings.api_prefix}/home-push-media/{image_filename}"
+
+    message = messaging.Message(
+        data=data,
+        topic=DAILY_MORNING_TOPIC,
+        android=messaging.AndroidConfig(priority="high"),
+        apns=messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(content_available=True),
+            ),
+        ),
+    )
+
+    try:
+        response = messaging.send(message)
+        logger.info("[push] Home notification sent (%s): %s", title, response)
+        return True
+    except Exception as exc:
+        logger.warning("[push] Home notification failed: %s", exc)
         return False

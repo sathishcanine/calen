@@ -30,11 +30,18 @@ const kPostNotificationRoute = 'post';
 /// Payload prefix — tap opens [TempleDetailScreen] (`temple:<slug>`).
 const kTempleNotificationRoute = 'temple';
 
+/// Payload value — tap opens the home tab on [HomeScreen].
+const kHomeNotificationRoute = 'home';
+
+/// Legacy local morning payload — also opens home.
+const kDailyMorningLocalPayload = 'daily_morning';
+
 /// FCM topics.
 const kMetalRatesFcmTopic = 'metal_rates_updates';
 const kPostsFcmTopic = 'posts_updates';
 const kIndruFcmTopic = 'indru_updates';
 const kTemplesFcmTopic = 'temples_updates';
+const kDailyMorningFcmTopic = 'daily_morning_updates';
 
 String postNotificationPayload(String postId) => '$kPostNotificationRoute:$postId';
 
@@ -44,6 +51,7 @@ const _postFcmNotificationId = 3001;
 const _indruFcmNotificationId = 4001;
 const _templeFcmNotificationId = 5001;
 const _metalFcmNotificationId = 2001;
+const _homeFcmNotificationId = 6001;
 const _postsChannelId = 'posts';
 const _postsChannelName = 'பதிவுகள்';
 const _postsChannelDescription = 'புதிய பதிவு நினைவூட்டல்கள்';
@@ -55,6 +63,10 @@ const _templeChannelId = 'temples';
 const _templeChannelName = 'பிரபல கோவில்கள்';
 const _templeChannelDescription = 'தினசரி கோவில் தகவல் நினைவூட்டல்கள்';
 const _templeTitleFallbackTa = 'இன்றைய பிரபல கோவில்';
+const _homeFcmChannelId = 'daily_morning_fcm';
+const _homeFcmChannelName = 'காலை ராசிபலன்';
+const _homeFcmChannelDescription = 'தினசரி காலை ராசிபலன் நினைவூட்டல்';
+const _homeTitleFallbackTa = 'இன்றைய ராசிபலன்';
 const _metalChannelId = 'metal_rates';
 const _metalChannelName = 'தங்கம் & வெள்ளி நிலவரம்';
 const _metalChannelDescription = 'இன்றைய தங்கம் மற்றும் வெள்ளி விலை நினைவூட்டல்';
@@ -106,8 +118,11 @@ Future<String?> _consumePersistedNotificationPayload() async {
   return payload;
 }
 
+const _androidNotificationIcon = '@drawable/ic_stat_notification';
+const _androidNotificationColor = Color(0xFF9B1B1F);
+
 Future<void> _initLocalNotificationsPlugin(FlutterLocalNotificationsPlugin plugin) async {
-  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const androidSettings = AndroidInitializationSettings(_androidNotificationIcon);
   await plugin.initialize(
     settings: const InitializationSettings(
       android: androidSettings,
@@ -135,6 +150,8 @@ Future<NotificationDetails> _buildPostNotificationDetails({
           channelDescription: _postsChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
+          icon: _androidNotificationIcon,
+          color: _androidNotificationColor,
           styleInformation: BigPictureStyleInformation(
             ByteArrayAndroidBitmap(response.bodyBytes),
             contentTitle: body.isNotEmpty ? title : null,
@@ -158,6 +175,8 @@ Future<NotificationDetails> _buildPostNotificationDetails({
     channelDescription: _postsChannelDescription,
     importance: Importance.high,
     priority: Priority.high,
+    icon: _androidNotificationIcon,
+    color: _androidNotificationColor,
   );
   return NotificationDetails(
     android: androidDetails,
@@ -182,6 +201,8 @@ Future<NotificationDetails> _buildIndruNotificationDetails({
           channelDescription: _indruChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
+          icon: _androidNotificationIcon,
+          color: _androidNotificationColor,
           styleInformation: BigPictureStyleInformation(
             ByteArrayAndroidBitmap(response.bodyBytes),
             contentTitle: body.isNotEmpty ? title : null,
@@ -205,6 +226,8 @@ Future<NotificationDetails> _buildIndruNotificationDetails({
     channelDescription: _indruChannelDescription,
     importance: Importance.high,
     priority: Priority.high,
+    icon: _androidNotificationIcon,
+    color: _androidNotificationColor,
   );
   return NotificationDetails(
     android: androidDetails,
@@ -229,6 +252,8 @@ Future<NotificationDetails> _buildTempleNotificationDetails({
           channelDescription: _templeChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
+          icon: _androidNotificationIcon,
+          color: _androidNotificationColor,
           styleInformation: BigPictureStyleInformation(
             ByteArrayAndroidBitmap(response.bodyBytes),
             contentTitle: body.isNotEmpty ? title : null,
@@ -252,6 +277,8 @@ Future<NotificationDetails> _buildTempleNotificationDetails({
     channelDescription: _templeChannelDescription,
     importance: Importance.high,
     priority: Priority.high,
+    icon: _androidNotificationIcon,
+    color: _androidNotificationColor,
   );
   return NotificationDetails(
     android: androidDetails,
@@ -263,186 +290,306 @@ Future<void> _displayIndruNotificationFromData(
   Map<String, dynamic> data, {
   FlutterLocalNotificationsPlugin? plugin,
 }) async {
-  final title = data['title']?.toString() ?? _indruTitleFallbackTa;
-  final body = data['body']?.toString() ?? '';
-  final imageUrl = data['image_url']?.toString();
+  try {
+    final title = data['title']?.toString() ?? _indruTitleFallbackTa;
+    final body = data['body']?.toString() ?? '';
+    final imageUrl = data['image_url']?.toString();
 
-  final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
-  if (plugin == null) {
-    await _initLocalNotificationsPlugin(activePlugin);
-  }
+    final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+    if (plugin == null) {
+      await _initLocalNotificationsPlugin(activePlugin);
+    }
 
-  if (Platform.isAndroid) {
-    final android = activePlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _indruChannelId,
-        _indruChannelName,
-        description: _indruChannelDescription,
-        importance: Importance.high,
-      ),
+    if (Platform.isAndroid) {
+      final android = activePlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _indruChannelId,
+          _indruChannelName,
+          description: _indruChannelDescription,
+          importance: Importance.high,
+        ),
+      );
+    }
+
+    final details = await _buildIndruNotificationDetails(
+      title: title,
+      body: body,
+      imageUrl: imageUrl,
     );
+
+    await activePlugin.show(
+      id: _indruFcmNotificationId,
+      title: title,
+      body: body.isNotEmpty ? body : null,
+      notificationDetails: details,
+      payload: kIndruNotificationRoute,
+    );
+  } catch (_) {
+    // Never crash while showing a notification.
   }
-
-  final details = await _buildIndruNotificationDetails(
-    title: title,
-    body: body,
-    imageUrl: imageUrl,
-  );
-
-  await activePlugin.show(
-    id: _indruFcmNotificationId,
-    title: title,
-    body: body.isNotEmpty ? body : null,
-    notificationDetails: details,
-    payload: kIndruNotificationRoute,
-  );
 }
 
 Future<void> _displayPostNotificationFromData(
   Map<String, dynamic> data, {
   FlutterLocalNotificationsPlugin? plugin,
 }) async {
-  final postId = data['post_id']?.toString() ?? '';
-  if (postId.isEmpty) return;
+  try {
+    final postId = data['post_id']?.toString() ?? '';
+    if (postId.isEmpty) return;
 
-  final title = data['title']?.toString() ?? 'புதிய பதிவு';
-  final body = data['body']?.toString() ?? '';
-  final imageUrl = data['image_url']?.toString();
+    final title = data['title']?.toString() ?? 'புதிய பதிவு';
+    final body = data['body']?.toString() ?? '';
+    final imageUrl = data['image_url']?.toString();
 
-  final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
-  if (plugin == null) {
-    await _initLocalNotificationsPlugin(activePlugin);
-  }
+    final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+    if (plugin == null) {
+      await _initLocalNotificationsPlugin(activePlugin);
+    }
 
-  if (Platform.isAndroid) {
-    final android = activePlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _postsChannelId,
-        _postsChannelName,
-        description: _postsChannelDescription,
-        importance: Importance.high,
-      ),
+    if (Platform.isAndroid) {
+      final android = activePlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _postsChannelId,
+          _postsChannelName,
+          description: _postsChannelDescription,
+          importance: Importance.high,
+        ),
+      );
+    }
+
+    final details = await _buildPostNotificationDetails(
+      title: title,
+      body: body,
+      imageUrl: imageUrl,
     );
+
+    await activePlugin.show(
+      id: _postFcmNotificationId,
+      title: title,
+      body: body.isNotEmpty ? body : null,
+      notificationDetails: details,
+      payload: postNotificationPayload(postId),
+    );
+  } catch (_) {
+    // Never crash while showing a notification.
   }
-
-  final details = await _buildPostNotificationDetails(
-    title: title,
-    body: body,
-    imageUrl: imageUrl,
-  );
-
-  await activePlugin.show(
-    id: _postFcmNotificationId,
-    title: title,
-    body: body.isNotEmpty ? body : null,
-    notificationDetails: details,
-    payload: postNotificationPayload(postId),
-  );
 }
 
 Future<void> _displayTempleNotificationFromData(
   Map<String, dynamic> data, {
   FlutterLocalNotificationsPlugin? plugin,
 }) async {
-  final slug = data['temple_slug']?.toString() ?? '';
-  if (slug.isEmpty) return;
+  try {
+    final slug = data['temple_slug']?.toString() ?? '';
+    if (slug.isEmpty) return;
 
-  final title = data['title']?.toString() ?? _templeTitleFallbackTa;
-  final body = data['body']?.toString() ?? '';
-  final imageUrl = data['image_url']?.toString();
+    final title = data['title']?.toString() ?? _templeTitleFallbackTa;
+    final body = data['body']?.toString() ?? '';
+    final imageUrl = data['image_url']?.toString();
 
-  final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
-  if (plugin == null) {
-    await _initLocalNotificationsPlugin(activePlugin);
-  }
+    final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+    if (plugin == null) {
+      await _initLocalNotificationsPlugin(activePlugin);
+    }
 
-  if (Platform.isAndroid) {
-    final android = activePlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _templeChannelId,
-        _templeChannelName,
-        description: _templeChannelDescription,
-        importance: Importance.high,
-      ),
+    if (Platform.isAndroid) {
+      final android = activePlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _templeChannelId,
+          _templeChannelName,
+          description: _templeChannelDescription,
+          importance: Importance.high,
+        ),
+      );
+    }
+
+    final details = await _buildTempleNotificationDetails(
+      title: title,
+      body: body,
+      imageUrl: imageUrl,
     );
+
+    await activePlugin.show(
+      id: _templeFcmNotificationId,
+      title: title,
+      body: body.isNotEmpty ? body : null,
+      notificationDetails: details,
+      payload: templeNotificationPayload(slug),
+    );
+  } catch (_) {
+    // Never crash while showing a notification.
   }
-
-  final details = await _buildTempleNotificationDetails(
-    title: title,
-    body: body,
-    imageUrl: imageUrl,
-  );
-
-  await activePlugin.show(
-    id: _templeFcmNotificationId,
-    title: title,
-    body: body.isNotEmpty ? body : null,
-    notificationDetails: details,
-    payload: templeNotificationPayload(slug),
-  );
 }
 
 Future<void> _displayMetalRatesNotificationFromData(
   Map<String, dynamic> data, {
   FlutterLocalNotificationsPlugin? plugin,
 }) async {
-  final title = data['title']?.toString() ?? _metalTitleTa;
-  final body = data['body']?.toString() ?? _metalBodyTa;
+  try {
+    final title = data['title']?.toString() ?? _metalTitleTa;
+    final body = data['body']?.toString() ?? _metalBodyTa;
 
-  final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
-  if (plugin == null) {
-    await _initLocalNotificationsPlugin(activePlugin);
-  }
+    final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+    if (plugin == null) {
+      await _initLocalNotificationsPlugin(activePlugin);
+    }
 
-  if (Platform.isAndroid) {
-    final android = activePlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _metalChannelId,
-        _metalChannelName,
-        description: _metalChannelDescription,
-        importance: Importance.high,
+    if (Platform.isAndroid) {
+      final android = activePlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _metalChannelId,
+          _metalChannelName,
+          description: _metalChannelDescription,
+          importance: Importance.high,
+        ),
+      );
+    }
+
+    await activePlugin.show(
+      id: _metalFcmNotificationId,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _metalChannelId,
+          _metalChannelName,
+          channelDescription: _metalChannelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: _androidNotificationIcon,
+          color: _androidNotificationColor,
+        ),
+        iOS: DarwinNotificationDetails(),
       ),
+      payload: kMetalRatesNotificationRoute,
     );
+  } catch (_) {
+    // Never crash while showing a notification.
+  }
+}
+
+Future<void> _displayHomeNotificationFromData(
+  Map<String, dynamic> data, {
+  FlutterLocalNotificationsPlugin? plugin,
+}) async {
+  try {
+    final title = data['title']?.toString() ?? _homeTitleFallbackTa;
+    final body = data['body']?.toString() ?? '';
+    final imageUrl = data['image_url']?.toString();
+
+    final activePlugin = plugin ?? FlutterLocalNotificationsPlugin();
+    if (plugin == null) {
+      await _initLocalNotificationsPlugin(activePlugin);
+    }
+
+    if (Platform.isAndroid) {
+      final android = activePlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _homeFcmChannelId,
+          _homeFcmChannelName,
+          description: _homeFcmChannelDescription,
+          importance: Importance.high,
+        ),
+      );
+    }
+
+    final details = await _buildHomeNotificationDetails(
+      title: title,
+      body: body,
+      imageUrl: imageUrl,
+    );
+
+    await activePlugin.show(
+      id: _homeFcmNotificationId,
+      title: title,
+      body: body.isNotEmpty ? body : null,
+      notificationDetails: details,
+      payload: kHomeNotificationRoute,
+    );
+  } catch (_) {
+    // Never crash while showing a notification.
+  }
+}
+
+Future<NotificationDetails> _buildHomeNotificationDetails({
+  required String title,
+  required String body,
+  String? imageUrl,
+}) async {
+  AndroidNotificationDetails androidDetails;
+
+  if (imageUrl != null && imageUrl.isNotEmpty) {
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        androidDetails = AndroidNotificationDetails(
+          _homeFcmChannelId,
+          _homeFcmChannelName,
+          channelDescription: _homeFcmChannelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: _androidNotificationIcon,
+          color: _androidNotificationColor,
+          styleInformation: BigPictureStyleInformation(
+            ByteArrayAndroidBitmap(response.bodyBytes),
+            contentTitle: body.isNotEmpty ? title : null,
+            summaryText: body.isNotEmpty ? body : null,
+            hideExpandedLargeIcon: true,
+          ),
+        );
+        return NotificationDetails(
+          android: androidDetails,
+          iOS: const DarwinNotificationDetails(),
+        );
+      }
+    } catch (_) {
+      // Fall back to text-only notification.
+    }
   }
 
-  await activePlugin.show(
-    id: _metalFcmNotificationId,
-    title: title,
-    body: body,
-    notificationDetails: const NotificationDetails(
-      android: AndroidNotificationDetails(
-        _metalChannelId,
-        _metalChannelName,
-        channelDescription: _metalChannelDescription,
-        importance: Importance.high,
-        priority: Priority.high,
-      ),
-      iOS: DarwinNotificationDetails(),
-    ),
-    payload: kMetalRatesNotificationRoute,
+  androidDetails = AndroidNotificationDetails(
+    _homeFcmChannelId,
+    _homeFcmChannelName,
+    channelDescription: _homeFcmChannelDescription,
+    importance: Importance.high,
+    priority: Priority.high,
+    icon: _androidNotificationIcon,
+    color: _androidNotificationColor,
+  );
+  return NotificationDetails(
+    android: androidDetails,
+    iOS: const DarwinNotificationDetails(),
   );
 }
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final route = message.data['route']?.toString();
-  if (route == kPostNotificationRoute) {
-    await _displayPostNotificationFromData(message.data);
-  } else if (route == kIndruNotificationRoute) {
-    await _displayIndruNotificationFromData(message.data);
-  } else if (route == kTempleNotificationRoute) {
-    await _displayTempleNotificationFromData(message.data);
-  } else if (route == kMetalRatesNotificationRoute) {
-    await _displayMetalRatesNotificationFromData(message.data);
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    final route = message.data['route']?.toString();
+    if (route == kPostNotificationRoute) {
+      await _displayPostNotificationFromData(message.data);
+    } else if (route == kIndruNotificationRoute) {
+      await _displayIndruNotificationFromData(message.data);
+    } else if (route == kTempleNotificationRoute) {
+      await _displayTempleNotificationFromData(message.data);
+    } else if (route == kMetalRatesNotificationRoute) {
+      await _displayMetalRatesNotificationFromData(message.data);
+    } else if (route == kHomeNotificationRoute) {
+      await _displayHomeNotificationFromData(message.data);
+    }
+  } catch (_) {
+    // Background isolate must never crash the app.
   }
 }
 
@@ -512,81 +659,94 @@ class NotificationService {
   Future<void> initialize() async {
     if (!_supported || _initialized) return;
 
-    tz_data.initializeTimeZones();
-    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(_resolveTimezoneLocation(timezoneInfo.identifier));
+    try {
+      tz_data.initializeTimeZones();
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(_resolveTimezoneLocation(timezoneInfo.identifier));
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+      const androidSettings = AndroidInitializationSettings(_androidNotificationIcon);
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
 
-    await _plugin.initialize(
-      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
-      onDidReceiveNotificationResponse: NotificationService.onNotificationResponseReceived,
-      onDidReceiveBackgroundNotificationResponse: onNotificationBackgroundResponseReceived,
-    );
+      await _plugin.initialize(
+        settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
+        onDidReceiveNotificationResponse: NotificationService.onNotificationResponseReceived,
+        onDidReceiveBackgroundNotificationResponse: onNotificationBackgroundResponseReceived,
+      );
 
-    if (Platform.isAndroid) {
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _morningChannelId,
-          _morningChannelName,
-          description: _morningChannelDescription,
-          importance: Importance.defaultImportance,
-        ),
-      );
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _budgetChannelId,
-          _budgetChannelName,
-          description: _budgetChannelDescription,
-          importance: Importance.defaultImportance,
-        ),
-      );
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _metalChannelId,
-          _metalChannelName,
-          description: _metalChannelDescription,
-          importance: Importance.high,
-        ),
-      );
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _postsChannelId,
-          _postsChannelName,
-          description: _postsChannelDescription,
-          importance: Importance.high,
-        ),
-      );
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _indruChannelId,
-          _indruChannelName,
-          description: _indruChannelDescription,
-          importance: Importance.high,
-        ),
-      );
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _templeChannelId,
-          _templeChannelName,
-          description: _templeChannelDescription,
-          importance: Importance.high,
-        ),
-      );
+      if (Platform.isAndroid) {
+        final android = _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _morningChannelId,
+            _morningChannelName,
+            description: _morningChannelDescription,
+            importance: Importance.defaultImportance,
+          ),
+        );
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _budgetChannelId,
+            _budgetChannelName,
+            description: _budgetChannelDescription,
+            importance: Importance.defaultImportance,
+          ),
+        );
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _metalChannelId,
+            _metalChannelName,
+            description: _metalChannelDescription,
+            importance: Importance.high,
+          ),
+        );
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _postsChannelId,
+            _postsChannelName,
+            description: _postsChannelDescription,
+            importance: Importance.high,
+          ),
+        );
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _indruChannelId,
+            _indruChannelName,
+            description: _indruChannelDescription,
+            importance: Importance.high,
+          ),
+        );
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _templeChannelId,
+            _templeChannelName,
+            description: _templeChannelDescription,
+            importance: Importance.high,
+          ),
+        );
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _homeFcmChannelId,
+            _homeFcmChannelName,
+            description: _homeFcmChannelDescription,
+            importance: Importance.high,
+          ),
+        );
+      }
+
+      // Background handler is registered once in main() before runApp.
+      FirebaseMessaging.onMessage.listen(_onForegroundFcmMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(_onFcmMessageOpened);
+
+      _initialized = true;
+    } catch (_) {
+      // Notification setup failure must not block app launch.
+      _initialized = false;
     }
-
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    FirebaseMessaging.onMessage.listen(_onForegroundFcmMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_onFcmMessageOpened);
-
-    _initialized = true;
   }
 
   static void onNotificationResponseReceived(NotificationResponse response) {
@@ -603,16 +763,21 @@ class NotificationService {
     final permitted = await _hasNotificationPermission();
     if (!permitted) return;
 
-    if (await isMetalRatesEnabled) {
-      await FirebaseMessaging.instance.subscribeToTopic(kMetalRatesFcmTopic);
-    }
-    await FirebaseMessaging.instance.subscribeToTopic(kPostsFcmTopic);
-    await FirebaseMessaging.instance.subscribeToTopic(kIndruFcmTopic);
-    await FirebaseMessaging.instance.subscribeToTopic(kTemplesFcmTopic);
+    try {
+      if (await isMetalRatesEnabled) {
+        await FirebaseMessaging.instance.subscribeToTopic(kMetalRatesFcmTopic);
+      }
+      await FirebaseMessaging.instance.subscribeToTopic(kPostsFcmTopic);
+      await FirebaseMessaging.instance.subscribeToTopic(kIndruFcmTopic);
+      await FirebaseMessaging.instance.subscribeToTopic(kTemplesFcmTopic);
+      await FirebaseMessaging.instance.subscribeToTopic(kDailyMorningFcmTopic);
 
-    final initial = await FirebaseMessaging.instance.getInitialMessage();
-    if (initial != null) {
-      _handleFcmData(initial.data);
+      final initial = await FirebaseMessaging.instance.getInitialMessage();
+      if (initial != null) {
+        _handleFcmData(initial.data);
+      }
+    } catch (_) {
+      // Topic subscribe / initial message must never crash.
     }
   }
 
@@ -877,10 +1042,12 @@ class NotificationService {
             channelDescription: _morningChannelDescription,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
+            icon: _androidNotificationIcon,
+            color: _androidNotificationColor,
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        payload: 'daily_morning',
+        payload: kDailyMorningLocalPayload,
       );
     }
   }
@@ -922,6 +1089,8 @@ class NotificationService {
             channelDescription: _budgetChannelDescription,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
+            icon: _androidNotificationIcon,
+            color: _androidNotificationColor,
           ),
           iOS: DarwinNotificationDetails(),
         ),
@@ -931,15 +1100,21 @@ class NotificationService {
   }
 
   void _onForegroundFcmMessage(RemoteMessage message) {
-    final route = message.data['route']?.toString();
-    if (route == kMetalRatesNotificationRoute) {
-      unawaited(_displayMetalRatesNotificationFromData(message.data, plugin: _plugin));
-    } else if (route == kPostNotificationRoute) {
-      _showPostForeground(message);
-    } else if (route == kIndruNotificationRoute) {
-      _showIndruForeground(message);
-    } else if (route == kTempleNotificationRoute) {
-      _showTempleForeground(message);
+    try {
+      final route = message.data['route']?.toString();
+      if (route == kMetalRatesNotificationRoute) {
+        unawaited(_displayMetalRatesNotificationFromData(message.data, plugin: _plugin));
+      } else if (route == kPostNotificationRoute) {
+        _showPostForeground(message);
+      } else if (route == kIndruNotificationRoute) {
+        _showIndruForeground(message);
+      } else if (route == kTempleNotificationRoute) {
+        _showTempleForeground(message);
+      } else if (route == kHomeNotificationRoute) {
+        unawaited(_displayHomeNotificationFromData(message.data, plugin: _plugin));
+      }
+    } catch (_) {
+      // Foreground FCM display must never crash.
     }
   }
 
@@ -967,6 +1142,10 @@ class NotificationService {
     }
     if (route == kIndruNotificationRoute) {
       _dispatchNotificationTap(kIndruNotificationRoute);
+      return;
+    }
+    if (route == kHomeNotificationRoute) {
+      _dispatchNotificationTap(kHomeNotificationRoute);
       return;
     }
     if (route == kPostNotificationRoute) {

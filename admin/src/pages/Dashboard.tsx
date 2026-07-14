@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import type { MetalRatesStatus, MetalRatesSyncResult } from '../api';
+import type { DailyMorningPushResult, MetalRatesStatus, MetalRatesSyncResult } from '../api';
 
 function formatIst(iso: string | null | undefined): string {
   if (!iso) return '—';
@@ -32,6 +32,12 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [pushError, setPushError] = useState('');
+  const [pushMessage, setPushMessage] = useState('');
+  const [sendingPush, setSendingPush] = useState(false);
+  const [homeTitle, setHomeTitle] = useState('');
+  const [homeBody, setHomeBody] = useState('');
+  const [homeFile, setHomeFile] = useState<File | null>(null);
 
   const loadStatus = useCallback(() => {
     api
@@ -59,6 +65,30 @@ export default function Dashboard() {
       setError(String(err));
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function onSendHomePush(e: FormEvent) {
+    e.preventDefault();
+    if (!homeTitle.trim()) {
+      setPushError('Title is required');
+      return;
+    }
+    setSendingPush(true);
+    setPushError('');
+    setPushMessage('');
+    try {
+      const result: DailyMorningPushResult = await api.sendDailyMorningPush({
+        title: homeTitle,
+        body: homeBody,
+        file: homeFile,
+      });
+      setPushMessage(`Push sent — opens Home: ${result.title}`);
+      setHomeFile(null);
+    } catch (err) {
+      setPushError(String(err));
+    } finally {
+      setSendingPush(false);
     }
   }
 
@@ -115,6 +145,41 @@ export default function Dashboard() {
         {message && <p className="success">{message}</p>}
         {error && <p className="error">{error}</p>}
       </div>
+
+      <form className="card dashboard-card" onSubmit={onSendHomePush}>
+        <h3>Home push notification</h3>
+        <p className="muted">
+          Write your own title and description, optionally add an image, then send. Tap opens the
+          app home screen. Does not affect the automatic 6:30 AM IST push.
+        </p>
+        <label>Title</label>
+        <input
+          value={homeTitle}
+          onChange={(e) => setHomeTitle(e.target.value)}
+          placeholder="Notification title"
+          required
+        />
+        <label>Description (optional)</label>
+        <textarea
+          value={homeBody}
+          onChange={(e) => setHomeBody(e.target.value)}
+          placeholder="Short message under the title"
+          rows={4}
+        />
+        <label>Image (optional)</label>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => setHomeFile(e.target.files?.[0] ?? null)}
+        />
+        <div className="dashboard-actions">
+          <button type="submit" disabled={sendingPush}>
+            {sendingPush ? 'Sending…' : 'Send home push'}
+          </button>
+        </div>
+        {pushMessage && <p className="success">{pushMessage}</p>}
+        {pushError && <p className="error">{pushError}</p>}
+      </form>
 
       <div className="card dashboard-links">
         <h3>Quick links</h3>

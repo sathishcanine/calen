@@ -13,7 +13,9 @@ from app.data import posts_service
 from app.data.post_content import resolve_blocks_for_api
 from app.data import indru_push_service
 from app.data import raasi_palan_service
-from app.push_service import send_indru_push, send_post_push
+from app.push_service import send_daily_morning_push, send_indru_push, send_post_push
+from app.data import home_push_service
+from app.daily_morning_push_scheduler import _today_ist as _morning_push_today_ist
 from app.data.indru_service import (
     LOOKAHEAD_DAYS,
     _today_ist,
@@ -322,6 +324,51 @@ def admin_sync_metal_rates(db: Session = Depends(get_db)):
     }
 
 
+@secured.post("/daily-morning/send")
+async def admin_send_daily_morning_push(
+    request: Request,
+    title: str = Form(...),
+    body: str = Form(default=""),
+    file: UploadFile | None = File(default=None),
+):
+    """Send a custom home-screen FCM (title + body + optional image)."""
+    title = title.strip()
+    if not title:
+        raise HTTPException(400, detail="Title is required")
+
+    image_filename: str | None = None
+    if file is not None and file.filename:
+        image_bytes = await file.read()
+        try:
+            image_filename = home_push_service.store_image(
+                filename=file.filename,
+                image_bytes=image_bytes,
+            )
+        except ValueError as exc:
+            raise HTTPException(400, detail=str(exc)) from exc
+
+    api_base = str(request.base_url).rstrip("/")
+    pushed = send_daily_morning_push(
+        title=title,
+        body=body.strip(),
+        image_filename=image_filename,
+        api_base=api_base,
+    )
+    if not pushed:
+        raise HTTPException(
+            503,
+            detail="Push notification unavailable (check FIREBASE_CREDENTIALS_PATH)",
+        )
+    return {
+        "ok": True,
+        "route": "home",
+        "push_date": _morning_push_today_ist().isoformat(),
+        "title": title,
+        "body": body.strip(),
+        "has_image": bool(image_filename),
+    }
+
+
 @secured.get("/indru", response_model=list[IndruDailyOut])
 def admin_list_indru(
     from_date: date | None = Query(default=None, alias="from"),
@@ -339,6 +386,110 @@ def admin_list_indru(
         .all()
     )
     return [IndruDailyOut(**indru_to_dict(r)) for r in rows]
+
+
+def _indru_push_out(entry, request: Request) -> IndruPushOut:
+    image_url = None
+    if entry.image_filename:
+        base = str(request.base_url).rstrip("/")
+        image_url = f"{base}{settings.api_prefix}/indru-push-media/{entry.image_filename}"
+    return IndruPushOut(
+        id=entry.id,
+        title=entry.title,
+        body=entry.body or "",
+        image_url=image_url,
+        push_sent=bool(entry.push_sent),
+        created_at=entry.created_at,
+    )
+
+
+@secured.get("/indru/pushes", response_model=list[IndruPushOut])
+def admin_list_indru_pushes(request: Request, db: Session = Depends(get_db)):
+    return [_indru_push_out(p, request) for p in indru_push_service.list_pushes(db)]
+
+
+@secured.post("/indru/pushes", response_model=IndruPushOut)
+async def admin_create_indru_push(
+    request: Request,
+    db: Session = Depends(get_db),
+    title: str = Form(...),
+    body: str = Form(default=""),
+    send_push: str = Form(default="false"),
+    file: UploadFile | None = File(default=None),
+):
+    image_bytes: bytes | None = None
+    filename: str | None = None
+    if file is not None and file.filename:
+        image_bytes = await file.read()
+        filename = file.filename
+    try:
+        row = indru_push_service.add_push(
+            db,
+            title=title,
+            body=body,
+            filename=filename,
+            image_bytes=image_bytes if image_bytes else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+
+    out = _indru_push_out(row, request)
+    api_base = str(request.base_url).rstrip("/")
+    if send_push.strip().lower() in {"true", "1", "yes", "on"}:
+        pushed = send_indru_push(
+            push_id=row.id,
+            title=row.title,
+            body=indru_push_service.push_notification_body(row.body),
+            image_filename=row.image_filename,
+            api_base=api_base,
+        )
+        if pushed:
+            indru_push_service.mark_push_sent(db, row)
+            out = _indru_push_out(row, request)
+    return out
+
+
+@secured.post("/indru/pushes/{push_id}/send", response_model=IndruPushOut)
+def admin_send_indru_push(push_id: str, request: Request, db: Session = Depends(get_db)):
+    row = indru_push_service.get_push(db, push_id)
+    if not row:
+        raise HTTPException(404, detail="Indru push not found")
+    api_base = str(request.base_url).rstrip("/")
+    pushed = send_indru_push(
+        push_id=row.id,
+        title=row.title,
+        body=indru_push_service.push_notification_body(row.body),
+        image_filename=row.image_filename,
+        api_base=api_base,
+    )
+    if not pushed:
+        raise HTTPException(503, detail="Push notification unavailable (check FIREBASE_CREDENTIALS_PATH)")
+    indru_push_service.mark_push_sent(db, row)
+    return _indru_push_out(row, request)
+
+
+@secured.delete("/indru/pushes/{push_id}")
+def admin_delete_indru_push(push_id: str, db: Session = Depends(get_db)):
+    if not indru_push_service.delete_push(db, push_id):
+        raise HTTPException(404, detail="Indru push not found")
+    return {"ok": True}
+
+
+@secured.post("/indru/refresh")
+def admin_refresh_indru(
+    on_date: date | None = Query(default=None, alias="date"),
+    days: int = Query(default=LOOKAHEAD_DAYS + 1, ge=1, le=31),
+    force: bool = Query(default=True),
+    db: Session = Depends(get_db),
+):
+    start = on_date or _today_ist()
+    rows = refresh_indru_range(db, start, days=days, force=force)
+    return {
+        "ok": True,
+        "from": start.isoformat(),
+        "days": days,
+        "count": len(rows),
+    }
 
 
 @secured.get("/indru/{on_date}", response_model=IndruDailyOut)
@@ -361,23 +512,6 @@ def admin_upsert_indru(on_date: date, body: IndruDailyIn, db: Session = Depends(
     db.commit()
     db.refresh(row)
     return IndruDailyOut(**indru_to_dict(row))
-
-
-@secured.post("/indru/refresh")
-def admin_refresh_indru(
-    on_date: date | None = Query(default=None, alias="date"),
-    days: int = Query(default=LOOKAHEAD_DAYS + 1, ge=1, le=31),
-    force: bool = Query(default=True),
-    db: Session = Depends(get_db),
-):
-    start = on_date or _today_ist()
-    rows = refresh_indru_range(db, start, days=days, force=force)
-    return {
-        "ok": True,
-        "from": start.isoformat(),
-        "days": days,
-        "count": len(rows),
-    }
 
 
 def _post_out(entry, request: Request) -> PostOut:
@@ -510,93 +644,6 @@ def admin_push_post(post_id: str, request: Request, db: Session = Depends(get_db
 def admin_delete_post(post_id: str, db: Session = Depends(get_db)):
     if not posts_service.delete_post(db, post_id):
         raise HTTPException(404, detail="Post not found")
-    return {"ok": True}
-
-
-def _indru_push_out(entry, request: Request) -> IndruPushOut:
-    image_url = None
-    if entry.image_filename:
-        base = str(request.base_url).rstrip("/")
-        image_url = f"{base}{settings.api_prefix}/indru-push-media/{entry.image_filename}"
-    return IndruPushOut(
-        id=entry.id,
-        title=entry.title,
-        body=entry.body or "",
-        image_url=image_url,
-        push_sent=bool(entry.push_sent),
-        created_at=entry.created_at,
-    )
-
-
-@secured.get("/indru/pushes", response_model=list[IndruPushOut])
-def admin_list_indru_pushes(request: Request, db: Session = Depends(get_db)):
-    return [_indru_push_out(p, request) for p in indru_push_service.list_pushes(db)]
-
-
-@secured.post("/indru/pushes", response_model=IndruPushOut)
-async def admin_create_indru_push(
-    request: Request,
-    db: Session = Depends(get_db),
-    title: str = Form(...),
-    body: str = Form(default=""),
-    send_push: str = Form(default="false"),
-    file: UploadFile | None = File(default=None),
-):
-    image_bytes: bytes | None = None
-    filename: str | None = None
-    if file is not None and file.filename:
-        image_bytes = await file.read()
-        filename = file.filename
-    try:
-        row = indru_push_service.add_push(
-            db,
-            title=title,
-            body=body,
-            filename=filename,
-            image_bytes=image_bytes if image_bytes else None,
-        )
-    except ValueError as exc:
-        raise HTTPException(400, detail=str(exc)) from exc
-
-    out = _indru_push_out(row, request)
-    api_base = str(request.base_url).rstrip("/")
-    if send_push.strip().lower() in {"true", "1", "yes", "on"}:
-        pushed = send_indru_push(
-            push_id=row.id,
-            title=row.title,
-            body=indru_push_service.push_notification_body(row.body),
-            image_filename=row.image_filename,
-            api_base=api_base,
-        )
-        if pushed:
-            indru_push_service.mark_push_sent(db, row)
-            out = _indru_push_out(row, request)
-    return out
-
-
-@secured.post("/indru/pushes/{push_id}/send", response_model=IndruPushOut)
-def admin_send_indru_push(push_id: str, request: Request, db: Session = Depends(get_db)):
-    row = indru_push_service.get_push(db, push_id)
-    if not row:
-        raise HTTPException(404, detail="Indru push not found")
-    api_base = str(request.base_url).rstrip("/")
-    pushed = send_indru_push(
-        push_id=row.id,
-        title=row.title,
-        body=indru_push_service.push_notification_body(row.body),
-        image_filename=row.image_filename,
-        api_base=api_base,
-    )
-    if not pushed:
-        raise HTTPException(503, detail="Push notification unavailable (check FIREBASE_CREDENTIALS_PATH)")
-    indru_push_service.mark_push_sent(db, row)
-    return _indru_push_out(row, request)
-
-
-@secured.delete("/indru/pushes/{push_id}")
-def admin_delete_indru_push(push_id: str, db: Session = Depends(get_db)):
-    if not indru_push_service.delete_push(db, push_id):
-        raise HTTPException(404, detail="Indru push not found")
     return {"ok": True}
 
 

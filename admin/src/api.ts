@@ -164,6 +164,15 @@ export interface MetalRatesSyncResult {
   daily_history_days: number;
 }
 
+export interface DailyMorningPushResult {
+  ok: boolean;
+  route: string;
+  push_date: string;
+  title: string;
+  body?: string;
+  has_image?: boolean;
+}
+
 export interface DailyCalendar {
   city_id: string;
   gregorian_date: string;
@@ -280,6 +289,25 @@ export const api = {
   getMetalRatesStatus: () => request<MetalRatesStatus>('/admin/metal-rates/status'),
   syncMetalRates: () =>
     request<MetalRatesSyncResult>('/admin/metal-rates/sync', { method: 'POST' }),
+  sendDailyMorningPush: async (params: {
+    title: string;
+    body?: string;
+    file?: File | null;
+  }) => {
+    const form = new FormData();
+    form.append('title', params.title);
+    form.append('body', params.body ?? '');
+    if (params.file) form.append('file', params.file);
+    const res = await authFetch('/admin/daily-morning/send', {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+    return res.json() as Promise<DailyMorningPushResult>;
+  },
   listPosts: () => request<Post[]>('/admin/posts'),
   uploadPostMedia: async (file: File) => {
     const form = new FormData();

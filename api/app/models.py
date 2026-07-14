@@ -245,6 +245,16 @@ class TempleDailyPush(Base):
     sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class DailyMorningPush(Base):
+    """Tracks one morning home-screen push per calendar day (IST)."""
+
+    __tablename__ = "daily_morning_pushes"
+
+    push_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    title: Mapped[str] = mapped_column(String(256))
+    sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Temple(Base):
     """Famous temple directory content for spiritual discovery screens."""
 

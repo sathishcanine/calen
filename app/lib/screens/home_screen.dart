@@ -49,6 +49,9 @@ class HomeScreen extends StatefulWidget {
 
   final CalendarRepository repository;
 
+  /// Bottom nav index for the home (calendar) tab.
+  static const int homeTabIndex = 0;
+
   /// Bottom nav index for the வரவு செலவு tab.
   static const int budgetTabIndex = 3;
 

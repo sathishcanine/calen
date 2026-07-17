@@ -2,7 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 
-/// AdMob IDs from `--dart-define`. Defaults use Google's official test IDs.
+/// AdMob IDs from `--dart-define`. Android interstitial/native defaults are production units.
 class AdConfig {
   AdConfig._();
 
@@ -33,12 +33,23 @@ class AdConfig {
 
   static const String androidInterstitialUnitId = String.fromEnvironment(
     'ADMOB_ANDROID_INTERSTITIAL_ID',
-    defaultValue: 'ca-app-pub-3940256099942544/1033173712',
+    defaultValue: 'ca-app-pub-4789468551786381/7369680510',
   );
 
   static const String androidBudgetInterstitialUnitId = String.fromEnvironment(
     'ADMOB_ANDROID_BUDGET_INTERSTITIAL_ID',
     defaultValue: 'ca-app-pub-4789468551786381/1926533177',
+  );
+
+  static const String androidRaasiPalanInterstitialUnitId =
+      String.fromEnvironment(
+    'ADMOB_ANDROID_RAASI_PALAN_INTERSTITIAL_ID',
+    defaultValue: 'ca-app-pub-4789468551786381/7369680510',
+  );
+
+  static const String androidLibraryInterstitialUnitId = String.fromEnvironment(
+    'ADMOB_ANDROID_LIBRARY_INTERSTITIAL_ID',
+    defaultValue: 'ca-app-pub-4789468551786381/1430958121',
   );
 
   static const String androidNativeUnitId = String.fromEnvironment(
@@ -123,6 +134,14 @@ class AdConfig {
   static String get budgetInterstitialUnitId => Platform.isIOS
       ? iosBudgetInterstitialUnitId
       : androidBudgetInterstitialUnitId;
+
+  static String get raasiPalanInterstitialUnitId => Platform.isIOS
+      ? iosInterstitialUnitId
+      : androidRaasiPalanInterstitialUnitId;
+
+  static String get libraryInterstitialUnitId => Platform.isIOS
+      ? iosInterstitialUnitId
+      : androidLibraryInterstitialUnitId;
 
   static String get nativeUnitId =>
       Platform.isIOS ? iosNativeUnitId : androidNativeUnitId;

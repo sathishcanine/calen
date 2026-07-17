@@ -141,6 +141,7 @@ class _RaasiPalanDetailScreenState extends State<RaasiPalanDetailScreen> {
   Future<void> _finishBack() async {
     if (!mounted) return;
     await AdService.instance.showInterstitialOncePerSession(
+      adUnitId: AdConfig.raasiPalanInterstitialUnitId,
       onFinished: () {
         if (mounted) Navigator.pop(context);
       },

@@ -1,6 +1,7 @@
 import { clearAuthToken, getAuthToken, setAuthToken } from './auth';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:4000/api/v1';
+const API_BASE =
+  import.meta.env.VITE_API_BASE || `${window.location.origin}/api/v1`;
 
 function authHeaders(): Record<string, string> {
   const token = getAuthToken();
@@ -25,7 +26,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || res.statusText);
+    let message = text || res.statusText;
+    try {
+      const parsed = JSON.parse(text) as { detail?: string };
+      if (parsed.detail) message = parsed.detail;
+    } catch {
+      /* use raw response */
+    }
+    throw new Error(message);
   }
   return res.json() as Promise<T>;
 }
@@ -139,6 +147,30 @@ export interface RaasiPalanPeriodData {
   current_label: string;
   updated_at: string | null;
   signs: RaasiPalanSign[];
+}
+
+export type RaasiPalanSyncStatus =
+  | 'idle'
+  | 'running'
+  | 'completed'
+  | 'completed_with_errors'
+  | 'failed';
+
+export interface RaasiPalanSyncSign {
+  sign_index: number;
+  sign_ta: string;
+  status: 'pending' | 'running' | 'success' | 'failed';
+  last_error: string | null;
+  updated_at: string;
+}
+
+export interface RaasiPalanSyncJob {
+  job_id: string | null;
+  status: RaasiPalanSyncStatus;
+  started_at: string | null;
+  finished_at: string | null;
+  updated_at: string | null;
+  signs: RaasiPalanSyncSign[];
 }
 
 export interface MetalRatesStatus {
@@ -390,4 +422,10 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
+  getLatestRaasiPalanSync: () =>
+    request<RaasiPalanSyncJob>('/admin/raasi-palan-sync'),
+  getRaasiPalanSync: (jobId: string) =>
+    request<RaasiPalanSyncJob>(`/admin/raasi-palan-sync/${jobId}`),
+  startRaasiPalanSync: () =>
+    request<RaasiPalanSyncJob>('/admin/raasi-palan-sync', { method: 'POST' }),
 };

@@ -13,6 +13,10 @@ from app.data import posts_service
 from app.data.post_content import resolve_blocks_for_api
 from app.data import indru_push_service
 from app.data import raasi_palan_service
+from app.data.raasi_palan_manual_sync import (
+    get_manual_sync_status,
+    start_manual_sync,
+)
 from app.push_service import send_daily_morning_push, send_indru_push, send_post_push
 from app.data import home_push_service
 from app.daily_morning_push_scheduler import _today_ist as _morning_push_today_ist
@@ -696,6 +700,29 @@ def _raasi_period_out(data: dict) -> RaasiPalanPeriodOut:
             for s in data["signs"]
         ],
     )
+
+
+@secured.get("/raasi-palan-sync")
+def admin_raasi_palan_sync_status():
+    return get_manual_sync_status()
+
+
+@secured.get("/raasi-palan-sync/{job_id}")
+def admin_raasi_palan_sync_job(job_id: str):
+    try:
+        return get_manual_sync_status(job_id)
+    except KeyError as exc:
+        raise HTTPException(404, detail="Raasi-palan sync job not found") from exc
+
+
+@secured.post("/raasi-palan-sync", status_code=202)
+def admin_start_raasi_palan_sync():
+    try:
+        return start_manual_sync()
+    except FileExistsError as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(503, detail=str(exc)) from exc
 
 
 @secured.get("/raasi-palan/{period}", response_model=RaasiPalanPeriodOut)

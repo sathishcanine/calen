@@ -1,8 +1,8 @@
 {
   "today": {
     "period": "today",
-    "period_label": "2026-07-12",
-    "updated_at": "2026-07-12T23:33:08.082910+05:30",
+    "period_label": "2026-07-17",
+    "updated_at": "2026-07-17T08:31:44.786007+05:30",
     "signs": {
       "0": {
         "general_ta": "மேஷ ராசி நண்பர்களே! இன்று உங்களுக்கு சாதகமான மாற்றங்கள் நிறைந்த நாளாக அமையும். நீண்ட நாட்களாக மனதில் இருந்த வீடு அல்லது வாகனம் வாங்கும் எண்ணம் முன்னேறும் வாய்ப்பு உள்ளது. தொழில் மற்றும் வியாபாரத்தில் வளர்ச்சிக்கான புதிய வாய்ப்புகள் உருவாகும்.\n\nஉடன்பிறந்தவர்களுடன் சிறிய கருத்து வேறுபாடுகள் ஏற்பட்டாலும் அவை விரைவில் சரியாகும். உங்கள் வாழ்க்கை முறையில் சில நல்ல மாற்றங்கள் ஏற்படலாம். குடும்பத்தில் சுபநிகழ்ச்சிகள் குறித்து ஆலோசனைகள் நடைபெறும். இதுவரை இருந்த உடல்நலக் குறைகள் படிப்படியாக குறையும்.\n\nவியாபாரத்தில் இருந்த தடைகள் நீங்கி வருமானம் மேம்படும். புதிய நபர்களின் அறிமுகம் எதிர்காலத்தில் உங்களுக்கு பயனுள்ளதாக அமையும்.",
@@ -24,7 +24,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "1": {
         "general_ta": "ரிஷப ராசி அன்பர்களே! இன்று தன்னம்பிக்கையும் மன உறுதியும் அதிகரிக்கும் நாளாக அமையும். நீண்ட நாட்களாக இருந்து வந்த தடைகள் படிப்படியாக விலகும். தொழில் மற்றும் வியாபாரத்தில் போட்டிகள் குறைந்து முன்னேற்றம் காண்பீர்கள். வருமானம் உயர்ந்து பொருளாதார நிலை வலுப்பெறும். அதிர்ஷ்டம் உங்களுக்கு சாதகமாக இருந்து பல நல்ல வாய்ப்புகளை வழங்கும்.\n\nகுலதெய்வத்தின் அருளால் எண்ணிய காரியங்கள் நிறைவேறும். உடல்நலம் சீராக இருந்து உற்சாகம் அதிகரிக்கும். பணவரவு திருப்திகரமாக இருக்கும். கடன் தொடர்பான பிரச்சனைகள் கட்டுக்குள் வந்து மனநிம்மதி கிடைக்கும். சிறிய சேமிப்புகளே எதிர்காலத்தில் நல்ல பலனை அளிக்கும்.",
@@ -46,7 +47,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "2": {
         "general_ta": "",
@@ -68,7 +70,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "3": {
         "general_ta": "",
@@ -90,7 +93,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "4": {
         "general_ta": "",
@@ -112,7 +116,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "5": {
         "general_ta": "",
@@ -134,7 +139,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "6": {
         "general_ta": "",
@@ -156,7 +162,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "7": {
         "general_ta": "",
@@ -178,7 +185,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "8": {
         "general_ta": "",
@@ -200,7 +208,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "9": {
         "general_ta": "",
@@ -222,10 +231,11 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "10": {
-        "general_ta": "",
+        "general_ta": "#♒ கும்பம் - இன்றைய ராசிபலன் (17.07.2026)#\n\n#கும்பம் ராசி அன்பர்களே!# கடுமையான நடைமுறையால் நெருக்கமான நண்பருடன் சில கோரிக்கைகள் தோன்றும். நிதி விஷயங்களில் பாதுகாப்பான முதலீடுகளை முன்னேற்றினால் நல்ல லாபம் கிடைக்கும். வீட்டுக்குள்ள உணர்ச்சிப்பூர்வமான சிக்கல்களை சமாளிக்க உங்கள் அறிவும் அமைதியுமாக செயல்பட வேண்டும்.\n\nஇன்று காதலை வெளிப்படுத்தத் தயங்க வேண்டாம். வேலைப்பணியில் இன்று சிறந்த வாய்ப்புகள் உண்டு, அதனை முழுமையாக பயன்படுத்திக் கொள்ளுங்கள். எதிர்பார்த்த விதத்தில் எல்லாம் நடக்காது என்றாலும் மனச்சோர்வு இல்லாமல் இருப்பதே முக்கியம். வீனஸ் மற்றும் மார்ஸின் தாக்கம் இன்று ஒருங்கிணைந்திருப்பதால் பெண்கள் மற்றும் ஆண்களின் மன நிலை தெளிவாகும்.\n\n#🔢 அதிர்ஷ்ட எண்#\n\n6\n\n#🎨 அதிர்ஷ்ட நிறம்#\n\nஒளி புகு மற்றும் இளஞ்சிவப்பு\n\n#🪔 பரிகாரம்#\n\nகரு கொல்லியைத் தவிர்த்து, கர்ப்பிணிப் பெண் அல்லது தாய்மையின் உணர்வுகளை விரைவில் புண்படுத்த கூடாது; நிதி நிலைமையில் நல்ல முன்னேற்றம் தொடங்கும்.\n\n#🌈 இன்றைய பலன் சுருக்கம்#\n\n❤️ #உடல்நலம்:# ★★☆☆☆\n💰 #செல்வம்:# ★★★★☆\n👨‍👩‍👧 #குடும்பம்:# ★★☆☆☆\n💕 #காதல் வாழ்க்கை:# ★★★★★\n💼 #வேலை:# ★★★☆☆\n💍 #மண வாழ்க்கை:# ★★★★★",
         "nakshatra_palan_ta": "",
         "balam_ta": "",
         "kavanam_ta": "",
@@ -244,10 +254,11 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "11": {
-        "general_ta": "",
+        "general_ta": "#♓ மீனம் - இன்றைய ராசிபலன் (17.07.2026)#\n\n#மீனம் ராசி அன்பர்களே!# நேர்மறையான சிந்தனைகள் மற்றும் தவறாத முயற்சிகள் உங்கள் வெற்றிக்கு நடுவண் வழிகாட்டும். நண்பர்களின் ஆதரவினால் நீங்கள் சந்திக்கும் நிதி சிக்கல்கள் சந்தோஷமாக நிறைவேற்றப்படுவோம். குடும்பத்தில் சிலர் அதிகாரம் கொள்பதால் விரோதமான உரையாடல்கள் ஏற்பட்டு தவறான குற்றச்சாட்டுகள் பிறக்கலாம்.\n\nஇந்த நிலையில், உங்களுக்குப் புதிதாக தோன்றும் காதலின் மீது விழுப்புணர்வு கொள்வது முக்கியம். உங்கள் திட்டங்கள் இன்று இறுதி பருவத்தை எட்டுகின்றன. மனதில் இருக்கும் எண்ணங்களை வெளிப்படுத்துவது பயம் வேண்டாம். இன்று, உங்கள் துணைக்காகியவருடன் சிறப்பான நேரங்களை அனுபவிப்பீர்கள்.\n\n#🔢 அதிர்ஷ்ட எண்#\n\n4\n\n#🎨 அதிர்ஷ்ட நிறம்#\n\nகாவி மற்றும் சாம்பல்\n\n#🪔 பரிகாரம்#\n\nமது பயன்படுத்துதல் செவ்வாய் கிரகத்தின் பாதிப்பை அதிகரிக்கும், எனவே குடும்ப அமைதிக்காக அதை தவிர்க்க வேண்டும்.\n\n#🌈 இன்றைய பலன் சுருக்கம்#\n\n❤️ #உடல்நலம்:# ★★★★★\n💰 #செல்வம்:# ★★★★☆\n👨‍👩‍👧 #குடும்பம்:# ★★☆☆☆\n💕 #காதல் வாழ்க்கை:# ★★★★★\n💼 #வேலை:# ★★★★★\n💍 #மண வாழ்க்கை:# ★★★★★",
         "nakshatra_palan_ta": "",
         "balam_ta": "",
         "kavanam_ta": "",
@@ -266,7 +277,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       }
     }
   },
@@ -295,13 +307,14 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "1": {
         "general_ta": "ரிஷப ராசி அன்பர்களே!",
         "nakshatra_palan_ta": "",
         "balam_ta": "",
-        "kavanam_ta": "",
+        "kavanam_ta": "ஒன்று\nஇரண்டு",
         "ninaivu_ta": "",
         "lucky_numbers_ta": "6, 2",
         "lucky_colors_ta": "",
@@ -317,7 +330,8 @@
         "special_ta": "சிறப்பு",
         "lucky_days_ta": "11, 12",
         "chandrashtamam_ta": "இல்லை",
-        "remedy_ta": "பரிகாரம்"
+        "remedy_ta": "பரிகாரம்",
+        "graham_sancharam_ta": ""
       },
       "2": {
         "general_ta": "",
@@ -339,7 +353,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "3": {
         "general_ta": "",
@@ -361,7 +376,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "4": {
         "general_ta": "",
@@ -383,7 +399,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "5": {
         "general_ta": "",
@@ -405,7 +422,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "6": {
         "general_ta": "",
@@ -427,7 +445,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "7": {
         "general_ta": "",
@@ -449,7 +468,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "8": {
         "general_ta": "",
@@ -471,7 +491,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "9": {
         "general_ta": "",
@@ -493,7 +514,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "10": {
         "general_ta": "",
@@ -515,7 +537,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "11": {
         "general_ta": "",
@@ -537,7 +560,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       }
     }
   },
@@ -566,7 +590,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "1": {
         "general_ta": "",
@@ -588,7 +613,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "2": {
         "general_ta": "",
@@ -610,7 +636,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "3": {
         "general_ta": "",
@@ -632,7 +659,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "4": {
         "general_ta": "",
@@ -654,7 +682,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "5": {
         "general_ta": "",
@@ -676,7 +705,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "6": {
         "general_ta": "",
@@ -698,7 +728,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "7": {
         "general_ta": "",
@@ -720,7 +751,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "8": {
         "general_ta": "",
@@ -742,7 +774,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "9": {
         "general_ta": "",
@@ -764,7 +797,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "10": {
         "general_ta": "",
@@ -786,7 +820,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "11": {
         "general_ta": "",
@@ -808,7 +843,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       }
     }
   },
@@ -837,7 +873,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "1": {
         "general_ta": "",
@@ -859,7 +896,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "2": {
         "general_ta": "",
@@ -881,7 +919,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "3": {
         "general_ta": "",
@@ -903,7 +942,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "4": {
         "general_ta": "",
@@ -925,7 +965,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "5": {
         "general_ta": "",
@@ -947,7 +988,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "6": {
         "general_ta": "",
@@ -969,7 +1011,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "7": {
         "general_ta": "",
@@ -991,7 +1034,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "8": {
         "general_ta": "",
@@ -1013,7 +1057,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "9": {
         "general_ta": "",
@@ -1035,7 +1080,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "10": {
         "general_ta": "",
@@ -1057,7 +1103,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       },
       "11": {
         "general_ta": "",
@@ -1079,7 +1126,8 @@
         "special_ta": "",
         "lucky_days_ta": "",
         "chandrashtamam_ta": "",
-        "remedy_ta": ""
+        "remedy_ta": "",
+        "graham_sancharam_ta": ""
       }
     }
   }

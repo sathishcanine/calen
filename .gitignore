@@ -18,6 +18,8 @@ api/**/__pycache__/
 api/*.pyc
 api/tamilar_calendar.db
 api/calender-all-citiest-to-use-later.db
+api/app/data/raasi_palan/sync_schedule.json
+api/app/data/raasi_palan/manual_sync_status.json
 
 # Flutter
 app/.dart_tool/

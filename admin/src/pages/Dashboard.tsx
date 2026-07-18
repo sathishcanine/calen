@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import type { DailyMorningPushResult, MetalRatesStatus, MetalRatesSyncResult } from '../api';
+import type {
+  DailyMorningPushResult,
+  MetalRatesStatus,
+  MetalRatesSyncResult,
+  RaasiPalanSyncJob,
+} from '../api';
 
 function formatIst(iso: string | null | undefined): string {
   if (!iso) return '—';
@@ -38,6 +43,9 @@ export default function Dashboard() {
   const [homeTitle, setHomeTitle] = useState('');
   const [homeBody, setHomeBody] = useState('');
   const [homeFile, setHomeFile] = useState<File | null>(null);
+  const [raasiJob, setRaasiJob] = useState<RaasiPalanSyncJob | null>(null);
+  const [raasiStarting, setRaasiStarting] = useState(false);
+  const [raasiError, setRaasiError] = useState('');
 
   const loadStatus = useCallback(() => {
     api
@@ -49,6 +57,29 @@ export default function Dashboard() {
   useEffect(() => {
     loadStatus();
   }, [loadStatus]);
+
+  const loadRaasiStatus = useCallback(() => {
+    api
+      .getLatestRaasiPalanSync()
+      .then(setRaasiJob)
+      .catch((e) => setRaasiError(String(e)));
+  }, []);
+
+  useEffect(() => {
+    loadRaasiStatus();
+  }, [loadRaasiStatus]);
+
+  useEffect(() => {
+    const jobId = raasiJob?.job_id;
+    if (!jobId || raasiJob.status !== 'running') return;
+    const timer = window.setInterval(() => {
+      api
+        .getRaasiPalanSync(jobId)
+        .then(setRaasiJob)
+        .catch((e) => setRaasiError(String(e)));
+    }, 2500);
+    return () => window.clearInterval(timer);
+  }, [raasiJob?.job_id, raasiJob?.status]);
 
   async function onSync() {
     setSyncing(true);
@@ -91,6 +122,27 @@ export default function Dashboard() {
       setSendingPush(false);
     }
   }
+
+  async function onRaasiSync() {
+    if (!confirm('Fetch and update today’s பொதுப் பலன் for all 12 raasis?')) {
+      return;
+    }
+    setRaasiStarting(true);
+    setRaasiError('');
+    try {
+      setRaasiJob(await api.startRaasiPalanSync());
+    } catch (err) {
+      setRaasiError(String(err));
+    } finally {
+      setRaasiStarting(false);
+    }
+  }
+
+  const raasiCompleted =
+    raasiJob?.signs.filter((entry) => entry.status === 'success').length ?? 0;
+  const raasiFailed =
+    raasiJob?.signs.filter((entry) => entry.status === 'failed').length ?? 0;
+  const raasiRunning = raasiJob?.status === 'running';
 
   return (
     <div>
@@ -144,6 +196,63 @@ export default function Dashboard() {
 
         {message && <p className="success">{message}</p>}
         {error && <p className="error">{error}</p>}
+      </div>
+
+      <div className="card dashboard-card">
+        <h3>Daily raasi palan automation</h3>
+        <p className="muted">
+          Fetch AstroSage, rephrase through OpenAI, and update only today’s பொதுப் பலன்.
+          Each raasi is saved separately; failures are shown below.
+        </p>
+        <div className="dashboard-actions">
+          <button
+            type="button"
+            onClick={onRaasiSync}
+            disabled={raasiStarting || raasiRunning}
+          >
+            {raasiStarting
+              ? 'Starting…'
+              : raasiRunning
+                ? `Syncing raasis… ${raasiCompleted}/12`
+                : 'Fetch & update all 12 raasis'}
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={loadRaasiStatus}
+            disabled={raasiStarting}
+          >
+            Reload status
+          </button>
+          <Link to="/raasi-palan">Open raasi editor</Link>
+        </div>
+
+        {raasiJob && raasiJob.status !== 'idle' ? (
+          <ul>
+            {raasiJob.signs.map((entry) => (
+              <li key={entry.sign_index}>
+                {entry.status === 'success'
+                  ? '✓'
+                  : entry.status === 'failed'
+                    ? '✗'
+                    : entry.status === 'running'
+                      ? '⏳'
+                      : '◷'}{' '}
+                <strong>{entry.sign_ta}</strong>
+                {entry.last_error ? ` — ${entry.last_error}` : ''}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {raasiJob?.status === 'completed' ? (
+          <p className="success">All 12 raasis updated successfully.</p>
+        ) : null}
+        {raasiJob?.status === 'completed_with_errors' ? (
+          <p className="error">
+            Sync finished: {raasiCompleted} succeeded, {raasiFailed} failed.
+          </p>
+        ) : null}
+        {raasiError ? <p className="error">{raasiError}</p> : null}
       </div>
 
       <form className="card dashboard-card" onSubmit={onSendHomePush}>

@@ -5,6 +5,8 @@ pydantic==2.10.3
 pydantic-settings==2.6.1
 python-multipart==0.0.20
 httpx==0.28.1
+beautifulsoup4==4.15.0
+openai==2.45.0
 kaalavidya==0.3.2
 pillow>=11.0.0
 pymupdf>=1.25.0

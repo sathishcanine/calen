@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     public_base_url: str = ""
     # Required for admin panel and /admin API routes
     admin_password: str = ""
+    # Used by the AstroSage daily raasi-palan rephrasing script
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4.1-mini"
+    # If false (default), daily raasi-palan only runs via the admin "Fetch &
+    # update" button — the 04:00–06:00 IST auto-scheduler is not started.
+    raasi_palan_auto_sync_enabled: bool = False
 
     class Config:
         env_file = ".env"

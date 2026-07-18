@@ -20,6 +20,10 @@ from app.daily_morning_push_scheduler import (
     start_daily_morning_push_scheduler,
     stop_daily_morning_push_scheduler,
 )
+from app.raasi_palan_scheduler import (
+    start_raasi_palan_scheduler,
+    stop_raasi_palan_scheduler,
+)
 from app.routers import admin, public
 from app.seed import ensure_cities
 
@@ -102,7 +106,11 @@ async def lifespan(_app: FastAPI):
     start_indru_scheduler()
     start_temple_push_scheduler()
     start_daily_morning_push_scheduler()
+    if settings.raasi_palan_auto_sync_enabled:
+        start_raasi_palan_scheduler()
     yield
+    if settings.raasi_palan_auto_sync_enabled:
+        stop_raasi_palan_scheduler()
     stop_daily_morning_push_scheduler()
     stop_temple_push_scheduler()
     stop_indru_scheduler()

@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { api, type RaasiPalanPeriod, type RaasiPalanSign } from '../api';
+import {
+  api,
+  type RaasiPalanPeriod,
+  type RaasiPalanSign,
+  type RaasiPalanSyncJob,
+} from '../api';
 
 const PERIODS: { id: RaasiPalanPeriod; label: string; hint: string }[] = [
   { id: 'today', label: 'இன்று', hint: 'Current date' },
@@ -110,6 +115,8 @@ export default function RaasiPalan() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [syncStarting, setSyncStarting] = useState(false);
+  const [syncJob, setSyncJob] = useState<RaasiPalanSyncJob | null>(null);
 
   const active = signs[activeIndex] ?? EMPTY_SIGN(0, SIGN_NAMES[0]);
   const periodMeta = useMemo(
@@ -144,6 +151,39 @@ export default function RaasiPalan() {
   useEffect(() => {
     load(period);
   }, [period]);
+
+  useEffect(() => {
+    api
+      .getLatestRaasiPalanSync()
+      .then((job) => setSyncJob(job))
+      .catch((err) => setError(String(err)));
+  }, []);
+
+  useEffect(() => {
+    const jobId = syncJob?.job_id;
+    if (!jobId || syncJob.status !== 'running') return;
+
+    let cancelled = false;
+    const timer = window.setInterval(() => {
+      api
+        .getRaasiPalanSync(jobId)
+        .then((job) => {
+          if (cancelled) return;
+          setSyncJob(job);
+          if (job.status !== 'running' && period === 'today') {
+            load('today');
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) setError(String(err));
+        });
+    }, 2500);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [syncJob?.job_id, syncJob?.status, period]);
 
   function updateActive(patch: Partial<RaasiPalanSign>) {
     setSigns((prev) =>
@@ -207,6 +247,32 @@ export default function RaasiPalan() {
     }
   }
 
+  async function startSync() {
+    if (!confirm('இன்றைய 12 ராசிகளையும் AstroSage + OpenAI மூலம் புதுப்பிக்கவா?')) {
+      return;
+    }
+    setSyncStarting(true);
+    setError('');
+    setMessage('');
+    try {
+      const job = await api.startRaasiPalanSync();
+      setSyncJob(job);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setSyncStarting(false);
+    }
+  }
+
+  const syncBySign = new Map(
+    (syncJob?.signs ?? []).map((entry) => [entry.sign_index, entry]),
+  );
+  const syncSuccessCount =
+    syncJob?.signs.filter((entry) => entry.status === 'success').length ?? 0;
+  const syncFailureCount =
+    syncJob?.signs.filter((entry) => entry.status === 'failed').length ?? 0;
+  const syncRunning = syncJob?.status === 'running';
+
   return (
     <div>
       <h2 style={{ marginTop: 0 }}>ராசி பலன்</h2>
@@ -242,11 +308,53 @@ export default function RaasiPalan() {
           Current: <code>{currentLabel || '—'}</code>
           {updatedAt ? ` · Updated: ${updatedAt}` : null}
         </div>
+        {period === 'today' ? (
+          <div style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              disabled={syncStarting || syncRunning}
+              onClick={startSync}
+            >
+              {syncStarting
+                ? 'Starting…'
+                : syncRunning
+                  ? `Syncing… ${syncSuccessCount}/12`
+                  : 'Fetch & update all 12 daily raasis'}
+            </button>
+            <span style={{ marginLeft: 10, color: '#546e7a', fontSize: 13 }}>
+              One raasi at a time · only பொதுப் பலன்
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {error ? <p className="error">{error}</p> : null}
       {message ? <p className="success">{message}</p> : null}
       {loading ? <p>Loading…</p> : null}
+
+      {syncJob && syncJob.status !== 'idle' ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <strong>
+            Daily sync:{' '}
+            {syncRunning
+              ? `Running — ${syncSuccessCount}/12 completed`
+              : syncJob.status === 'completed'
+                ? 'All 12 completed'
+                : `Finished with ${syncFailureCount} error(s)`}
+          </strong>
+          {syncJob.signs.some((entry) => entry.last_error) ? (
+            <ul className="error" style={{ marginBottom: 0 }}>
+              {syncJob.signs
+                .filter((entry) => entry.last_error)
+                .map((entry) => (
+                  <li key={entry.sign_index}>
+                    <strong>{entry.sign_ta}:</strong> {entry.last_error}
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
 
       <div
         style={{
@@ -260,6 +368,21 @@ export default function RaasiPalan() {
           <h3 style={{ marginTop: 0 }}>12 ராசிகள்</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {signs.map((s, i) => (
+              (() => {
+                const syncStatus = syncBySign.get(s.sign_index)?.status;
+                const syncMark =
+                  syncStatus === 'success'
+                    ? ' ✓'
+                    : syncStatus === 'failed'
+                      ? ' ✗'
+                      : syncStatus === 'running'
+                        ? ' ⏳'
+                        : syncStatus === 'pending'
+                          ? ' ◷'
+                          : isFilled(s, period)
+                            ? ' ✓'
+                            : '';
+                return (
               <button
                 key={s.sign_index}
                 type="button"
@@ -268,8 +391,10 @@ export default function RaasiPalan() {
                 onClick={() => setActiveIndex(i)}
               >
                 {s.sign_index + 1}. {s.sign_ta}
-                {isFilled(s, period) ? ' ✓' : ''}
+                {syncMark}
               </button>
+                );
+              })()
             ))}
           </div>
           <button
